@@ -1,16 +1,22 @@
-mootools-jsdbobject
+jsdbobject
 ===================
 
-An almost 1:1 port of my PHP dbObject ORM to Mootools javascript. Includes full SQLite support, and JSON REST API
+An almost 1:1 port of my PHP dbObject ORM to javascript. 
+Includes full SQLite support, and a JSON REST API to load content from a remote datasource.
+Removed Mootools Dependencies, so now you can use this with Mootools, Jquery, Zepto, Ember, or whatever your drug of choice is.
 
 
 Example, connecting to sqlite
 =============================
 
-	// define an adapter to sqlite myDbName
+First, define an adapter. In this case we use an SQLiteAdapter to the database 'myDbName'
+
+	```javascript
 	window.dbAdapter = new dbObject.SQLiteAdapter('myDbName');
 
-	// define 3 entity objects using dbObject.define
+Then, define some entity objects using dbObject.define
+
+	```javascript
 	var Presentation = dbObject.define({
 			className: 'Presentation',
 			table : 'presentations',
@@ -41,22 +47,9 @@ Example, connecting to sqlite
 		}
 	});
 
-	var Presentationslide = dbObject.define({
-			className: 'Presentationslide',
-			table : 'presentations_slides',
-			primary : 'ID_PresentationSlide',
-			fields: ['ID_PresentationSlide', 'ID_Presentation', 'ID_Slide', 'slideIndex', 'subSlideIndex'],
-			relations: {
-				'Presentation': dbObject.RELATION_FOREIGN,
-				'Slide': dbObject.RELATION_FOREIGN
-			},
-			adapter: 'dbAdapter'
-		}, {
-		display: function() {
-			return new Element("div", {html: "Presentationslide: "+this.get('Name') });
-		}
-	});
+These entity objects map directly to an Sqlite database table. In this case we're setting up a many:many relationship
 
+	```javascript
 	var Slide = dbObject.define({
 			className: 'Slide',
 			table : 'slides',
@@ -83,10 +76,31 @@ Example, connecting to sqlite
 
 	});
 
+The connecting table is also defined as an entity, but this has 2 foreign relations.
 
+	```javascript
+	var Presentationslide = dbObject.define({
+			className: 'Presentationslide',
+			table : 'presentations_slides',
+			primary : 'ID_PresentationSlide',
+			fields: ['ID_PresentationSlide', 'ID_Presentation', 'ID_Slide', 'slideIndex', 'subSlideIndex'],
+			relations: {
+				'Presentation': dbObject.RELATION_FOREIGN,
+				'Slide': dbObject.RELATION_FOREIGN
+			},
+			adapter: 'dbAdapter'
+		}, {
+		display: function() {
+			return new Element("div", {html: "Presentationslide: "+this.get('Name') });
+		}
+	});
+
+We initialize the whole stuff on onload or domready like this:
+
+	```javascript
 	window.onload = function() {
-		window.dbAdapter = new dbObject.SQLiteAdapter('salesboard');
-
+		window.dbAdapter = new dbObject.SQLiteAdapter('myDbName');
+		// This will return an array with Presentation objects on success.
 		dbObject.Find(Presentation, {} , { onSuccess: function(result) {
 				for (var i=0; i< result.length; i++) {
 					result[i].display();
@@ -95,3 +109,9 @@ Example, connecting to sqlite
 		});
 
 	}
+
+To create a new Presentation, this is enough:
+
+	var pres = new Presentation();
+	pres.set('name', 'test');
+	pres.Save();
