@@ -11,12 +11,13 @@ Example, connecting to sqlite
 
 First, define an adapter. In this case we use an SQLiteAdapter to the database 'myDbName'
 
-	```javascript
+```javascript
 	window.dbAdapter = new dbObject.SQLiteAdapter('myDbName');
+```
 
 Then, define some entity objects using dbObject.define
 
-	```javascript
+```javascript
 	var Presentation = dbObject.define({
 			className: 'Presentation',
 			table : 'presentations',
@@ -46,10 +47,11 @@ Then, define some entity objects using dbObject.define
 			}});
 		}
 	});
+```
 
 These entity objects map directly to an Sqlite database table. In this case we're setting up a many:many relationship
 
-	```javascript
+```javascript
 	var Slide = dbObject.define({
 			className: 'Slide',
 			table : 'slides',
@@ -75,10 +77,11 @@ These entity objects map directly to an Sqlite database table. In this case we'r
 		}
 
 	});
+```
 
 The connecting table is also defined as an entity, but this has 2 foreign relations.
 
-	```javascript
+```javascript
 	var Presentationslide = dbObject.define({
 			className: 'Presentationslide',
 			table : 'presentations_slides',
@@ -94,10 +97,11 @@ The connecting table is also defined as an entity, but this has 2 foreign relati
 			return new Element("div", {html: "Presentationslide: "+this.get('Name') });
 		}
 	});
+```
 
 We initialize the whole stuff on onload or domready like this:
 
-	```javascript
+```javascript
 	window.onload = function() {
 		window.dbAdapter = new dbObject.SQLiteAdapter('myDbName');
 		// This will return an array with Presentation objects on success.
@@ -109,9 +113,12 @@ We initialize the whole stuff on onload or domready like this:
 		});
 
 	}
+```
 
 To create a new Presentation, this is enough:
 
+```javascript
 	var pres = new Presentation();
 	pres.set('name', 'test');
 	pres.Save();
+```
