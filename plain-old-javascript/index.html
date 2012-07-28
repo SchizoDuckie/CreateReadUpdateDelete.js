@@ -1,0 +1,20 @@
+<html>
+<body>
+<h1>
+	Plain old jsDbObjects, framework agnostic
+</h1>
+<script src='dbObject.js'></script>
+<script src='slide.js'></script>
+<script src='dbObject.SqliteAdapter.js'></script>
+<script src='database.js'></script>
+<script src='querybuilder.js'></script>
+
+<script>
+
+window.onload = function() {
+	window.dbAdapter = new dbObject.SQLiteAdapter('database');
+};
+</script>
+
+</body>
+</html>
