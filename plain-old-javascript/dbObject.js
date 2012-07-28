@@ -8,9 +8,7 @@ if (!dbObject) var dbObject = {
 
 
 dbObject.define = function(opts, method) {
-	console.log("Define! ", opts, method);
 	return function(ID) {
-		console.log("Creating! ", opts, method);
 		if(ID) {
 			console.log("FOund id! ", ID);
 		}
@@ -56,7 +54,7 @@ dbObject.Find = function(obj, filters, options) {
 			type : filters
 		};
 	}
-	console.log("Find! ", type, filters, options);
+	//console.log("Find! ", type, filters, options);
 	
 	var extras = [];
 	options = options || {};

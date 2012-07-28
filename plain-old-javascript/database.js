@@ -30,13 +30,12 @@ Database = function(name, options) {
 
 	this.execute = function(sql, options){
 		if(!this.db) return;
-		console.log("Execute! ", sql, options);
+		//console.log("Execute! ", sql, options);
 		options = Objectmerge({
 			values: [],
 			onComplete: function(r){console.log("Database result retrieved: ", r)},
 			onError: function(e){ console.error(sql, e);}
 		}, options);
-		console.log("Execute! ", options);
 		this.db.transaction(function(transaction){
 			transaction.executeSql(sql, options.values, function(transaction, rs){
 				try {

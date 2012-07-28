@@ -4,7 +4,7 @@ dbObject.SQLiteAdapter = function(database, options) {
 		this.db = new Database(database);
 		this.options = options || {};
 		this.lastQuery = false;
-		console.info("Created dbObject.SQLiteAdapter for database:", this.db.dbName);
+		//console.info("Created dbObject.SQLiteAdapter for database:", this.db.dbName);
 		return this;
 };
 
@@ -12,7 +12,7 @@ dbObject.SQLiteAdapter.prototype = new dbObject.ConnectionAdapter();
 
 
 dbObject.SQLiteAdapter.prototype.onComplete = function(ObjectToFind, resultSet, options){
-	console.info("Query Executed! ", ObjectToFind, resultSet, options);
+	//console.info("Query Executed! ", ObjectToFind, resultSet, options);
 	var output = [];
 	var row;
 	while (row = resultSet.next()) {
@@ -36,7 +36,6 @@ dbObject.SQLiteAdapter.prototype.Find = function(what, filters, sorting, justthe
 	this.lastQuery = query;
 	this.db.execute(query, {
 		onComplete: function(resultSet) { 
-			console.log("Query done! firing oncomplete");
 			this.onComplete(what, resultSet, opt); }.bind(this),
 		onError: this.onError.bind(this)
 	});

@@ -15,8 +15,6 @@
 	}, {
 
 	display : function(target) {
-		console.log("Displaying slide "+this.get('ID_Slide'));
-		console.log(this.databaseValues);
 		var d = document.createElement('div');
 		d.innerHTML = this.get('ID_Slide') + ' - '+ this.get('Title')  + ' - '+ this.get('SubTitle');
 

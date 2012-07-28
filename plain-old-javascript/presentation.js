@@ -13,16 +13,17 @@
 	}, {
 
 	display: function() {
-		console.log("Displaying presentation "+this.get('name'));
-		console.log(this.databaseValues);
+		//console.log("Displaying presentation "+this.get('name'));
+		//console.log(this.databaseValues);
 		var d = document.createElement('div');
 		d.innerHTML = 'Presentation:'+ this.get('name');
 		d.id = 'pres_'+this.getID();
 		document.body.appendChild(d);
-		console.log(this.Find(Slide, {}, { onSuccess: function(slides) {
+		// find slides for this presentation, it's a many:many relation.
+		this.Find(Slide, {}, { onSuccess: function(slides) {
 			for(var i = 0; i< slides.length; i++) {
 				slides[i].display(d.id);
 			}
-		}}));
+		}});
 	}
 });

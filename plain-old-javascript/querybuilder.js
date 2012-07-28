@@ -23,7 +23,6 @@ dbObject.QueryBuilder = function(className, filters, extras, justthese) {
 	this.groups = [];
 	this.limit = extras.limit ? 'LIMIT ' + extras.limit : 'LIMIT 0,100';
 	
-	console.log("querybuilder for : ", typeof(this.origin));
 	if(typeof(this.origin) === "string") {
 		this.origin = new window[className]();
 	}
@@ -96,11 +95,10 @@ dbObject.QueryBuilder = function(className, filters, extras, justthese) {
 
 dbObject.QueryBuilder.prototype.buildFilters = function(what, value, _class)
 {
-	console.log("Build Filters! ", what, value, _class);
 	var wtclass = _class.dbSetup.relations[what] ? new window[what]() : false;
 	//console.info("BuildFilters: ", what, value, wtclass, _class.relations);
 	if(wtclass) {  // filter by a property of a subclass
-		console.warn("BuildFilters for sublcas! ", wtclass, value);
+		//console.warn("BuildFilters for sublcas! ", wtclass, value);
 		for(var val in value) {
 			this.buildFilters(val,value[val], wtclass);
 			this.buildJoins(wtclass,_class);
@@ -175,12 +173,10 @@ dbObject.QueryBuilder.prototype.buildJoins = function(theClass, parent) { // det
 	if(!(theClass.dbSetup)) theClass = new theClass();
 	var _class = theClass.getType();
 	if(!(parent.dbSetup)) parent = new parent();
-	console.log("Building joins: ", _class, '->',  parent.getType(), 'type:', parent.dbSetup.relations[_class]);
 	
 	switch(parent.dbSetup.relations[_class]) { // then check the relationtype
 		case dbObject.RELATION_SINGLE:
 		case dbObject.RELATION_FOREIGN:	
-			console.log("Foreign relation found");							// it's a foreign relation. Join the appropriate table.
 			if(theClass.dbSetup.fields.indexOf(parent.dbSetup.primary) > -1) {
 				this.joins.push("LEFT JOIN \n\t "+theClass.dbSetup.table+ " on "+ parent.dbSetup.table+ "."+ parent.dbSetup.primary+" = "+theClass.dbSetup.table+ "."+ parent.dbSetup.primary);
 			}
@@ -189,9 +185,7 @@ dbObject.QueryBuilder.prototype.buildJoins = function(theClass, parent) { // det
 			}
 		break;
 		case dbObject.RELATION_MANY:									// it's a many:many relation. Join the connector table and then the other one.
-			console.log("Many relation found!");
 			connectorClass = parent.dbSetup.connectors[_class];
-			console.warn(connectorClass);
 			conn = new window[connectorClass](false);
 			this.joins.push("LEFT JOIN \n\t "+ conn.dbSetup.table+ " on  "+ conn.dbSetup.table+ "."+ parent.dbSetup.primary+ " = "+ parent.dbSetup.table+ "."+ parent.dbSetup.primary+ "");
 			this.joins.push("LEFT JOIN \n\t "+theClass.dbSetup.table+ " on "+ conn.dbSetup.table+ "."+theClass.dbSetup.primary+ " = "+theClass.dbSetup.table+ "."+theClass.dbSetup.primary+ "");
