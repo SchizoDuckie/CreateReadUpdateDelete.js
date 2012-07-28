@@ -1,24 +1,28 @@
-﻿Presentation = new Class({
-	Implements: [dbObject.Entity],
-	dbSetup: {
+﻿var Presentation = dbObject.define({
 		className: 'Presentation',
 		table : 'presentations',
 		primary : 'ID_Presentation',
-		fields: ['ID_Presentation','ID_Client','Name','template','forceUpdate', 'lastUpdated','lastAccesse3d','ID_Catalog', 'ID_Category'],
-		editorFields: {
-			'Name': { label: 'Presentation Naam', placeholder: 'Weergave naam van uw Presentation', type: 'text', validation: 'validate-alphanumeric' }
-		},
+		fields: ['ID_Presentation','ID_Client','name','template','forceUpdate', 'lastUpdated','lastAccessed','ID_Catalog', 'ID_Category'],
 		relations: {
-			'Slide': RELATION_MANY
+			'Slide': dbObject.RELATION_MANY
 		},
 		connectors: {
 			'Slide' : 'Presentationslide'
 		},
 		adapter: 'dbAdapter'
-	},
-	
+	}, {
 
 	display: function() {
-		return new Element("div", {html: "Presentation: "+this.get('Name') });
+		console.log("Displaying presentation "+this.get('name'));
+		console.log(this.databaseValues);
+		var d = document.createElement('div');
+		d.innerHTML = 'Presentation:'+ this.get('name');
+		d.id = 'pres_'+this.getID();
+		document.body.appendChild(d);
+		console.log(this.Find(Slide, {}, { onSuccess: function(slides) {
+			for(var i = 0; i< slides.length; i++) {
+				slides[i].display(d.id);
+			}
+		}}));
 	}
 });

@@ -7,7 +7,7 @@ Removed all moo dependencies and converted to POJS
 ...
 */
 
-var Database = function(name, options) {
+Database = function(name, options) {
 
 	this.options = {
 		version: '1.0',
@@ -28,46 +28,52 @@ var Database = function(name, options) {
 	}
 
 
-	function execute(sql, options){
+	this.execute = function(sql, options){
 		if(!this.db) return;
-		options = Object.merge({
+		console.log("Execute! ", sql, options);
+		options = Objectmerge({
 			values: [],
-			onComplete: function(){},
-			onError: function(){}
+			onComplete: function(r){console.log("Database result retrieved: ", r)},
+			onError: function(e){ console.error(sql, e);}
 		}, options);
+		console.log("Execute! ", options);
 		this.db.transaction(function(transaction){
 			transaction.executeSql(sql, options.values, function(transaction, rs){
 				try {
-					this.lastInsertRowId = rs.insertId;
-				} catch(e) {}
+					if(insertId in rs) {
+						this.lastInsertRowId = rs.insertId;
+					}
+				} catch(E) {}
 				if (options.onComplete)
 					options.onComplete(new Database.ResultSet(rs));
-			}.bind(this), options.onError);
+				}.bind(this), options.onError);
 		}.bind(this));
-	}
-	
-	function lastInsertId(){
+	};
+
+	this.lastInsertId = function(){
 		return this.lastInsertRowId;
-	}
-	
-	function getVersion(){
+	};
+
+	this.getVersion = function(){
 		return this.dbVersion;
-	}
-	
-	function changeVersion(from, to){
+	};
+
+	this.changeVersion = function(from, to){
 		if(this.html5)
 			this.db.changeVersion(from, to);
 		else
 			this.db.execute('UPDATE DATABASE_METADATA SET version = ? WHERE version = ?', [to, from]);
 			
 		this.dbVersion = to;
-	}
-	
-	function close(){
-		this.db.close();
-	}
+	};
 
+	this.close = function (){
+		this.db.close();
+	};
+
+	return this;
 };
+
 
 Database.ResultSet = function(rs){
 		this.rs = rs;
@@ -92,4 +98,16 @@ Database.ResultSet.Row = function(row) {
 Database.ResultSet.Row.prototype.get = function(index, defaultValue) {
 	var col = this.row[index];
 	return (col) ? col : defaultValue;
+};
+
+
+Objectmerge = function(obj1, obj2) {
+	for (var p in obj2) {
+		try { // Property in destination object set; update its value.
+			obj1[p] = obj2[p].constructor==Object ?  Objectmerge(obj1[p], obj2[p]) :  obj2[p];
+		} catch(e) { // Property in destination object not set; create it and set its value.
+			obj1[p] = obj2[p];
+		}
+	}
+	return obj1;
 };

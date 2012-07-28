@@ -23,7 +23,7 @@ dbObject.QueryBuilder = function(className, filters, extras, justthese) {
 	this.groups = [];
 	this.limit = extras.limit ? 'LIMIT ' + extras.limit : 'LIMIT 0,100';
 	
-	console.log(typeof(this.origin));
+	console.log("querybuilder for : ", typeof(this.origin));
 	if(typeof(this.origin) === "string") {
 		this.origin = new window[className]();
 	}
@@ -96,10 +96,11 @@ dbObject.QueryBuilder = function(className, filters, extras, justthese) {
 
 dbObject.QueryBuilder.prototype.buildFilters = function(what, value, _class)
 {
+	console.log("Build Filters! ", what, value, _class);
 	var wtclass = _class.dbSetup.relations[what] ? new window[what]() : false;
 	//console.info("BuildFilters: ", what, value, wtclass, _class.relations);
 	if(wtclass) {  // filter by a property of a subclass
-		//console.warn("BuildFilters for sublcas! ", wtclass, value);
+		console.warn("BuildFilters for sublcas! ", wtclass, value);
 		for(var val in value) {
 			this.buildFilters(val,value[val], wtclass);
 			this.buildJoins(wtclass,_class);
@@ -172,17 +173,14 @@ dbObject.QueryBuilder.prototype.mapFields = function(query, object) { // map the
 dbObject.QueryBuilder.prototype.buildJoins = function(theClass, parent) { // determine what joins to use
 	if(!parent) return;	// nothing to join on, skip.
 	if(!(theClass.dbSetup)) theClass = new theClass();
-	var _class = theClass.dbSetup.className;
+	var _class = theClass.getType();
 	if(!(parent.dbSetup)) parent = new parent();
-
+	console.log("Building joins: ", _class, '->',  parent.getType(), 'type:', parent.dbSetup.relations[_class]);
+	
 	switch(parent.dbSetup.relations[_class]) { // then check the relationtype
-		case RELATION_NOT_ANALYZED:							// if its not analyzed, it's new. Save + analyze + re-call this function.
-			if(_class.changedValues.length > 0) _class.Save();
-			parent.analyzeRelations();
-			return(this.buildJoins(_class, parent));
-		break;
-		case RELATION_SINGLE:
-		case RELATION_FOREIGN:								// it's a foreign relation. Join the appropriate table.
+		case dbObject.RELATION_SINGLE:
+		case dbObject.RELATION_FOREIGN:	
+			console.log("Foreign relation found");							// it's a foreign relation. Join the appropriate table.
 			if(theClass.dbSetup.fields.indexOf(parent.dbSetup.primary) > -1) {
 				this.joins.push("LEFT JOIN \n\t "+theClass.dbSetup.table+ " on "+ parent.dbSetup.table+ "."+ parent.dbSetup.primary+" = "+theClass.dbSetup.table+ "."+ parent.dbSetup.primary);
 			}
@@ -190,7 +188,7 @@ dbObject.QueryBuilder.prototype.buildJoins = function(theClass, parent) { // det
 				this.joins.push("LEFT JOIN \n\t "+theClass.dbSetup.table+ " on "+theClass.dbSetup.table+ "."+theClass.dbSetup.primary+ " = "+ parent.dbSetup.table+ "."+theClass.dbSetup.primary+ "");
 			}
 		break;
-		case RELATION_MANY:									// it's a many:many relation. Join the connector table and then the other one.
+		case dbObject.RELATION_MANY:									// it's a many:many relation. Join the connector table and then the other one.
 			console.log("Many relation found!");
 			connectorClass = parent.dbSetup.connectors[_class];
 			console.warn(connectorClass);
@@ -198,12 +196,12 @@ dbObject.QueryBuilder.prototype.buildJoins = function(theClass, parent) { // det
 			this.joins.push("LEFT JOIN \n\t "+ conn.dbSetup.table+ " on  "+ conn.dbSetup.table+ "."+ parent.dbSetup.primary+ " = "+ parent.dbSetup.table+ "."+ parent.dbSetup.primary+ "");
 			this.joins.push("LEFT JOIN \n\t "+theClass.dbSetup.table+ " on "+ conn.dbSetup.table+ "."+theClass.dbSetup.primary+ " = "+theClass.dbSetup.table+ "."+theClass.dbSetup.primary+ "");
 		break;
-		case RELATION_CUSTOM:
-			this.joins = this.joins.unshift("LEFT JOIN \n\t "+theClass.dbSetup.table+ " on "+ parent.dbSetup.table+ "."+ parent.relations[_class].sourceProperty+ " = "+theClass.dbSetup.table+ "."+ parent.relations[_class].targetProperty+ "");
-			this.joins.push("LEFT JOIN \n\t "+theClass.dbSetup.table+ " on "+ parent.dbSetup.table+ "."+ parent.relations[_class].sourceProperty+ " = "+theClass.dbSetup.table+ "."+ parent.relations[_class].targetProperty+ "");
+		case dbObject.RELATION_CUSTOM:
+			this.joins = this.joins.unshift("LEFT JOIN \n\t "+theClass.dbSetup.table+ " on "+ parent.dbSetup.table+ "."+ parent.dbSetup.relations[_class].sourceProperty+ " = "+theClass.dbSetup.table+ "."+ parent.dbSetup.relations[_class].targetProperty+ "");
+			this.joins.push("LEFT JOIN \n\t "+theClass.dbSetup.table+ " on "+ parent.dbSetup.table+ "."+ parent.dbSetup.relations[_class].sourceProperty+ " = "+theClass.dbSetup.table+ "."+ parent.dbSetup.relations[_class].targetProperty+ "");
 		break;
 		default:
-			throw new Exception("Warning! class "+parent.dbSetup.className+" probably has no relation defined for class "+ _class+ "  or you did something terribly wrong..." + JSON.encode(parent.relations[_class]));
+			throw new Exception("Warning! class "+parent.dbSetup.className+" probably has no relation defined for class "+ _class+ "  or you did something terribly wrong..." + JSON.encode(parent.dbSetup.relations[_class]));
 		break;
 	}
 	//this.joins = array_unique(this.joins);

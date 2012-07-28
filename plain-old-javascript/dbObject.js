@@ -3,9 +3,20 @@ if (!dbObject) var dbObject = {
 	RELATION_SINGLE : 1,
 	RELATION_FOREIGN : 2,
 	RELATION_MANY : 3,
-	RELATION_NOT_RECOGNIZED : 99,
-	RELATION_NOT_ANALYZED : 0,
 	RELATION_CUSTOM : 6
+};
+
+
+dbObject.define = function(opts, method) {
+	console.log("Define! ", opts, method);
+	return function(ID) {
+		console.log("Creating! ", opts, method);
+		if(ID) {
+			console.log("FOund id! ", ID);
+		}
+		var s = new dbObject.Entity(opts, method);
+		return s;
+	};
 };
 
 /**
@@ -27,7 +38,6 @@ if (!dbObject) var dbObject = {
  */
 dbObject.Find = function(obj, filters, options) {
 	var type = false;
-	console.log("Find! ", obj(), filters, options);
 	if(obj.toString() == 'dbObject') {
 		type = obj.getType();
 	} else {
@@ -46,8 +56,10 @@ dbObject.Find = function(obj, filters, options) {
 			type : filters
 		};
 	}
-	var extras = {} ;
-	var options = options || {};
+	console.log("Find! ", type, filters, options);
+	
+	var extras = [];
+	options = options || {};
 	if(options.limit) {
 		extras.limit = (options.start || 0) + "," + options.limit;
 		delete options.limit;
@@ -55,7 +67,7 @@ dbObject.Find = function(obj, filters, options) {
 	}
 	var justthese = [];
 	
-	obj.getAdapter().Find(obj.getType(), filters, extras, justthese, options);
+	obj.getAdapter().Find(type, filters, extras, justthese, options);
 };
 			
 dbObject.FindOne = function(obj, filters, options) {
@@ -81,9 +93,9 @@ dbObject.fromCache = function(obj, values) {
 dbObject.ConnectionAdapter = function(endpoint, options) {
 	
 	this.endpoint = endpoint || false;
-	this.options = options || {};
+	this.options = options ? this.filterOptions(options) : {};
 	
-	function filterOptions(options) {
+	this.filterOptions = function(options) {
 		this.success = options.onSuccess || function(a,b) { console.log("Unhandled result! Missing onSuccess?", a,b); };
 		this.error = options.onError || function(a,b) { console.info("Error!", a,b); };
 		
@@ -95,8 +107,7 @@ dbObject.ConnectionAdapter = function(endpoint, options) {
 };
 
 
-dbObject.Entity = function(options) {
-	console.log("creating new entity: ", options);
+dbObject.Entity = function(options, methods) {
 	this.dbSetup = {
 		className: 'dbObject.Entity',
 		table: false,
@@ -105,42 +116,53 @@ dbObject.Entity = function(options) {
 		ID: false,
 		adapter: 'dbAdapter',
 		orderProperty: false,
-		orderDirection: false
+		orderDirection: false,
+		relations: {},
+		connectors: {},
 	};
 	this.databaseValues = {};
 	this.changedValues = {};
-	this.relations = {};
+	
 	this.customData = {};
 	this._customProperties = [];// custom properties to send along to the adapter (handy for form saves)
 
 	for(var i in options) {
-		if(this.dbSetup[i]) this.dbSetup[i] = options[i];
+		if(i in this.dbSetup) this.dbSetup[i] = options[i];
+	}
+	for(var i in methods) {
+		this[i] = methods[i];
 	}
 	var self = this;
-	return function() { return self; };
-};
 
-	dbObject.Entity.prototype.__setupDatabase = function (ID, dbSetup) {
-		this.dbSetup.ID = ID || false;
-		if(this.dbSetup.ID !== false) {
-		this.Find({"ID" : ID});
-		}
-	};
 
-	dbObject.Entity.prototype.getID = function () {
+	this.__setupDatabase = function (ID, dbSetup) {
+			this.dbSetup.ID = ID || false;
+			if(this.dbSetup.ID !== false) {
+			this.Find({"ID" : ID});
+			}
+		};
+
+	this.getID = function () {
 		return this.dbSetup.ID;
 	};
 
-	dbObject.Entity.prototype.getAdapter = function () {
+	this.getAdapter = function () {
 		var adapter = typeof this.dbSetup.adapter == "string" ? window[this.dbSetup.adapter] : this.dbSetup.adapter;
 		if(!adapter) throw("[dbObject] Exception in getAdapter, cannot find an instance of "+this.dbSetup.adapter+" for entity "+this.dbSetup.className+ "- "+ window[this.dbSetup.adapter]);
 		return adapter;
 	};
 
+	this.Find = function(type, filters, options) {
+		filters = filters || {};
+		filters[this.getType()] = {} ;
+		filters[this.getType()][this.dbSetup.primary] = this.getID();
+		dbObject.Find(type, filters, options);
+	};
+
 	/**
 	 * Get al list of all the values to display.
 	 */
-	dbObject.Entity.prototype.getValues = function () {
+	this.getValues = function () {
 		var v = this.databaseValues;
 		if(this.changedValues && Array.from(this.changedValues).length > 0) {
 			for(var k in this.changedValues) {
@@ -151,11 +173,11 @@ dbObject.Entity = function(options) {
 		return v;
 	};
 
-	dbObject.Entity.prototype.hasField = function (fieldname) {
+	this.hasField = function (fieldname) {
 		return(this.dbSetup.fields.indexOf(fieldname) > -1);
 	};
 
-	dbObject.Entity.prototype.importValues = function (values) {
+	this.importValues = function (values) {
 		var fields = this.dbSetup.fields, pri = this.dbSetup.primary;
 		for(var i= 0; i < fields.length; i++) {
 			var field = fields[i];
@@ -165,7 +187,7 @@ dbObject.Entity = function(options) {
 		return this;
 	};
 
-	dbObject.Entity.prototype.get = function (field, def) {
+	this.get = function (field, def) {
 		if(this.changedValues[field]) { return this.changedValues[field] ;}
 		if(this.databaseValues[field]) { return this.databaseValues[field];}
 		if(!this.hasField(field)) {
@@ -175,7 +197,7 @@ dbObject.Entity = function(options) {
 		}
 	};
 
-	dbObject.Entity.prototype.set = function (field, value) {
+	this.set = function (field, value) {
 		if(this.hasField(field)) {
 			if(this.get(field) != value) this.changedValues[field] = value;
 		} else if (this._customProperties.indexOf(field) > -1) {
@@ -185,7 +207,7 @@ dbObject.Entity = function(options) {
 		}
 	};
 
-	dbObject.Entity.prototype.Save = function (event, callbacks) {
+	this.Save = function (event, callbacks) {
 		if(!callbacks.onComplete) {
 			callbacks.onComplete = this.onSaved.bind(this);
 		} else {
@@ -197,11 +219,11 @@ dbObject.Entity = function(options) {
 		}
 	};
 
-	dbObject.Entity.prototype.registerProperty = function (name) {
+	this.registerProperty = function (name) {
 		this.__customProperties.push(name);
 	};
 
-	dbObject.Entity.prototype.onSaved = function (result) {
+	this.onSaved = function (result) {
 		if(result.Action == 'inserted' && this.getID() === false) {
 			this.databaseValues = result.Result[0];
 			this.changedValues = [];
@@ -224,7 +246,7 @@ dbObject.Entity = function(options) {
 		//alert('dbObject has been saved! ', result);
 	};
 
-	dbObject.Entity.prototype.onDeleted = function (result) {
+	this.onDeleted = function (result) {
 		this.fireEvent('deleted', result);
 		if(result.Action == 'deleted') {
 			this.dbSetup.ID = false;
@@ -234,7 +256,7 @@ dbObject.Entity = function(options) {
 		console.warn(this.getType()+" has been deleted! ");
 	};
 
-	dbObject.Entity.prototype.deleteYourself = function (callbacks) {
+	this.deleteYourself = function (callbacks) {
 		if(!callbacks) callbacks = {};
 		if(!callbacks.onComplete) {
 			callbacks.onComplete = this.onDeleted.bind(this);
@@ -245,13 +267,27 @@ dbObject.Entity = function(options) {
 		this.getAdapter().Delete(this, callbacks);
 	};
 
-	dbObject.Entity.prototype.toString = function () {
+	this.toString = function () {
 		return 'dbObject';
 	};
 
-	dbObject.Entity.prototype.getType = function () {
+	this.getType = function () {
 		return(this.dbSetup.className);
 	};
+
+    function _clone(obj) {
+		var clone = {};
+        for(var i in obj) {
+            if(typeof(obj[i])=="object")
+                clone[i] =  _clone(obj[i]);
+            else
+                clone[i] = obj[i];
+        }
+        return clone;
+    }
+
+	return this;
+};
 
 
 //window.dbObjectAdapter = new dbObject.JSONAdapter('dbobject/proxy/');
@@ -289,3 +325,4 @@ dbObject.Find(RemoteProduct, { ID: 5, RemoteCatalog: { ID: 1 }}, {}, {
 
 
 */
+

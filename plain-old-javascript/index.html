@@ -3,17 +3,37 @@
 <h1>
 	Plain old jsDbObjects, framework agnostic
 </h1>
+
+<h2>About to connect to local sqlite db and fetch all Slide objects </h2>
 <script src='dbObject.js'></script>
-<script src='slide.js'></script>
 <script src='dbObject.SqliteAdapter.js'></script>
 <script src='database.js'></script>
 <script src='querybuilder.js'></script>
 
+<script src='slide.js'></script>
+<script src='presentation.js'></script>
+<script src='presentationslide.js'></script>
+
 <script>
 
 window.onload = function() {
-	window.dbAdapter = new dbObject.SQLiteAdapter('database');
-};
+	window.dbAdapter = new dbObject.SQLiteAdapter('salesboard');
+
+	dbObject.Find(Presentation, {} , { onSuccess: function(result) {
+			for (var i=0; i< result.length; i++) {
+				result[i].display();
+			}
+		}
+	});
+/*
+
+	dbObject.Find(Slide, {} , { onSuccess: function(result) {
+			for (var i=0; i< result.length; i++) {
+				result[i].display();
+			}
+		}
+	});*/
+}
 </script>
 
 </body>
