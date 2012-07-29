@@ -70,6 +70,10 @@ dbObject.Find = function(obj, filters, options) {
 			
 dbObject.FindOne = function(obj, filters, options) {
 	options.limit = 1;
+	var os = options.onSuccess;
+	options.onSuccess = function(res) {
+		os(res[0]);
+	};
 	return this.Find(obj, filters, options);
 };
 
@@ -120,7 +124,7 @@ dbObject.Entity = function(options, methods) {
 	};
 	this.databaseValues = {};
 	this.changedValues = {};
-	
+	this.isDirty = false;
 	this.customData = {};
 	this._customProperties = [];// custom properties to send along to the adapter (handy for form saves)
 
@@ -150,6 +154,10 @@ dbObject.Entity = function(options, methods) {
 		return adapter;
 	};
 
+	/** 
+	 * Progy find function, that can be run on the entity itself.
+	 * Makes sure you can create object A, and find just relations connected to it.
+	 */
 	this.Find = function(type, filters, options) {
 		filters = filters || {};
 		filters[this.getType()] = {} ;
@@ -185,6 +193,9 @@ dbObject.Entity = function(options, methods) {
 		return this;
 	};
 
+	/**
+	 * Accessor. Gets one field, optionally returns the default value.
+	 */
 	this.get = function (field, def) {
 		if(this.changedValues[field]) { return this.changedValues[field] ;}
 		if(this.databaseValues[field]) { return this.databaseValues[field];}
@@ -195,42 +206,66 @@ dbObject.Entity = function(options, methods) {
 		}
 	};
 
+	/**
+	 * Setter, accepts key / value or object with keys/values
+	 */
 	this.set = function (field, value) {
+		console.log(typeof(field));
+		if(typeof field === "object") {
+			for(var i in field) {
+				if(field.hasOwnProperty(i) && this.hasField(i)) {
+					this.set(i, field[i]);
+				}
+			}
+			return;
+		}
 		if(this.hasField(field)) {
-			if(this.get(field) != value) this.changedValues[field] = value;
+			if(this.get(field) != value) {
+				this.changedValues[field] = value;
+				this.isDirty = true;
+			}
 		} else if (this._customProperties.indexOf(field) > -1) {
 				this.customData[field] = value;
-		}else {
+		} else {
 			console.error("Could not find field '"+field+"' in '"+ this.getType()+"' for setting.");
 		}
 	};
 
-	this.Save = function (event, callbacks) {
+	/**
+	 * Persist changes on object using dbObject.Entity.set through the adapter.
+	 */
+	this.Save = function (callbacks) {
 		if(!callbacks.onComplete) {
 			callbacks.onComplete = this.onSaved.bind(this);
 		} else {
 			callbacks.oldOnComplete = callbacks.onComplete;
-			callbacks.onComplete = function(result) { this.onSaved(result); callbacks.oldOnComplete(result); }.bind(this);
+			callbacks.onComplete = function(result) { 
+				this.onSaved(result);
+				callbacks.oldOnComplete(result);
+			}.bind(this);
 		}
-		if($H(this.changedValues).getLength() > 0 || $H(this.customData).getLength() > 0) {
-			var newID = this.getAdapter().Save(this, callbacks);
+		if(!callbacks.onError) {
+			callbacks.onError = function(e) {
+				console.error("Error saving dbObject", this, e);
+			}.bind(this);
+		}
+		if(this.isDirty) {
+			this.getAdapter().Save(this, callbacks);
 		}
 	};
-
-	this.registerProperty = function (name) {
-		this.__customProperties.push(name);
-	};
-
+	
+	/**
+	 * Default save callback. for internal use
+	 */
 	this.onSaved = function (result) {
+		console.error("onSaved! ", result);
+		this.isDirty = false;
 		if(result.Action == 'inserted' && this.getID() === false) {
 			this.databaseValues = result.Result[0];
 			this.changedValues = [];
 			this.dbSetup.ID = this.databaseValues[this.dbSetup.primary];
 		}
-		else if (result.Action == 'saved' && this.getID() !== false) {
-			this.databaseValues = result.Result[0];
-			this.changedValues = [];
-		} else if (result.Action == 'updated') {
+		else if (result.Action == 'updated') {
 			this.changedValues = [];
 			for( var i in this.dbSetup.fields) {
 				var field = this.dbSetup.fields[i];
@@ -239,21 +274,25 @@ dbObject.Entity = function(options, methods) {
 				}
 			}
 		}
-		this.fireEvent('saved', {target: result });
-		console.warn(this.getType()+" has been saved. Result: " + result.Action + ". New Values: "+JSON.encode(this.databaseValues));
+		console.warn(this.getType()+" has been saved. Result: " + result.Action + ". New Values: "+JSON.stringify(this.databaseValues));
 		//alert('dbObject has been saved! ', result);
 	};
 
+	/** 
+	 * Default delete callback, for internal use
+	 */
 	this.onDeleted = function (result) {
-		this.fireEvent('deleted', result);
 		if(result.Action == 'deleted') {
+			console.warn(this.getType()+" "+this.getID()+" has been deleted! ");
 			this.dbSetup.ID = false;
-			this.changedValues = [];
-			this.databaseValues = [];
 		}
-		console.warn(this.getType()+" has been deleted! ");
 	};
 
+	/**
+	* Delete the object via the adapter.
+	* Allows you to call Save() again on the same object by just setting the ID to false.
+	* @param callbacks object with optional onComplete / onError
+	*/
 	this.deleteYourself = function (callbacks) {
 		if(!callbacks) callbacks = {};
 		if(!callbacks.onComplete) {
@@ -265,21 +304,28 @@ dbObject.Entity = function(options, methods) {
 		this.getAdapter().Delete(this, callbacks);
 	};
 
+	/**
+	 * override toString for easy detection of dbObjects
+	 */
 	this.toString = function () {
 		return 'dbObject';
 	};
 
+	/** 
+	 * Returns the actual className. Should be provided in the entity object.
+	 * Might not look best, but saves a lot of hassle with reflection
+	 */
 	this.getType = function () {
 		return(this.dbSetup.className);
 	};
 
+	/** 
+	 * Tiny private clone function
+	 */
     function _clone(obj) {
 		var clone = {};
         for(var i in obj) {
-            if(typeof(obj[i])=="object")
-                clone[i] =  _clone(obj[i]);
-            else
-                clone[i] = obj[i];
+            clone[i] = (typeof(obj[i])=="object") ? _clone(obj[i]) : obj[i];
         }
         return clone;
     }
