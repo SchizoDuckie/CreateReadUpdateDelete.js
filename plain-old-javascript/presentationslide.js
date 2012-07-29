@@ -7,6 +7,10 @@
 			'Presentation': dbObject.RELATION_FOREIGN,
 			'Slide': dbObject.RELATION_FOREIGN
 		},
+		defaultValues: {
+			slideIndex: 0,
+			subSlideIndex: 0
+		},
 		adapter: 'dbAdapter'
 	}, {
 	display: function() {

@@ -99,7 +99,6 @@ dbObject.FindOne(Presentation, { ID_Presentation: 46 }, {
 	}
 });
 
-
 // test find relations on instantiated object
 // dbObject.Entity.find automatically provides contenxt to the current entity.
 // queryBuilder automagically takes this into account and builds a join.
@@ -109,3 +108,27 @@ dbObject.FindOne(Presentation, { ID_Presentation: 42 }, {
 
 	}
 });
+
+// test find presentation 41, find slide slide 167, call presentation.Disconnect(slide)
+// PresentatioSlide object should be deleted and onComplete called.
+dbObject.FindOne(Presentation, { ID_Presentation: 41 }, { onSuccess: function(pres) {
+   dbObject.FindOne(Slide, { ID_Slide: 167 } , { onSuccess: function(slide) {
+     pres.Disconnect(slide, { onComplete: function(r) {
+          console.log("DELETED connection between presentation 41 and slide 167");
+       }
+   });
+  }});
+}});
+
+
+// test find presentation 41, find slide slide 167, call presentation.Connect(slide)
+// PresentatioSlide object should be created, both ID's should be set and onComplete called.
+// also, the Presentationslide constraint is met by embedding the defaultValues on insert.
+dbObject.FindOne(Presentation, { ID_Presentation: 41 }, { onSuccess: function(pres) {
+   dbObject.FindOne(Slide, { ID_Slide: 167 } , { onSuccess: function(slide) {
+     pres.Connect(slide, { onComplete: function(r) {
+          console.log("CREATED connection between presentation 41 and slide 167");
+       }
+   });
+  }});
+}});

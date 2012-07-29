@@ -104,7 +104,7 @@ dbObject.ConnectionAdapter = function(endpoint, options) {
 		delete options.onSuccess;
 		delete options.onError;
 		return options;
-	}
+	};
 	return this;
 };
 
@@ -112,15 +112,16 @@ dbObject.ConnectionAdapter = function(endpoint, options) {
 dbObject.Entity = function(options, methods) {
 	this.dbSetup = {
 		className: 'dbObject.Entity',
+		ID: false,
 		table: false,
 		primary: false,
 		fields: [],
-		ID: false,
+		defaultValues: {},
 		adapter: 'dbAdapter',
 		orderProperty: false,
 		orderDirection: false,
 		relations: {},
-		connectors: {},
+		connectors: {}
 	};
 	this.databaseValues = {};
 	this.changedValues = {};
@@ -131,8 +132,8 @@ dbObject.Entity = function(options, methods) {
 	for(var i in options) {
 		if(i in this.dbSetup) this.dbSetup[i] = options[i];
 	}
-	for(var i in methods) {
-		this[i] = methods[i];
+	for(var j in methods) {
+		this[j] = methods[j];
 	}
 	var self = this;
 
@@ -238,7 +239,7 @@ dbObject.Entity = function(options, methods) {
 			callbacks.onComplete = this.onSaved.bind(this);
 		} else {
 			callbacks.oldOnComplete = callbacks.onComplete;
-			callbacks.onComplete = function(result) { 
+			callbacks.onComplete = function(result) {
 				this.onSaved(result);
 				callbacks.oldOnComplete(result);
 			}.bind(this);
@@ -248,8 +249,19 @@ dbObject.Entity = function(options, methods) {
 				console.error("Error saving dbObject", this, e);
 			}.bind(this);
 		}
+		if(this.dbSetup.ID === false) {
+			if(this.dbSetup.defaultValues) {
+				for(var i in this.dbSetup.defaultValues) {
+					if(this.dbSetup.defaultValues.hasOwnProperty(i) && !this.changedValues[i]) {
+						this.changedValues[i] = this.dbSetup.defaultValues[i];
+					}
+				}
+			}
+		}
 		if(this.isDirty) {
 			this.getAdapter().Save(this, callbacks);
+		} else {
+			callbacks.onComplete(this);
 		}
 	};
 	
@@ -316,6 +328,109 @@ dbObject.Entity = function(options, methods) {
 	 */
 	this.getType = function () {
 		return(this.dbSetup.className);
+	};
+
+	this.Connect = function(to, events) {
+		var targetType = to.getType();
+		var thisType = this.getType();
+		var thisPrimary = this.dbSetup.primary;
+		var targetPrimary = to.dbSetup.primary;
+		this.Save({
+			onComplete:function(e) {
+				to.Save({
+					onComplete: function(e) {
+						switch(this.dbSetup.relations[to.getType()]) {
+							case dbObject.RELATION_SINGLE:
+								to.set(thisPrimary, this.getID());
+								this.set(targetPrimary, to.getID());
+							break;
+							case dbObject.RELATION_FOREIGN:
+								if(to.hasField(thisPrimary)) {
+									to.set(thisPrimary, this.getID());
+								}
+								if(this.hasField(targetPrimary)) {
+									this.set(targetPrimary, to.getID());
+								}
+							break;
+							case dbObject.RELATION_MANY:
+								var connector = new window[ this.dbSetup.connectors[targetType]]();
+								connector.set(thisPrimary, this.getID());
+								connector.set(targetPrimary, to.getID());
+								connector.Save({
+									onComplete: function(e) {
+										if(events.onComplete) {	events.onComplete(e); }
+									}
+								});
+							break;
+							case dbObject.RELATION_CUSTOM:
+
+							break;
+						}
+						if(this.dbSetup.relations[to.getType()] != dbObject.RELATION_MANY) {
+							to.Save({
+								onComplete: function() {
+									from.Save({
+										onComplete: function(e) {
+											if(events.onComplete) {	events.onComplete(e); }
+										}
+									});
+								}
+							});
+						}
+		
+					}.bind(this)
+				});
+			}.bind(this)
+		});
+
+	};
+
+	this.Disconnect = function(from, events) {
+		var targetType = from.getType();
+		var thisType = this.getType();
+		var thisPrimary = this.dbSetup.primary;
+		var targetPrimary = from.dbSetup.primary;
+		this.Save({
+			onComplete:function(e) {
+				from.Save({
+					onComplete: function(e) {
+						switch(this.dbSetup.relations[from.getType()]) {
+							case dbObject.RELATION_SINGLE:
+								from.set(thisPrimary, null);
+								this.set(targetPrimary, null);
+							break;
+							case dbObject.RELATION_FOREIGN:
+								if(from.hasField(thisPrimary)) {
+									from.set(thisPrimary, null);
+								}
+								if(this.hasField(targetPrimary)) {
+									this.set(targetPrimary, null);
+								}
+							break;
+							case dbObject.RELATION_MANY:
+								var filters = {};
+								filters[thisPrimary] = this.getID();
+								filters[targetPrimary] = from.getID();
+
+								dbObject.FindOne(this.dbSetup.connectors[targetType], filters, {
+									onSuccess: function(target) {
+										target.deleteYourself({
+											onComplete: function(e) {
+												if(events.onComplete) {	events.onComplete(e); }
+											}
+										});
+									}
+								});
+							break;
+							case dbObject.RELATION_CUSTOM:
+
+							break;
+						}
+		
+					}.bind(this)
+				});
+			}.bind(this)
+		});
 	};
 
 	/** 
