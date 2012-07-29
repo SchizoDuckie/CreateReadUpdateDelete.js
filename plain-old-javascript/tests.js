@@ -16,6 +16,24 @@ p.Save({onComplete: function(res) {
  console.log('done saving new test presentation', res) ;
 }});
 
+// test insert, set multiple properties at once with object.
+var p = new Presentation();
+p.set({
+	'name' : 'test '+new Date().getTime(),
+	'ID_Client': 1,
+	'template':'ImageOnly',
+	'forceUpdate':1,
+	'lastUpdated': '2012-07-24 14:16:19',
+	'lastAccessed': '2012-07-24 14:16:19',
+	'ID_Catalog': 1,
+	'ID_Category': 1,
+	'globalCSS': 'test',
+	'globalJS': 'test'
+});
+p.Save({onComplete: function(res) {
+ console.log('done saving new test presentation', res) ;
+}});
+
 // test insert success with minimum properties:
 var p = new Presentation();
 p.set('name', 'test '+new Date().getTime());

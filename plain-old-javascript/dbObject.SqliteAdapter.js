@@ -70,7 +70,7 @@ dbObject.SQLiteAdapter.prototype.Save = function(what, callbacks) {
 				resultSet.Action = 'inserted';
 				resultSet.Result = Objectmerge(what.databaseValues, what.changedValues);
 				resultSet.Result[what.dbSetup.primary] = resultSet.rs.insertId;
-				callbacks.onComplete(resultSet[0]);
+				callbacks.onComplete(resultSet);
 			},
 			onError:  errfunc
 		});

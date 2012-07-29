@@ -210,7 +210,6 @@ dbObject.Entity = function(options, methods) {
 	 * Setter, accepts key / value or object with keys/values
 	 */
 	this.set = function (field, value) {
-		console.log(typeof(field));
 		if(typeof field === "object") {
 			for(var i in field) {
 				if(field.hasOwnProperty(i) && this.hasField(i)) {
@@ -261,7 +260,7 @@ dbObject.Entity = function(options, methods) {
 		console.error("onSaved! ", result);
 		this.isDirty = false;
 		if(result.Action == 'inserted' && this.getID() === false) {
-			this.databaseValues = result.Result[0];
+			this.databaseValues = result.Result;
 			this.changedValues = [];
 			this.dbSetup.ID = this.databaseValues[this.dbSetup.primary];
 		}
