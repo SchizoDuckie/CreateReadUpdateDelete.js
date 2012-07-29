@@ -91,6 +91,10 @@ var Presentationslide = dbObject.define({
 			'Presentation': dbObject.RELATION_FOREIGN,
 			'Slide': dbObject.RELATION_FOREIGN
 		},
+		defaultValues: {
+			slideIndex: 0,
+			subSlideIndex: 0
+		},
 		adapter: 'dbAdapter'
 	}, {
 	display: function() {
@@ -121,4 +125,26 @@ To create a new Presentation, this is enough:
 var pres = new Presentation();
 pres.set('name', 'test');
 pres.Save();
+```
+
+A more advanced example: Create a Presentation and a Slide, and use Connect to automagically create the relation between them, in this many:many case a Presentationslide object.
+
+```javascript
+var pres = new Presentation();
+pres.set({
+	name: 'test presentation',
+	template: 'ImageOnly'
+})
+
+var slide = new Slide();
+slide.set({
+	Content1: '<h1>Test!</h1>',
+	Title : 'Test Slide',
+	SubTitle: 'Test SubTitle'
+});
+
+pres.Connect(slide, { onComplete: function(r) {
+          console.log("CREATED connection between presentation "+pres.getID()+" and slide "+slide.getID());
+      }
+});
 ```
