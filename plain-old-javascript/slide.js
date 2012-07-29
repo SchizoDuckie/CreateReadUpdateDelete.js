@@ -11,6 +11,7 @@
 		connectors: {
 			'Presentation' : 'Presentationslide'
 		},
+		createStatement: 'CREATE TABLE slides ( ID_Slide INTEGER PRIMARY KEY NOT NULL,  ID_User int(11) NOT NULL,  Title varchar(250) NOT NULL,  SubTitle varchar(1024) NOT NULL,  Content1 mediumtext NOT NULL,  Content2 mediumtext NOT NULL,  Content3 mediumtext NOT NULL,  ID_SlideTemplate int(11) NOT NULL,  lastUpdated timestamp NULL)',
 		adapter: 'dbAdapter'
 	}, {
 
