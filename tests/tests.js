@@ -66,7 +66,7 @@ p.Save({onComplete: function(res) {
 
 // test update one value:
 // find a presentation with id 42, update it's name, save, exec onSuccess
-dbObject.FindOne(Presentation, { ID_Presentation: 42 }, {
+CRUD.FindOne(Presentation, { ID_Presentation: 42 }, {
 	onSuccess: function(res) {
 		console.log("Foud pres 42: ", res);
 		res.set('name', res.get('name') +'woei_');
@@ -78,7 +78,7 @@ dbObject.FindOne(Presentation, { ID_Presentation: 42 }, {
 
 // test update one value:
 // find a presentation with id 42, update it's name, save, exec onSuccess
-dbObject.FindOne(Presentation, { ID_Presentation: 42 }, {
+CRUD.FindOne(Presentation, { ID_Presentation: 42 }, {
 	onSuccess: function(res) {
 		console.log("Foud pres 42: ", res);
 		res.set('name', res.get('name') +'woei_');
@@ -92,7 +92,7 @@ dbObject.FindOne(Presentation, { ID_Presentation: 42 }, {
 
 // test delete on object.
 // find an existing row, and call deleteYourself on it.
-dbObject.FindOne(Presentation, { ID_Presentation: 46 }, {
+CRUD.FindOne(Presentation, { ID_Presentation: 46 }, {
 	onSuccess: function(res) {
 		console.log("Foud pres 46: ", res);
 		res.deleteYourself({onComplete: function(r) { console.log("Done!", r); } });
@@ -100,9 +100,9 @@ dbObject.FindOne(Presentation, { ID_Presentation: 46 }, {
 });
 
 // test find relations on instantiated object
-// dbObject.Entity.find automatically provides contenxt to the current entity.
+// CRUD.Entity.find automatically provides contenxt to the current entity.
 // queryBuilder automagically takes this into account and builds a join.
-dbObject.FindOne(Presentation, { ID_Presentation: 42 }, {
+CRUD.FindOne(Presentation, { ID_Presentation: 42 }, {
 	onSuccess: function(res) {
 		console.log("Foud pres 42: ", res.Find("Slide", {},  { onSuccess: function(r) { console.log("Found "+r.length+" slides related to presentation 42! ", r); } }));
 
@@ -111,8 +111,8 @@ dbObject.FindOne(Presentation, { ID_Presentation: 42 }, {
 
 // test find presentation 41, find slide slide 167, call presentation.Disconnect(slide)
 // PresentatioSlide object should be deleted and onComplete called.
-dbObject.FindOne(Presentation, { ID_Presentation: 41 }, { onSuccess: function(pres) {
-   dbObject.FindOne(Slide, { ID_Slide: 167 } , { onSuccess: function(slide) {
+CRUD.FindOne(Presentation, { ID_Presentation: 41 }, { onSuccess: function(pres) {
+   CRUD.FindOne(Slide, { ID_Slide: 167 } , { onSuccess: function(slide) {
      pres.Disconnect(slide, { onComplete: function(r) {
           console.log("DELETED connection between presentation 41 and slide 167");
        }
@@ -124,8 +124,8 @@ dbObject.FindOne(Presentation, { ID_Presentation: 41 }, { onSuccess: function(pr
 // test find presentation 41, find slide slide 167, call presentation.Connect(slide)
 // PresentatioSlide object should be created, both ID's should be set and onComplete called.
 // also, the Presentationslide constraint is met by embedding the defaultValues on insert.
-dbObject.FindOne(Presentation, { ID_Presentation: 41 }, { onSuccess: function(pres) {
-   dbObject.FindOne(Slide, { ID_Slide: 167 } , { onSuccess: function(slide) {
+CRUD.FindOne(Presentation, { ID_Presentation: 41 }, { onSuccess: function(pres) {
+   CRUD.FindOne(Slide, { ID_Slide: 167 } , { onSuccess: function(slide) {
      pres.Connect(slide, { onComplete: function(r) {
           console.log("CREATED connection between presentation 41 and slide 167");
        }

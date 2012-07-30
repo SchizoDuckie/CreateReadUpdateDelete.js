@@ -1,30 +1,40 @@
-jsdbobject
-===================
+CreateReadUpdateDelete.js
+=========================
 
-An almost 1:1 port of my PHP dbObject ORM to javascript. 
-Includes full SQLite support, and a JSON REST API to load content from a remote datasource.
-Removed Mootools Dependencies, so now you can use this with Mootools, Jquery, Zepto, Ember, or whatever your drug of choice is.
+CreateReadUpdateDelete.js aims to bring you a tiny footprint, platform independent ORM/ActiveRecord implementation for Javascript that works flawlessly on SQLite / WebSQL databases,
+or any flavor of remote database you can think of via serverside JSON API
 
+Written in Plain Old JavaScript without any framework dependencies, you can use this with Mootools, Jquery, Zepto, Ember, or whatever your drug of choice is.
+
+ActiveRecord? Orm?
+==================
+ActiveRecord/ORM is a technique that fits perfectly into the DRY (Don't Repeat Yourself) paradigm. 
+It takes away all the hassle of creating Insert, Select, Update and Delete database queries. You create your class, set some properties, call Save, and a database record is created automagicaly.
+If the object you're referring to already exists in the database, it will be updated.
+
+Want to find related data? Instantiate an object, call Find() on it with the filters you need, and the onComplete callback returns you your data.
+
+If you're doing data storage right, you don't have to write *any* SQL, at all.
 
 Example, connecting to sqlite
 =============================
 
-First, define an adapter. In this case we use an SQLiteAdapter to the database 'myDbName'
+First, define an adapter. In this case we use an SQLiteAdapter to the database 'myDbName '
 
 ```javascript
-window.dbAdapter = new dbObject.SQLiteAdapter('myDbName');
+window.dbAdapter = new CRUD.SQLiteAdapter('myDbName');
 ```
 
-Then, define some entity objects using dbObject.define
+Then, define some entity objects using CRUD.define
 
 ```javascript
-var Presentation = dbObject.define({
+var Presentation = CRUD.define({
 		className: 'Presentation',
 		table : 'presentations',
 		primary : 'ID_Presentation',
 		fields: ['ID_Presentation','ID_Client','name','template','forceUpdate', 'lastUpdated','lastAccessed','ID_Catalog', 'ID_Category'],
 		relations: {
-			'Slide': dbObject.RELATION_MANY
+			'Slide': CRUD.RELATION_MANY
 		},
 		connectors: {
 			'Slide' : 'Presentationslide' // connectors are the way for RELATION_MANY to see what the joining table is
@@ -52,15 +62,15 @@ var Presentation = dbObject.define({
 These entity objects map directly to an Sqlite database table. In this case we're setting up a many:many relationship
 
 ```javascript
-var Slide = dbObject.define({
+var Slide = CRUD.define({
 		className: 'Slide',
 		table : 'slides',
 		primary : 'ID_Slide',
 		fields: ['ID_Slide','ID_User','Title','SubTitle','Content1','Content2', 'Content3','ID_Slidetemplate'],
 		
 		relations: {
-			'Presentation': dbObject.RELATION_MANY,
-			'Slidetemplate': dbObject.RELATION_FOREIGN
+			'Presentation': CRUD.RELATION_MANY,
+			'Slidetemplate': CRUD.RELATION_FOREIGN
 		},
 		connectors: {
 			'Presentation' : 'Presentationslide'
@@ -82,14 +92,14 @@ var Slide = dbObject.define({
 The connecting table is also defined as an entity, but this has 2 foreign relations.
 
 ```javascript
-var Presentationslide = dbObject.define({
+var Presentationslide = CRUD.define({
 		className: 'Presentationslide',
 		table : 'presentations_slides',
 		primary : 'ID_PresentationSlide',
 		fields: ['ID_PresentationSlide', 'ID_Presentation', 'ID_Slide', 'slideIndex', 'subSlideIndex'],
 		relations: {
-			'Presentation': dbObject.RELATION_FOREIGN,
-			'Slide': dbObject.RELATION_FOREIGN
+			'Presentation': CRUD.RELATION_FOREIGN,
+			'Slide': CRUD.RELATION_FOREIGN
 		},
 		defaultValues: {
 			slideIndex: 0,
@@ -107,9 +117,9 @@ We initialize the whole stuff on onload or domready like this:
 
 ```javascript
 window.onload = function() {
-	window.dbAdapter = new dbObject.SQLiteAdapter('myDbName');
+	window.dbAdapter = new CRUD.SQLiteAdapter('myDbName');
 	// This will return an array with Presentation objects on success.
-	dbObject.Find(Presentation, {} , { onSuccess: function(result) {
+	CRUD.Find(Presentation, {} , { onSuccess: function(result) {
 			for (var i=0; i< result.length; i++) {
 				result[i].display();
 			}
