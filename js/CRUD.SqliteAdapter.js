@@ -40,7 +40,7 @@ var prototypeMethods = {
 	Save : function(what, callbacks) {
 		var query = [], valCount =0, values = [], valmap = [], names =[];
 		var errfunc = function(rs, e) {
-			console.error("Error saving dbObject to database", what.getType(), what, e, rs);
+			console.error("Error saving CRUD Entity to database", what.getType(), what, e, rs);
 			callbacks.onError(e);
 		};
 		changes = {} ;
@@ -109,8 +109,5 @@ var prototypeMethods = {
 
 
 for(var i in prototypeMethods) {
-	if(prototypeMethods.hasOwnProperty(i)) {
-		CRUD.prototype[i] = prototypeMethods[i];
-	}
-	
+	CRUD.SQLiteAdapter.prototype[i] = prototypeMethods[i];
 }

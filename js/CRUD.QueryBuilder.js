@@ -6,7 +6,7 @@ CRUD.QueryBuilder = function(className, filters, extras, justthese) {
 	this.filters = filters || {};
 	this.extras = extras || [];
 	justthese = justthese || [];
-	this.wheres = this.joins = this.fields = this.orders = this.groups = [];
+	this.wheres = []; this.joins = []; this.fields = []; this.orders = []; this.groups = [];
 	this.limit = extras.limit ? 'LIMIT ' + extras.limit : 'LIMIT 0,100';
 	
 	if(typeof(this.origin) === "string") {
@@ -14,7 +14,7 @@ CRUD.QueryBuilder = function(className, filters, extras, justthese) {
 	}
 
 	var tableName = this.origin.dbSetup.table;
-	justthese = justthese || this.origin.dbSetup.fields;
+	justthese = justthese.length > 0 ? justthese : this.origin.dbSetup.fields;
 	for(var i=0; i<justthese.length; i++) {
 		this.fields.push(tableName+'.'+justthese[i]);
 	}
@@ -23,7 +23,7 @@ CRUD.QueryBuilder = function(className, filters, extras, justthese) {
 		this.buildFilters(prop, filters[prop], this.origin);
 	}
 	this.buildOrderBy();
-}
+};
 
 CRUD.QueryBuilder.prototype = {
 	

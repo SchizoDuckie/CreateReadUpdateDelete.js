@@ -1,11 +1,11 @@
-﻿var Presentationslide = dbObject.define({
+﻿var Presentationslide = CRUD.define({
 		className: 'Presentationslide',
 		table : 'presentations_slides',
 		primary : 'ID_PresentationSlide',
 		fields: ['ID_PresentationSlide', 'ID_Presentation', 'ID_Slide', 'slideIndex', 'subSlideIndex'],
 		relations: {
-			'Presentation': dbObject.RELATION_FOREIGN,
-			'Slide': dbObject.RELATION_FOREIGN
+			'Presentation': CRUD.RELATION_FOREIGN,
+			'Slide': CRUD.RELATION_FOREIGN
 		},
 		defaultValues: {
 			slideIndex: 0,

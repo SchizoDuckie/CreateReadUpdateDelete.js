@@ -1,12 +1,12 @@
-﻿var Slide = dbObject.define({
+﻿var Slide = CRUD.define({
 		className: 'Slide',
 		table : 'slides',
 		primary : 'ID_Slide',
 		fields: ['ID_Slide','ID_User','Title','SubTitle','Content1','Content2', 'Content3','ID_Slidetemplate'],
 		
 		relations: {
-			'Presentation': dbObject.RELATION_MANY,
-			'Slidetemplate': dbObject.RELATION_FOREIGN
+			'Presentation': CRUD.RELATION_MANY,
+			'Slidetemplate': CRUD.RELATION_FOREIGN
 		},
 		connectors: {
 			'Presentation' : 'Presentationslide'

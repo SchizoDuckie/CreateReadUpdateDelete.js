@@ -10,7 +10,7 @@ if (!CRUD) var CRUD = {
 CRUD.define = function(opts, method) {
 	return function(ID) {
 		if(ID) {
-			console.log("FOund id! ", ID);
+			console.log("Found id! ", ID);
 		}
 		var s = new CRUD.Entity(opts, method);
 		return s;
@@ -48,8 +48,6 @@ CRUD.Find = function(obj, filters, options) {
 			return false;
 		}
 	}
-
-	// 
 	if(obj.getID() !== false) {
 		filters = {
 			ID : obj.getID(),
@@ -64,7 +62,7 @@ CRUD.Find = function(obj, filters, options) {
 		delete options.limit;
 		delete options.start;
 	}
-	var justthese = options.justthese || [];	
+	var justthese = options.justthese || [];
 	obj.getAdapter().Find(type, filters, extras, justthese, options);
 };
 			
