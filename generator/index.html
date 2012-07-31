@@ -1,0 +1,18 @@
+<html>
+<title>Scaffold Genertator for CreateReadUpdateDelete.js</title>
+<script src='scaffold.js' type='text/javascript'></script>
+<script src='../js/CRUD.database.js' type='text/javascript'></script>
+<body>
+
+<h1>Enter the name for an existing local database</h1>
+<p>I'll try to generate a set of entity objects for you, and match the relations</p>
+
+<h2>Database name</h2>
+<input type='text' id='db' value='salesboard' placeholder='enter an existing database name here'>
+
+<input type='button' value='Generate' onclick='Scaffold.generate(document.getElementById("db").value)'>
+
+</body>
+
+</html>
+
