@@ -1,33 +1,37 @@
  
 var virtualObject = new Class({
 	
+	database: false,
+	table: false,
+	properties: {},
+	relations: {},
+	foreignRelations: {},
+	multiRelations: {},
+	relationproperties: [],
+	generator: false,
+	primaryKey: false,
+	graphViz: '',
+
 	initialize: function(database,table,properties)	{
 		this.database = database;
 		this.table = table;
 		this.dbInfo = properties;
-		this.relations = {};
-		this.foreignRelations = {};
-		this.multiRelations = {};
-		this.properties = {};
-		this.relationproperties = [];
-		this.generator = false;
-		this.graphViz ='';
 	},
 
 	addRelation: function(table) {
+		console.log("Adding relation to ", table, " on ", this.table);
 		this.relations[table] = {};
 	},
 	
 	getPrimaryKey: function() {
-		Object.each(this.dbInfo, function(obj, index) {
+		Object.each(this.dbInfo.columns, function(obj, index) {
 			if (obj.primary === true) {
 				this.primaryKey = obj.fieldname;
 			}
 			else {
 				this.properties[index] = obj;
 			}
-		});
-		this.setupMappings();
+		}, this);
 		return(this.primaryKey);
 	},
 
@@ -36,26 +40,32 @@ var virtualObject = new Class({
 	},
 
 	findForeignRelations: function(objects)	{
-		Object.each(this.relations, function(obj, index) {
-			if (objects[table].relations[this.table]) {						// foreign relations hebben een link naar $this, maar property $targettable->{$this->primarykey}
-				this.relations[table] = '1:1';								// $table->$field  zit 1:1 naar $this->ID, is dus 1:1 link
-				objects[table].relations[this.table] = 'foreign';			// we laten de target tabel ook weten dat ie een relatie met deze tabel heeft.
-			}
-		});
+		var relatedTables = Object.keys(this.relations);
+		for(var i=0; i< relatedTables.length; i++) {
+			var tbl = relatedTables[i];
+			if(objects[tbl].relations[this.table]) {
+				this.relations[tbl] = '1:1';								// $table->$field  zit 1:1 naar $this->ID, is dus 1:1 link
+				objects[tbl].relations[this.table] = 'foreign';			// we laten de target tabel ook weten dat ie een relatie met deze tabel heeft.				
+			}	
+		}
 	},
 
 	findMultiRelations: function(objects){
 		for (var table in  this.relations) {
 			var type = this.relations[table];
-			if (type == 'foreign' && objects[table].relations[this.table]) {	// doorloop alle foreign relations van deze tabel // en kijk of er een link terug voorkomt naar deze tabel
-				var tables = Object.filter(objects[table].relations, function(type, key) { // find all the 1:1 relationships to this object
-					return type == "1:1";
-			});
-			if (Object.getLength(tables) == 2) {
-				delete tables[unsetme];
-				this.multiRelations[tables] = table;					// en voeg $targettable toe :)
+			var tables = {};
+				if (type == 'foreign' && objects[table].relations[this.table]) {	// doorloop alle foreign relations van deze tabel // en kijk of er een link terug voorkomt naar deze tabel
+					tables = Object.filter(objects[table].relations, function(type, key) { // find all the 1:1 relationships to this object
+						return type == "1:1";
+				});
+				if (Object.getLength(tables) == 2) {
+				//delete tables[unsetme];
+					this.multiRelations[table] = tables;					// en voeg $targettable toe :)
+ 					
+ 					//this.relations[tables] = 'many:many';
 				}
 			}
+			
 		}
 	},
 
@@ -71,7 +81,7 @@ var virtualObject = new Class({
 		}
 		for (var target in this.multiRelations) {
 			var connector = this[target];
-			if (array_key_exists(connector, this.relations) && this.relations[connector] == 'foreign') {	// doorloop alle foreign relations van deze tabel
+			if (this.relations[connector] && this.relations[connector] == 'foreign') {	// doorloop alle foreign relations van deze tabel
 				delete this.relations[connector];
 								// en pleur ze weg als ze koppeltabel zijn
 			}

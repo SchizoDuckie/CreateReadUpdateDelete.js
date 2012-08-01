@@ -6,6 +6,7 @@ var Scaffold = new Class({
 	initialize: function() {
 		$('gen').addEvent('click', function() {
 			this.analyzer = new DatabaseAnalyzer($('db').get('value'));
+			console.log(this.analyzer);
 			
 		}.bind(this));
 	},

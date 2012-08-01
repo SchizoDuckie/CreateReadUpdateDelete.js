@@ -1,11 +1,9 @@
-
- 
-var databaseanalyzer = new Class({
+DatabaseAnalyzer = new Class({
 	Implements:[Options, Events],
 	db:  false,
 	tables : [],
 	field: [],
-	primaryKeys: {},
+	primaryKeys: [],
 	fieldList: [],
 	relations: [],
 	tableList: [],
@@ -13,9 +11,8 @@ var databaseanalyzer = new Class({
 
 	initialize: function(db, options) {
 		this.db = db;
-		this.parseSchema(databaseName, this.Analyze.bind(this));
+		this.parseSchema(db, this.Analyze.bind(this));
 	},
-
 
 	parseSchema : function(databaseName, callback) {
 			var db = new Database(databaseName);
@@ -67,46 +64,46 @@ var databaseanalyzer = new Class({
 
 	Analyze: function(tables) {
 		console.log("Analyzing tables: ", tables);
-		for(i=0; i<tables.length; i++) {
+		for(var i=0; i<tables.length; i++) {
 				this.tables.push(tables[i]);
 				var currentTable = tables[i];
-				var virtualTable = new virtualObject(this.db, currentTable);		// convert it to virtualObject
+				var virtualTable = new virtualObject(this.db, currentTable.name, currentTable);		// convert it to virtualObject
 				var pk = virtualTable.getPrimaryKey();
+				if(!pk) continue;
 				if(!this.primaryKeys[pk]) {
 					this.primaryKeys[pk] = [];
 				}
-				this.primaryKeys[pk].push(currentTable);	// find primary keys, and store ze op in a global array with this object attached to it
-				this.virtuals[currentTable] = virtualTable;					// store this virtualObject too.
+				this.primaryKeys[pk].push(currentTable);						// find primary keys, and store ze op in a global array with this object attached to it
+				this.virtuals[currentTable.name] = virtualTable;				// store this virtualObject too.
 		}
-		
-		Object.each(this.primaryKeys, function(object, field) {
-				var tables = this[field];
-				for (var id in this.tables){ // and find all tables where this key exist 
-						var table = this[id];
-						if (this.virtuals[table].hasProperty(field)) {
-							this.virtuals[table].addRelation(tables[0]);		// if that's true, it's a relation to $tables[0]
-						}
+		var keys = Object.keys(this.primaryKeys);
+		console.log("Keys", keys);
+		for(var i=0; i<keys.length; i++) {
+				var field = keys[i];
+				var tables = this.primaryKeys[field];
+				console.log("Primary keys for ", keys[i], tables);
+				for(j=0; j< this.tables.length; j++) {
+					var table = this.tables[j].name;
+					if (this.virtuals[table] && this.virtuals[table].hasProperty(field)) {
+						console.log("adding relation!", tables[0].name, 'to', this.virtuals[table].table, 'on', field);
+						this.virtuals[table].addRelation(tables[0].name);			// if that's true, it's a relation to $tables[0]
+						this.virtuals[tables[0].name].addRelation(table);
 					}
 				}
 
-				for (var table in this.virtuals) {						// run it again and find all foreign relations
-					var object = this[table];
-					object.findForeignRelations(this.virtuals);					
-				}
-				
-				for (var table in this.virtuals) {						// run it again and find al many:many relations (2 foreign keys where one of them is $this)
-				 	var object = this[table];
-					object.findMultiRelations(this.virtuals);					
-				}
-				for (var table in this.virtuals) {
-				 	var object = this[table];	
-					object.cleanup(this.virtuals);								// throw away the unnessecary stuff.
-				}
+				Object.each(this.virtuals, function(tbl) {				// run it again and find all foreign relations
+					tbl.findForeignRelations(this.virtuals);
+				}, this);
 
-		});
-			
-		
-	
+				Object.each(this.virtuals, function(tbl, id) {				// run it again and find all foreign relations
+					tbl.findMultiRelations(this.virtuals);
+				}, this);
+
+				Object.each(this.virtuals, function(tbl, id) {				// run it again and find all foreign relations
+					tbl.cleanup(this.virtuals);								// throw away the unnessecary stuff.
+				}, this);
+		}
+		console.log("Done analyzign! ", this);
 	},
 
 	getName: function(table) {
@@ -139,15 +136,15 @@ var databaseanalyzer = new Class({
 		var table = arguments.length >= 1 ? arguments[0] : false;
 
 		this.Analyze();
-		output  = '
-		graph ER {
-			rankdir=UD;
-			fontname=arial;
-			bgcolor=transparent;
-			fontcolor=000000;
-			concentrate=true;
-			 node [shape=plaintext];
-		';
+		output  = [
+		'graph ER {',
+			'rankdir=UD;',
+			'fontname=arial;',
+			'bgcolor=transparent;',
+			'fontcolor=000000;',
+			'concentrate=true;',
+			 'node [shape=plaintext];'
+		].join('\n');
 		
 		tables = [];
 		relations = [];
@@ -185,7 +182,7 @@ var databaseanalyzer = new Class({
 					if(array_key_exists(sourcetbl, this.virtuals)) {
 						tables[sourcetbl] = this.virtuals[sourcetbl].displayGraphViz(2);
 					}
-					if(array_key_exists(targettbl, this.virtuals){
+					if(this.virtuals[targettbl]){
 						tables[targettbl] = this.virtuals[targettbl].displayGraphViz(1);
 					}
 					rellines[object.table][targettbl][sourcetbl] = targettbl;
@@ -202,8 +199,8 @@ var databaseanalyzer = new Class({
 		
 		for (var currentTable in rellines) {
 			var connectedTables = rellines[currentTable];
-			for (var connectedTable in connectedTables  ) 
-				if(array_key_exists(currentTable, rellines[connectedTable]) != false) {
+			for (var connectedTable in connectedTables  ) {
+				if(rellines[connectedTable][currentTable] !== false) {
 				//	unset($rellines[$connectedTable][$currentTable]);
 				}
 			}
