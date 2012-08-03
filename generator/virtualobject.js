@@ -134,7 +134,6 @@ var virtualObject = new Class({
 
 
 	getName: function() {
-		console.log("getName for virtualobject ", this.table);
 		if (this.name === '') {
 			if (this.primaryKey.indexOf('_') > -1) {
 				var nam = this.primaryKey.split('_');
@@ -157,10 +156,8 @@ var virtualObject = new Class({
 
 	createClass: function() {
 		
-		console.log("Creating class: ", this.getName());
 		var multi = Object.keys(this.multiRelations);
 		var rels = [], multis= [], relString = '';
-		console.log("Multirelations: ", multi);
 		for(var i=0; i<multi.length; i++) {
 			console.log("getting names for multis ",  this.multiRelations[multi[i]]);
 			multis.push('"' + window.Scaffold.analyzer.getName(multi[i])+'" : "'+window.Scaffold.analyzer.getName(this.multiRelations[multi[i]])+'"');
@@ -170,7 +167,7 @@ var virtualObject = new Class({
 		var rel = Object.keys(this.relations);
 		for(var i=0; i<rel.length; i++) {
 			console.log("Get name for ", rel[i]);
-			rels.push('"' + window.Scaffold.analyzer.getName(rel[i])+ '" : '+ (this.relations[rel[i]] == '1:1' ? 'dbObject.RELATION_SINGLE': 'CRUD.RELATION_FOREIGN'));
+			rels.push('"' + window.Scaffold.analyzer.getName(rel[i])+ '" : '+ (this.relations[rel[i]] == '1:1' ? 'CRUD.RELATION_SINGLE': 'CRUD.RELATION_FOREIGN'));
 		}
 		var props = Object.keys(this.properties);
 		props.unshift(this.primaryKey);
@@ -186,8 +183,8 @@ var virtualObject = new Class({
 		'	}, ',
 		'	connectors: {',
 			'\t\t'+multis.join(",\n\t\t"),
-		' 	},',
-		" 	createStatement: '"+this.dbInfo.sql.replace(/(--.*)\n/g,'').replace(/\'/g, '"').split("\n").join(" ")+"',",
+		'	},',
+		"	createStatement: '"+this.dbInfo.sql.replace(/[-](.*)\n/gm,'').replace(/\'/g, '"').split("\n").join(" ")+"',",
 		'	adapter: "dbAdapter"',
 		'});'
 		].join("\n");

@@ -14,11 +14,17 @@ var Scaffold = new Class({
 		var generatedText = $('generated');
 		Object.each(virtuals, function(obj, key) {
 			generatedText.value += "\n\n/*\n * "+obj.getName()+"\n */\n"+obj.createClass();
-			document.body.appendChild(new Element('pre', { 'class': "brush: js; ruler: true;", text: obj.createClass() }));
-			
+			document.body.appendChild(
+				new Element(
+					'pre', { 'class': "prettyprint"}
+					).adopt(
+						new Element('code', {
+							'class':'language-javascript language-sql', text: obj.createClass() }
+						)
+				));
 		});
 
-		 SyntaxHighlighter.all();
+		prettyPrint();
 
 	}
 
