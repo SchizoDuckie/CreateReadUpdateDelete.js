@@ -1,5 +1,5 @@
 DatabaseAnalyzer = new Class({
-	Implements:[Options, Events],
+	Implements: [Options, Events],
 	db:  false,
 	tables : [],
 	field: [],
@@ -10,6 +10,7 @@ DatabaseAnalyzer = new Class({
 	virtuals: {},
 
 	initialize: function(db, options) {
+		this.options = options || {};
 		this.db = db;
 		this.parseSchema(db, this.Analyze.bind(this));
 	},
@@ -62,7 +63,30 @@ DatabaseAnalyzer = new Class({
 			});
 	},
 
-	Analyze: function(tables) {
+	getName: function(table) {
+		var virtual = this.virtuals[table];
+		console.log("getName! ", table, virtual);
+		if (virtual.name === '') {
+			if (virtual.primaryKey.indexOf('_') > -1) {
+				var nam = virtual.primaryKey.split('_');
+				if (nam.length >= 2) {
+					var parts = [];
+					for(i=0; i<nam.length; i++) {
+						if (nam[i].toLowerCase() != 'id') {
+							parts.push(nam[i]);
+						}
+					}
+					virtual.name = parts.join('');
+				}
+			}
+			else {
+				virtual.name = virtual.table;
+			}
+		}
+		return (String.capitalize(virtual.name));
+	},
+
+	Analyze: function(tables, completed) {
 		console.log("Analyzing tables: ", tables);
 		for(var i=0; i<tables.length; i++) {
 				this.tables.push(tables[i]);
@@ -77,60 +101,38 @@ DatabaseAnalyzer = new Class({
 				this.virtuals[currentTable.name] = virtualTable;				// store this virtualObject too.
 		}
 		var keys = Object.keys(this.primaryKeys);
-		console.log("Keys", keys);
 		for(var i=0; i<keys.length; i++) {
 				var field = keys[i];
 				var tables = this.primaryKeys[field];
-				console.log("Primary keys for ", keys[i], tables);
-				for(j=0; j< this.tables.length; j++) {
-					var table = this.tables[j].name;
-					if (this.virtuals[table] && this.virtuals[table].hasProperty(field)) {
-						console.log("adding relation!", tables[0].name, 'to', this.virtuals[table].table, 'on', field);
-						this.virtuals[table].addRelation(tables[0].name);			// if that's true, it's a relation to $tables[0]
-						this.virtuals[tables[0].name].addRelation(table);
-					}
-				}
-
-				Object.each(this.virtuals, function(tbl) {				// run it again and find all foreign relations
-					tbl.findForeignRelations(this.virtuals);
-				}, this);
-
-				Object.each(this.virtuals, function(tbl, id) {				// run it again and find all foreign relations
-					tbl.findMultiRelations(this.virtuals);
-				}, this);
-
-				Object.each(this.virtuals, function(tbl, id) {				// run it again and find all foreign relations
-					tbl.cleanup(this.virtuals);								// throw away the unnessecary stuff.
-				}, this);
-		}
-		console.log("Done analyzign! ", this);
-	},
-
-	getName: function(table) {
-		if (this.virtuals[table].name == '') {
-			if (strpos(this.virtuals[table].primaryKey, '_') != false) {
-				var nam = this.virtuals[table].primaryKey.split('_');
-				if (nam.length >= 2) {
-					for (var key in nam) {
-						var val = nam[key];
-						if (strtolower(val) == 'id')
-						{
-							delete nam[key];
-
+				for(var k=0; k<tables.length; k++) {
+					var curt = tables[k].name;
+					for(j=0; j< this.tables.length; j++) {
+						var table = this.tables[j].name;
+						if (this.virtuals[table] && this.virtuals[table].hasProperty(field)) {
+							this.virtuals[table].addRelation(curt);			// if that's true, it's a relation to $tables[0]
+							this.virtuals[curt].addRelation(table);
 						}
 					}
-					this.virtuals[table].name = implode("", nam);
 				}
 			}
-			else {
-				this.virtuals[table].name = ucFirst(this.virtuals[table].table);
-			}
-		}
-		
-		return (ucFirst(this.virtuals[table].name));
-	},
-	
 
+			Object.each(this.virtuals, function(tbl) {				// run it again and find all foreign relations
+				tbl.findForeignRelations(this.virtuals);
+			}, this);
+
+			Object.each(this.virtuals, function(tbl, id) {				// run it again and find all foreign relations
+				tbl.findMultiRelations(this.virtuals);
+			}, this);
+
+			Object.each(this.virtuals, function(tbl, id) {				// run it again and find all foreign relations
+				tbl.cleanup(this.virtuals);								// throw away the unnessecary stuff.
+			}, this);
+		
+		console.log("Done analyzign! ", this);
+		if(this.options.onAnalyzed) {
+			this.options.onAnalyzed(this.virtuals, this);
+		}
+	},
 
 	displayGraphViz: function() {
 		var table = arguments.length >= 1 ? arguments[0] : false;

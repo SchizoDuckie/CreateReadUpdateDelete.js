@@ -10,6 +10,7 @@ var virtualObject = new Class({
 	relationproperties: [],
 	generator: false,
 	primaryKey: false,
+	name: '',
 	graphViz: '',
 
 	initialize: function(database,table,properties)	{
@@ -19,7 +20,6 @@ var virtualObject = new Class({
 	},
 
 	addRelation: function(table) {
-		console.log("Adding relation to ", table, " on ", this.table);
 		this.relations[table] = {};
 	},
 	
@@ -43,49 +43,45 @@ var virtualObject = new Class({
 		var relatedTables = Object.keys(this.relations);
 		for(var i=0; i< relatedTables.length; i++) {
 			var tbl = relatedTables[i];
-			if(objects[tbl].relations[this.table]) {
-				this.relations[tbl] = '1:1';								// $table->$field  zit 1:1 naar $this->ID, is dus 1:1 link
-				objects[tbl].relations[this.table] = 'foreign';			// we laten de target tabel ook weten dat ie een relatie met deze tabel heeft.				
-			}	
+			this.relations[tbl] = (objects[tbl].hasProperty(this.primaryKey)) ? '1:1' : 'foreign';
+			objects[tbl].relations[this.table] = (this.hasProperty(objects[tbl].primaryKey)) ? '1:1' : 'foreign';
 		}
 	},
 
 	findMultiRelations: function(objects){
-		for (var table in  this.relations) {
-			var type = this.relations[table];
-			var tables = {};
-				if (type == 'foreign' && objects[table].relations[this.table]) {	// doorloop alle foreign relations van deze tabel // en kijk of er een link terug voorkomt naar deze tabel
-					tables = Object.filter(objects[table].relations, function(type, key) { // find all the 1:1 relationships to this object
-						return type == "1:1";
-				});
-				if (Object.getLength(tables) == 2) {
-				//delete tables[unsetme];
-					this.multiRelations[table] = tables;					// en voeg $targettable toe :)
- 					
- 					//this.relations[tables] = 'many:many';
+		var singles = this.getForeignRelations();
+		var singleNames = Object.keys(singles);
+		if (Object.getLength(singles) >= 0) {
+			var foreigns = [];
+			for(var i=0; i<singleNames.length; i++) {
+				if(objects[singleNames[i]].relations && objects[singleNames[i]].relations[this.table]) {
+					foreigns.push(singleNames[i]);
 				}
 			}
-			
+			if (foreigns.length == 2) {
+				objects[foreigns[0]].multiRelations[foreigns[1]] = this.table;
+				objects[foreigns[1]].multiRelations[foreigns[0]] = this.table;
+			}
 		}
 	},
 
+	getSingleRelations: function() {
+		return Object.filter(this.relations, function(type, key) { // find all the 1:1 relationships to this object
+			return type == "1:1";
+		});
+	},
+
+	getForeignRelations: function() {
+		return Object.filter(this.relations, function(type, key) { // find all the 1:1 relationships to this object
+			return type == "foreign";
+		});
+	},
+
+
 	cleanup: function(objects) {
-		//print_r($this->relations);
-		for (var table in this.relations) {
-			var type = this[table];
-			if (type == '1:1') {											// doorloop alle foreign relations van deze tabel{
-				this.relationproperties[objects[table].primaryKey] = this.ucProperties[objects[table].primaryKey];
-				delete this.properties[objects[table].primaryKey];
-				delete this.propertymappings[objects[table].primaryKey];
-			}
-		}
-		for (var target in this.multiRelations) {
-			var connector = this[target];
-			if (this.relations[connector] && this.relations[connector] == 'foreign') {	// doorloop alle foreign relations van deze tabel
-				delete this.relations[connector];
-								// en pleur ze weg als ze koppeltabel zijn
-			}
-		}
+		this.relations = Object.filter(this.relations, function(type, key) {
+			return !Object.keyOf(this.multiRelations, key);
+		}.bind(this));
 	},
 	
 	display: function() {
@@ -137,29 +133,66 @@ var virtualObject = new Class({
 	},
 
 
+	getName: function() {
+		console.log("getName for virtualobject ", this.table);
+		if (this.name === '') {
+			if (this.primaryKey.indexOf('_') > -1) {
+				var nam = this.primaryKey.split('_');
+				if (nam.length >= 2) {
+					var parts = [];
+					for(i=0; i<nam.length; i++) {
+						if (nam[i].toLowerCase() != 'id') {
+							parts.push(nam[i]);
+						}
+					}
+					this.name = parts.join('');
+				}
+			}
+			else {
+				this.name = this.table;
+			}
+		}
+		return (String.capitalize(this.name));
+	},
+
 	createClass: function() {
-		var analyzer = window.databaseAnalyzer;
-		var generator = new classGenerator(this);
-		generator.feedValues(this);
-		this.name = analyzer.getName(this.table);
-		generator.name = this.name;
-		generator.table = this.table;
-		generator.dbInfo = this.dbInfo;
-		generator.relationproperties = this.relationproperties;
-		generator.properties = this.propertymappings;
-		this.primaryKey = this.getPrimaryKey();
-		generator.fields = generator.createConstructor();
-		generator.primaryKey = this.ucProperties[this.primaryKey];
-		generator.relations = generator.createRelations();
-		generator.dbSchema = generator.createSchema();
+		
+		console.log("Creating class: ", this.getName());
+		var multi = Object.keys(this.multiRelations);
+		var rels = [], multis= [], relString = '';
+		console.log("Multirelations: ", multi);
+		for(var i=0; i<multi.length; i++) {
+			console.log("getting names for multis ",  this.multiRelations[multi[i]]);
+			multis.push('"' + window.Scaffold.analyzer.getName(multi[i])+'" : "'+window.Scaffold.analyzer.getName(this.multiRelations[multi[i]])+'"');
+			rels.push('"' + window.Scaffold.analyzer.getName(multi[i])+'" : CRUD.RELATION_MANY');
+		}
+		
+		var rel = Object.keys(this.relations);
+		for(var i=0; i<rel.length; i++) {
+			console.log("Get name for ", rel[i]);
+			rels.push('"' + window.Scaffold.analyzer.getName(rel[i])+ '" : '+ (this.relations[rel[i]] == '1:1' ? 'dbObject.RELATION_SINGLE': 'CRUD.RELATION_FOREIGN'));
+		}
+		var props = Object.keys(this.properties);
+		props.unshift(this.primaryKey);
 
-		tpl = new TemplateEngine('./templates/template.class.php');
-		tpl.feedValues(generator.props);
-		tpl.template = './templates/template.class.php';
-
-		this.generator = generator;
-		return(tpl.run());
-	}
+		var output = [
+		'var '+this.getName()+' = CRUD.define({',
+		'	className: "'+this.getName()+'",',
+		'	table: "'+this.table+'",',
+		'	primary: "'+this.primaryKey+'",',
+		'	fields: ["'+props.join('","')+'"],',
+		'	relations: { ',
+			'\t\t'+rels.join(",\n\t\t"),
+		'	}, ',
+		'	connectors: {',
+			'\t\t'+multis.join(",\n\t\t"),
+		' 	},',
+		" 	createStatement: '"+this.dbInfo.sql.replace(/(--.*)\n/g,'').replace(/\'/g, '"').split("\n").join(" ")+"',",
+		'	adapter: "dbAdapter"',
+		'});'
+		].join("\n");
+ 	return output;
+	} 
 
 
 });
