@@ -15,9 +15,11 @@ Database = function(name, options) {
 	this.lastInsertRowId = 0;
 	this.db = false;
 	this.dbName = name || false;
+	try {
 	this.db = openDatabase(this.dbName, this.options.version, '', this.options.estimatedSize);
-	if (!this.db) {	alert("Failed to open database "+this.dbName+"!"); }
-
+	if (!this.db) {
+		options.onError("could not open database ", this.dbName);
+	} 
 	this.execute = function(sql, options){
 		if(!this.db) return;
 		options = Objectmerge({
@@ -38,6 +40,8 @@ Database = function(name, options) {
 		}.bind(this));
 	};
 
+} catch(E) { alert("ERROR "+E.toString()); }
+
 	this.lastInsertId = function(){
 		return this.lastInsertRowId;
 	};
@@ -45,6 +49,13 @@ Database = function(name, options) {
 	this.close = function (){
 		this.db.close();
 	};
+
+	if(options.onConnect) {
+		setTimeout(function() {
+			options.onConnect();
+		}, 50);
+	}
+
 	return this;
 };
 
