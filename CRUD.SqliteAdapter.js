@@ -1,4 +1,5 @@
 CRUD.SQLiteAdapter = function(database, options) {
+	console.log("Create new crud.sqliteadapter!");
 		CRUD.ConnectionAdapter.apply( this, arguments );
 		this.db = new Database(database, options);
 		this.options = options || {};
@@ -21,20 +22,51 @@ var prototypeMethods = {
 		}
 		options.onSuccess(output);
 	},
-	onError : function(resultset, sqlerror) {
+	onError : function(resultset, sqlerror, queryInfo) {
+		console.log('ERRORT!', sqlerror, resultset, queryInfo);
+		if(sqlerror.message.indexOf('no such table') > -1) {
+			console.log(queryInfo.what, ": Table does not exist.");
+			var ojb = new window[queryInfo.what]();
+			console.log(ojb);	
+			if(!ojb.dbSetup.createStatement) {
+				console.log("No create statement found for "+queryInfo.what+". Don't know how to create table.");
+			} else {
+				console.log("Create statment found. Creating table for "+queryInfo.what, this.db);
+				debugger;
+				this.db.execute(ojb.dbSetup.createStatement, {
+					onComplete: function(resultSet) {
+						console.log("Create statement completed!", ojb.dbSetup.createStatement, queryInfo);
+						CRUD.Find(queryInfo.what, queryInfo.filters, queryInfo.options);
+					 }.bind(this),
+					onError: this.onError.bind(this)
+				});	
+				return;
+			}	
+		}
 		console.warn('DB query error: ', sqlerror, this.lastQuery, resultset);
 		this.error(sqlerror, resultset);
 	},
-	Find : function(what, filters, sorting, justthese, options) {
+	Find : function(what, filters, sorting, justthese, options, filters) {
 		var builder = new CRUD.QueryBuilder(what, filters, sorting, justthese, options);
 		var query = builder.buildQuery();
 		console.log("Executing query via sqliteadapter: ", options, query);
 		var opt = options;
 		this.lastQuery = query;
+		var errd = this.onError.bind(this);
+		var completeFunc = this.onComplete.bind(this);
+		
+		var errorFunc = function(resultSet, sqlError) {
+				errd(resultSet, sqlError, {
+					what: what,
+					options:opt,
+					filters: filters
+				});
+			};
 		this.db.execute(query, {
 			onComplete: function(resultSet) {
-				this.onComplete(what, resultSet, opt); }.bind(this),
-			onError: this.onError.bind(this)
+				completeFunc(what, resultSet, opt);
+			},
+			onError:errorFunc
 		});
 	},
 	Save : function(what, callbacks) {

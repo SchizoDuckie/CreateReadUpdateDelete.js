@@ -49,21 +49,17 @@ CRUD.Find = function(obj, filters, options) {
 		}
 	}
 	if(obj.getID() !== false) {
-		filters = {
-			ID : obj.getID(),
-			type : filters
-		};
+		filters.ID = obj.getID();
+		filters.type = filters
 	}
 
 	var extras = [];
 	options = options || {};
-	if(options.limit) {
+	if(filters.limit) {
 		extras.limit = (options.start || 0) + "," + options.limit;
-		delete options.limit;
-		delete options.start;
 	}
 	var justthese = options.justthese || [];
-	obj.getAdapter().Find(type, filters, extras, justthese, options);
+	obj.getAdapter().Find(type, filters, extras, justthese, options, filters);
 };
 			
 CRUD.FindOne = function(obj, filters, options) {
@@ -118,7 +114,8 @@ CRUD.Entity = function(options, methods) {
 		orderProperty: false,
 		orderDirection: false,
 		relations: {},
-		connectors: {}
+		connectors: {},
+		createStatement: false,
 	};
 	this.databaseValues = {};
 	this.changedValues = {};

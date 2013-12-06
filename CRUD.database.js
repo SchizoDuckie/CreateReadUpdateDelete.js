@@ -16,29 +16,36 @@ Database = function(name, options) {
 	this.db = false;
 	this.dbName = name || false;
 	try {
-	this.db = openDatabase(this.dbName, this.options.version, '', this.options.estimatedSize);
-	if (!this.db) {
-		options.onError("could not open database ", this.dbName);
-	} 
-	this.execute = function(sql, options){
-		if(!this.db) return;
-		options = Objectmerge({
-			values: [],
-			onComplete: function(r){ console.log("Database result retrieved: ", r); },
-			onError: function(e, f){ console.error(sql, e,f);}
-		}, options);
-		this.db.transaction(function(transaction){
-			transaction.executeSql(sql, options.values, function(transaction, rs){
-				try {
-					if(insertId in rs) {
-						this.lastInsertRowId = rs.insertId;
-					}
-				} catch(E) {}
-				if (options.onComplete)
-					options.onComplete(new Database.ResultSet(rs));
-				}.bind(this), options.onError);
-		}.bind(this));
-	};
+		this.db = openDatabase(this.dbName, this.options.version, '', this.options.estimatedSize);
+		if (!this.db) {
+			options.onError("could not open database ", this.dbName);
+		} else {
+
+			this.execute = function(sql, options){
+				if(!this.db) return;
+				options = Objectmerge({
+					values: [],
+					onComplete: function(r){ console.log("Database result retrieved: ", r); },
+					onError: function(e, f){ console.error(sql, e,f);}
+				}, options);
+				this.db.transaction(function(transaction){
+					transaction.executeSql(sql, options.values, function(transaction, rs){
+						try {
+							if(insertId in rs) {
+								this.lastInsertRowId = rs.insertId;
+							}
+						} catch(E) {}
+						if (options.onComplete)
+							options.onComplete(new Database.ResultSet(rs));
+						}.bind(this), options.onError);
+				}.bind(this));
+			}
+			if(options.onConnect) {
+				setTimeout(function() {
+					options.onConnect(this);
+				}, 100);
+			}
+	}
 
 } catch(E) { alert("ERROR "+E.toString()); }
 
@@ -49,12 +56,6 @@ Database = function(name, options) {
 	this.close = function (){
 		this.db.close();
 	};
-
-	if(options.onConnect) {
-		setTimeout(function() {
-			options.onConnect();
-		}, 50);
-	}
 
 	return this;
 };
