@@ -85,8 +85,10 @@ Database.ResultSet.Row.prototype.get = function(index, defaultValue) {
 };
 
 Objectmerge = function(a, b) {
-	for (var p in a) {
-		try { a[p] = b[p].constructor==Object ?  Objectmerge(a[p], b[p]) :  b[p]; } catch(e) { a[p] = b[p]; }
+	for (var p in b) {
+		if(b.hasOwnProperty(p)) {
+			a[p] = b[p];
+		}
 	}
 	return a;
 };
