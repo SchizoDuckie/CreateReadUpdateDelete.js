@@ -121,7 +121,7 @@ CRUD.Entity = function(options, methods) {
 	this.changedValues = {};
 	this.isDirty = false;
 	this.customData = {};
-	this._customProperties = [];// custom properties to send along to the adapter (handy for form saves)
+	this._customProperties = [];// custom properties to send along to the adapter (handy for form persists)
 
 	for(var i in options) {
 		if(i in this.dbSetup) this.dbSetup[i] = options[i];
@@ -150,14 +150,14 @@ CRUD.Entity = function(options, methods) {
 	};
 
 	/** 
-	 * Progy find function, that can be run on the entity itself.
+	 * Proxy find function, that can be run on the entity itself.
 	 * Makes sure you can create object A, and find just relations connected to it.
 	 */
 	this.Find = function(type, filters, options) {
 		filters = filters || {};
 		filters[this.getType()] = {} ;
 		filters[this.getType()][this.dbSetup.primary] = this.getID();
-		CRUD.Find(type, filters, options);
+		return CRUD.Find(type, filters, options);
 	};
 
 	/**
@@ -228,42 +228,40 @@ CRUD.Entity = function(options, methods) {
 	/**
 	 * Persist changes on object using CRUD.Entity.set through the adapter.
 	 */
-	this.Save = function (callbacks) {
-		if(!callbacks.onComplete) {
-			callbacks.onComplete = this.onSaved.bind(this);
-		} else {
-			callbacks.oldOnComplete = callbacks.onComplete;
-			callbacks.onComplete = function(result) {
-				this.onSaved(result);
-				callbacks.oldOnComplete(result);
-			}.bind(this);
-		}
-		if(!callbacks.onError) {
-			callbacks.onError = function(e) {
-				console.error("Error saving CRUD", this, e);
-			}.bind(this);
-		}
-		if(this.dbSetup.ID === false) {
-			if(this.dbSetup.defaultValues) {
-				for(var i in this.dbSetup.defaultValues) {
-					if(this.dbSetup.defaultValues.hasOwnProperty(i) && !this.changedValues[i]) {
-						this.changedValues[i] = this.dbSetup.defaultValues[i];
+	this.Persist = function (callbacks) {
+		var that = this;
+		new Promise(function(resolve, fail) {
+
+			if(!this.isDirty) return resolve();
+
+			if(that.dbSetup.ID === false) {
+				if(that.dbSetup.defaultValues) {
+					for(var i in that.dbSetup.defaultValues) {
+						if(that.dbSetup.defaultValues.hasOwnProperty(i) && !that.changedValues[i]) {
+							that.changedValues[i] = that.dbSetup.defaultValues[i];
+						}
 					}
 				}
 			}
-		}
-		if(this.isDirty) {
-			this.getAdapter().Save(this, callbacks);
-		} else {
-			callbacks.onComplete(this);
-		}
+
+			that.getAdapter().Persist(that).then(
+				function(result) {
+					that.onPersisted(result);
+					resolve(result);
+				}, function(e) {
+					console.error("Error saving CRUD", that, e);
+					fail(e);
+				}
+			);
+
+		});
 	};
 	
 	/**
-	 * Default save callback. for internal use
+	 * Default persist callback. for internal use
 	 */
-	this.onSaved = function (result) {
-		console.error("onSaved! ", result);
+	this.onPersisted = function (result) {
+		console.error("onPersisted! ", result);
 		this.isDirty = false;
 		if(result.Action == 'inserted' && this.getID() === false) {
 			this.databaseValues = result.Result;
@@ -279,8 +277,8 @@ CRUD.Entity = function(options, methods) {
 				}
 			}
 		}
-		console.warn(this.getType()+" has been saved. Result: " + result.Action + ". New Values: "+JSON.stringify(this.databaseValues));
-		//alert('CRUD has been saved! ', result);
+		console.warn(this.getType()+" has been persisted. Result: " + result.Action + ". New Values: "+JSON.stringify(this.databaseValues));
+		//alert('CRUD has been persisted! ', result);
 	};
 
 	/** 
@@ -295,18 +293,16 @@ CRUD.Entity = function(options, methods) {
 
 	/**
 	* Delete the object via the adapter.
-	* Allows you to call Save() again on the same object by just setting the ID to false.
-	* @param callbacks object with optional onComplete / onError
+	* Allows you to call Persist() again on the same object by just setting the ID to false.
 	*/
-	this.deleteYourself = function (callbacks) {
-		if(!callbacks) callbacks = {};
-		if(!callbacks.onComplete) {
-			callbacks.onComplete = this.onDeleted.bind(this);
-		} else {
-			callbacks.oldOnComplete = callbacks.onComplete;
-			callbacks.onComplete = function(result) { this.onDeleted(result); callbacks.oldOnComplete(result); }.bind(this);
+	this.Delete = function() {
+		var that = this;
+		new Promise(function(resolve, fail) {
+			that.getAdapter().Delete(that).then(function(e) {
+				that.onDeleted(e);
+				resolve(e)
+			}, fail);
 		}
-		this.getAdapter().Delete(this, callbacks);
 	};
 
 	/**
@@ -329,54 +325,38 @@ CRUD.Entity = function(options, methods) {
 		var thisType = this.getType();
 		var thisPrimary = this.dbSetup.primary;
 		var targetPrimary = to.dbSetup.primary;
-		this.Save({
-			onComplete:function(e) {
-				to.Save({
-					onComplete: function(e) {
-						switch(this.dbSetup.relations[to.getType()]) {
-							case CRUD.RELATION_SINGLE:
-								to.set(thisPrimary, this.getID());
-								this.set(targetPrimary, to.getID());
-							break;
-							case CRUD.RELATION_FOREIGN:
-								if(to.hasField(thisPrimary)) {
-									to.set(thisPrimary, this.getID());
-								}
-								if(this.hasField(targetPrimary)) {
-									this.set(targetPrimary, to.getID());
-								}
-							break;
-							case CRUD.RELATION_MANY:
-								var connector = new window[ this.dbSetup.connectors[targetType]]();
-								connector.set(thisPrimary, this.getID());
-								connector.set(targetPrimary, to.getID());
-								connector.Save({
-									onComplete: function(e) {
-										if(events.onComplete) {	events.onComplete(e); }
-									}
-								});
-							break;
-							case CRUD.RELATION_CUSTOM:
-
-							break;
+		var that = this;
+		new Promise(function(resolve, fail) {
+			Promise.all([that.Persist(), to.Persist()]).then(function() {
+				switch(that.dbSetup.relations[targetType]) {
+					case CRUD.RELATION_SINGLE:
+						to.set(thisPrimary, that.getID());
+						that.set(targetPrimary, to.getID());
+					break;
+					case CRUD.RELATION_FOREIGN:
+						if(to.hasField(thisPrimary)) {
+							to.set(thisPrimary, that.getID());
 						}
-						if(this.dbSetup.relations[to.getType()] != CRUD.RELATION_MANY) {
-							to.Save({
-								onComplete: function() {
-									from.Save({
-										onComplete: function(e) {
-											if(events.onComplete) {	events.onComplete(e); }
-										}
-									});
-								}
-							});
+						if(that.hasField(targetPrimary)) {
+							that.set(targetPrimary, to.getID());
 						}
-		
-					}.bind(this)
-				});
-			}.bind(this)
+					break;
+					case CRUD.RELATION_MANY:
+						var connector = new window[that.dbSetup.connectors[targetType]]();
+						connector.set(thisPrimary, that.getID());
+						connector.set(targetPrimary, to.getID());
+						connector.Persist().then(resolve, fail);
+						return;
+					break;
+					case CRUD.RELATION_CUSTOM:
+						//@TODO
+					break;
+				}
+				if(that.dbSetup.relations[to.getType()] != CRUD.RELATION_MANY) {
+					Promise.all([to.Persist(), from.Persist()]).then(resolve, fail);	
+				}
+			}, fail);
 		});
-
 	};
 
 	this.Disconnect = function(from, events) {
@@ -384,46 +364,39 @@ CRUD.Entity = function(options, methods) {
 		var thisType = this.getType();
 		var thisPrimary = this.dbSetup.primary;
 		var targetPrimary = from.dbSetup.primary;
-		this.Save({
-			onComplete:function(e) {
-				from.Save({
-					onComplete: function(e) {
-						switch(this.dbSetup.relations[from.getType()]) {
-							case CRUD.RELATION_SINGLE:
-								from.set(thisPrimary, null);
-								this.set(targetPrimary, null);
-							break;
-							case CRUD.RELATION_FOREIGN:
-								if(from.hasField(thisPrimary)) {
-									from.set(thisPrimary, null);
-								}
-								if(this.hasField(targetPrimary)) {
-									this.set(targetPrimary, null);
-								}
-							break;
-							case CRUD.RELATION_MANY:
-								var filters = {};
-								filters[thisPrimary] = this.getID();
-								filters[targetPrimary] = from.getID();
+		var that = this;
 
-								CRUD.FindOne(this.dbSetup.connectors[targetType], filters, {
-									onSuccess: function(target) {
-										target.deleteYourself({
-											onComplete: function(e) {
-												if(events.onComplete) {	events.onComplete(e); }
-											}
-										});
-									}
-								});
-							break;
-							case CRUD.RELATION_CUSTOM:
-
-							break;
+		new Promise(function (resolve, fail) {
+			Promise.all([that.Persist(), from.Persist()]).then(function() {
+				switch(this.dbSetup.relations[from.getType()]) {
+					case CRUD.RELATION_SINGLE:
+						from.set(thisPrimary, null);
+						that.set(targetPrimary, null);
+					break;
+					case CRUD.RELATION_FOREIGN:
+						if(from.hasField(thisPrimary)) {
+							from.set(thisPrimary, null);
 						}
-		
-					}.bind(this)
-				});
-			}.bind(this)
+						if(that.hasField(targetPrimary)) {
+							that.set(targetPrimary, null);
+						}
+					break;
+					case CRUD.RELATION_MANY:
+						var filters = {};
+						filters[thisPrimary] = this.getID();
+						filters[targetPrimary] = from.getID();
+
+						CRUD.FindOne(this.dbSetup.connectors[targetType], filters).then(function(target) {
+							target.deleteYourself().then(resolve, fail);
+						}, fail);
+						return;
+					break;
+					case CRUD.RELATION_CUSTOM:
+						// TODO: implement.
+					break;
+				}
+				Promise.all([that.Persist(), this.Persist()]).then(resolve, fail);
+			}, fail);
 		});
 	};
 

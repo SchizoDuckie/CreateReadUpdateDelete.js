@@ -31,7 +31,7 @@ var prototypeMethods = {
 			if(!ojb.dbSetup.createStatement) {
 				console.log("No create statement found for "+queryInfo.what+". Don't know how to create table.");
 			} else {
-				console.log("Create statment found. Creating table for "+queryInfo.what, this.db);
+				console.log("Create statement found. Creating table for "+queryInfo.what, this.db);
 				debugger;
 				this.db.execute(ojb.dbSetup.createStatement, {
 					onComplete: function(resultSet) {
@@ -69,7 +69,7 @@ var prototypeMethods = {
 			onError:errorFunc
 		});
 	},
-	Save : function(what, callbacks) {
+	Persist : function(what, callbacks) {
 		var query = [], valCount =0, values = [], valmap = [], names =[];
 		var errfunc = function(rs, e) {
 			console.error("Error saving CRUD Entity to database", what.getType(), what, e, rs);
