@@ -95,7 +95,7 @@ CRUD.fromCache = function(obj, values) {
  */
 CRUD.ConnectionAdapter = function(endpoint, options) {
 	this.endpoint = endpoint || false;
-	this.options = options;
+	this.options = options || {};
 
 	this.Delete = function(what, events) { console.log("The Delete method for your connection adaptor is not implemented!"); debugger; };
 	this.Persist = function(what) { console.log("The Persist method for your connection adaptor is not implemented!"); debugger;  }; 
@@ -325,10 +325,16 @@ CRUD.Entity = function(options, methods) {
 		return(this.dbSetup.className);
 	};
 
+	/** 
+	 * Connect 2 entities regardles of their relationship type.
+	 * Pass the object you want to connect this entity to to this function and
+	 * this will find out what it needs to do to set the correct properties in your persistence layer.
+	 * @TODO: update thisPrimary, thatPrimary resolve functions to allow mapping using RELATION_CUSTOM, also, using identified_by propertys
+	 */
 	this.Connect = function(to, events) {
 		var targetType = to.getType();
 		var thisType = this.getType();
-		var thisPrimary = this.dbSetup.primary;
+		var thisPrimary = this.dbSetup.primary; 
 		var targetPrimary = to.dbSetup.primary;
 		var that = this;
 		new Promise(function(resolve, fail) {
@@ -392,7 +398,7 @@ CRUD.Entity = function(options, methods) {
 						filters[targetPrimary] = from.getID();
 
 						CRUD.FindOne(this.dbSetup.connectors[targetType], filters).then(function(target) {
-							target.deleteYourself().then(resolve, fail);
+							target.Delete().then(resolve, fail);
 						}, fail);
 						return;
 					break;

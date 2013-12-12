@@ -26,7 +26,6 @@ CRUD.QueryBuilder = function(className, filters, extras, justthese) {
 };
 
 CRUD.QueryBuilder.prototype = {
-	
 	buildFilters : function(what, value, _class) {
 		var wtclass = _class.dbSetup.relations[what] ? new window[what]() : false;
 		if(wtclass) {  // filter by a property of a subclass
@@ -124,4 +123,4 @@ CRUD.QueryBuilder.prototype = {
 		var query = "SELECT count(*) FROM \n\t"+this.origin.dbSetup.table+"\n "+this.joins.join("\n ")+where+' '+group+' '+order+' ';
 		return(query);
 	}
-};
+}

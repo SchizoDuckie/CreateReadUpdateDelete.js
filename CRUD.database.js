@@ -58,8 +58,6 @@ Database = function(name, options) {
 			fail('ERROR!'+e.toString(), E);
 		}
 	});
-
-	return this;
 };
 
 Database.ResultSet = function(rs){
