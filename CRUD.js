@@ -89,10 +89,19 @@ CRUD.fromCache = function(obj, values) {
 	return obj;
 };
 
-
+/**
+ * Default interface for a connection.
+ * Implement these methods for a new adapter.
+ */
 CRUD.ConnectionAdapter = function(endpoint, options) {
 	this.endpoint = endpoint || false;
 	this.options = options;
+
+	this.Delete = function(what, events) { console.log("The Delete method for your connection adaptor is not implemented!"); debugger; };
+	this.Persist = function(what) { console.log("The Persist method for your connection adaptor is not implemented!"); debugger;  }; 
+	this.Find = function(what, filters, sorting, justthese, options, filters) { console.log("The Find method for your connection adaptor is not!"); debugger;  };
+	this.onError = function(resultset, sqlerror, queryInfo) { console.log("The onError method for your connection adaptor is not!"); debugger; };
+	this.onComplete = function(ObjectToFind, resultSet, options) { console.log("The onComplete method for your connection adaptor is not!"); debugger; };
 	return this;
 };
 
