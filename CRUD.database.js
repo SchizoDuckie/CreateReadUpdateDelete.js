@@ -4,6 +4,7 @@
 Database.js, a simple database abstraction layer.
 Adapted from mootools Database.js by  Dipl.-Ing. (FH) AndrÃ© Fiedler <kontakt@visualdrugs.net>
 Removed all moo dependencies and converted to POJS
+December 2013: Updated for use of promises.
 ...
 */
 Database = function(name, options) {
@@ -15,47 +16,48 @@ Database = function(name, options) {
 	this.lastInsertRowId = 0;
 	this.db = false;
 	this.dbName = name || false;
-	try {
-		this.db = openDatabase(this.dbName, this.options.version, '', this.options.estimatedSize);
-		if (!this.db) {
-			options.onError("could not open database ", this.dbName);
-		} else {
-
-			this.execute = function(sql, options){
-				if(!this.db) return;
-				options = Objectmerge({
-					values: [],
-					onComplete: function(r){ console.log("Database result retrieved: ", r); },
-					onError: function(e, f){ console.error(sql, e,f);}
-				}, options);
-				this.db.transaction(function(transaction){
-					transaction.executeSql(sql, options.values, function(transaction, rs){
-						try {
-							if(insertId in rs) {
-								this.lastInsertRowId = rs.insertId;
-							}
-						} catch(E) {}
-						if (options.onComplete)
-							options.onComplete(new Database.ResultSet(rs));
-						}.bind(this), options.onError);
-				}.bind(this));
-			}
-			if(options.onConnect) {
-				setTimeout(function() {
-					options.onConnect(this);
-				}, 100);
-			}
-	}
-
-} catch(E) { alert("ERROR "+E.toString()); }
 
 	this.lastInsertId = function(){
 		return this.lastInsertRowId;
 	};
 
 	this.close = function (){
-		this.db.close();
+		return this.db.close();
 	};
+
+	/** 
+	 * Execute a db query and promise a resultset.
+	 */ 
+	this.execute = function(sql, valueBindings){
+		if(!this.db) return;
+		var that = this;
+		return new Promise(resolve, fail) {
+			that.db.transaction(function(transaction){
+				transaction.executeSql(sql, valueBindings, function(transaction, rs){
+					try {
+						if(rs && insertId in rs) that.lastInsertRowId = rs.insertId;
+					} catch(E) {}
+					resolve(new Database.ResultSet(rs));
+			}, function(transaction, error) { 
+				fail(error, transaction) 
+			});
+		}
+	}
+
+	var that = this;
+	return new Promise(function(resolve, fail) { 
+		try {
+			that.db = openDatabase(that.dbName, that.options.version, '', that.options.estimatedSize);
+			if (!that.db) {
+				fail("could not open database "+that.dbName);
+			} else {
+				resolve(this);
+			}
+		} catch(E) { 
+			console.error("ERROR "+E.toString()); 
+			fail('ERROR!'+e.toString(), E);
+		}
+	});
 
 	return this;
 };
@@ -82,13 +84,4 @@ Database.ResultSet.Row = function(row) {
 Database.ResultSet.Row.prototype.get = function(index, defaultValue) {
 	var col = this.row[index];
 	return (col) ? col : defaultValue;
-};
-
-Objectmerge = function(a, b) {
-	for (var p in b) {
-		if(b.hasOwnProperty(p)) {
-			a[p] = b[p];
-		}
-	}
-	return a;
 };
