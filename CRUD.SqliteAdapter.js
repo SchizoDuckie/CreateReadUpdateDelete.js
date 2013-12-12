@@ -1,11 +1,11 @@
 CRUD.SQLiteAdapter = function(database, options) {
 	console.log("Create new crud.sqliteadapter!");
-		CRUD.ConnectionAdapter.apply( this, arguments );
-		this.db = new Database(database, options);
-		this.options = options || {};
-		this.lastQuery = false;
-		//console.info("Created CRUD.SQLiteAdapter for database:", this.db.dbName);
-		return this;
+	CRUD.ConnectionAdapter.apply( this, arguments );
+	this.db = new Database(database, options);
+	this.options = options || {};
+	this.lastQuery = false;
+	//console.info("Created CRUD.SQLiteAdapter for database:", this.db.dbName);
+	return this;
 };
 
 CRUD.SQLiteAdapter.prototype = new CRUD.ConnectionAdapter();

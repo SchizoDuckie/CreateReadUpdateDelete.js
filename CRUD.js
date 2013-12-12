@@ -51,7 +51,6 @@ CRUD.Find = function(obj, filters, options) {
 		filters.ID = obj.getID();
 		filters.type = filters
 	}
-
 	var extras = [];
 	options = options || {};
 	if(filters.limit) {
@@ -60,7 +59,11 @@ CRUD.Find = function(obj, filters, options) {
 	var justthese = options.justthese || [];
 	return obj.getAdapter().Find(type, filters, extras, justthese, options, filters);
 };
-			
+
+/** 
+ * Uses CRUD.find with a limit 0,1 and returns the first result.
+ * @returns Promise
+ */			
 CRUD.FindOne = function(obj, filters, options) {
 	var that = this;
 	return new Promise(function(success, error) {
@@ -86,8 +89,8 @@ CRUD.fromCache = function(obj, values) {
 	return obj;
 };
 
+
 CRUD.ConnectionAdapter = function(endpoint, options) {
-	
 	this.endpoint = endpoint || false;
 	this.options = options;
 	return this;
@@ -134,8 +137,17 @@ CRUD.Entity = function(options, methods) {
 	};
 
 	/** 
-	 * Proxy find function, that can be run on the entity itself.
+	 * Proxy find function, that can be run on the entity instance itself.
 	 * Makes sure you can create object A, and find just relations connected to it.
+	 * example:
+	 * 
+	 * var Project = new Project(1).then(function(proj) {  proj.find(Catalog).then(function( catalogs) { console.log("Fetched catalogs!", catalogs); }});
+	 * // versus
+	 * var Project = CRUD.Find(Project, { ID : 1 }).then(function(proj) { console.log("Found project 1", proj); });
+	 * // or use a join:
+	 * CRUD.Find(Project, { Catalog: { ID: 1 }}).then(function(projects) { console.log("Found projects connected to catalog 1 !", projects); });
+	 *
+	 * @returns Promise
 	 */
 	this.Find = function(type, filters, options) {
 		filters = filters || {};
@@ -395,12 +407,11 @@ CRUD.Entity = function(options, methods) {
         return clone;
     }
 
-    return new Promise()
-	this.__setupDatabase = function (ID, dbSetup) {
-			this.dbSetup.ID = ID || false;
-			if(this.dbSetup.ID !== false) {
-				this.Find({"ID" : ID});
-			}
-		};
+    this.primaryKeyInit = function (ID) {
+		this.dbSetup.ID = ID || false;
+		if(this.dbSetup.ID !== false) {
+			return this.Find({"ID" : ID});
+		}
+	};
 	return this;
 };
