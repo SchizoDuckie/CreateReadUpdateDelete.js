@@ -6,33 +6,32 @@ if (!CRUD) var CRUD = {
 	RELATION_CUSTOM : 6
 };
 
+/** 
+ * The main object proxy that returns either a fresh entity object or a promise that loads data, when you pass the primary key value to search for.
+ *
+ * The main idea behind this is that you can do:
+ * var Project = CRUD.define(dbSetup, methods)
+ * var p = new Project(); // now you can use get/set on p, after which you can use p.Persist().then(function() {} );
+ * new Project(20).then(function(project) { project with id 20 has been fetched from adapter, use it here. })
+ */
 
 CRUD.define = function(opts, method) {
-	return function(ID) {
-		if(ID) {
-			console.log("Found id! ", ID);
-		}
-		var s = new CRUD.Entity(opts, method);
-		return s;
-	};
-};
+   return function(ID) {
+		var el = new CRUD.Entity(opts, method);
+	   return ID ? el.primaryKeyInit(ID) : el;
+  }
+}
+	
 
 /**
  * CRUD.Find is probably the function that you'll use most to query things:
  *
  * Syntax:
- * CRUD.Find(Product, { Catalog: { ID: 1 }}, {
- function *			onSuccess(products) {
- *				for(var i=0; i< products.length; i++) {
- *					$$(".body")[0].adopt(products[i].display());
- *				}
- *			},
- function *			onError(error) {
- *				console.debug("Error in finding CRUD.find products for catlog!!", error);
- *			}
- *		});
- *
- * Searches for products connected to catalog id #1
+ * CRUD.Find(Product, { Catalog: { ID: 1 }} ).then( function(products) {
+ *		for(var i=0; i< products.length; i++) {
+ *			$$(".body")[0].adopt(products[i].display());
+ *		}
+ *	}, function(error) { console.debug("ERROR IN CRUD.FIND for catalog 1 ", error); });
  */
 CRUD.Find = function(obj, filters, options) {
 	var type = false;
@@ -59,16 +58,18 @@ CRUD.Find = function(obj, filters, options) {
 		extras.limit = (options.start || 0) + "," + options.limit;
 	}
 	var justthese = options.justthese || [];
-	obj.getAdapter().Find(type, filters, extras, justthese, options, filters);
+	return obj.getAdapter().Find(type, filters, extras, justthese, options, filters);
 };
 			
 CRUD.FindOne = function(obj, filters, options) {
-	options.limit = 1;
-	var os = options.onSuccess;
-	options.onSuccess = function(res) {
-		os(res[0]);
-	};
-	return this.Find(obj, filters, options);
+	var that = this;
+	return new Promise(function(success, error) {
+		options.limit = 1;
+		that.Find(obj, filters, options).then(function(result) {
+			success(result[0]);
+		}, error);
+
+	});
 };
 
 
@@ -88,16 +89,7 @@ CRUD.fromCache = function(obj, values) {
 CRUD.ConnectionAdapter = function(endpoint, options) {
 	
 	this.endpoint = endpoint || false;
-	this.options = options ? this.filterOptions(options) : {};
-	
-	this.filterOptions = function(options) {
-		this.success = options.onSuccess || function(a,b) { console.log("Unhandled result! Missing onSuccess?", a,b); };
-		this.error = options.onError || function(a,b) { console.info("Error!", a,b); };
-		
-		delete options.onSuccess;
-		delete options.onError;
-		return options;
-	};
+	this.options = options;
 	return this;
 };
 
@@ -129,15 +121,7 @@ CRUD.Entity = function(options, methods) {
 	for(var j in methods) {
 		this[j] = methods[j];
 	}
-	var self = this;
-
-
-	this.__setupDatabase = function (ID, dbSetup) {
-			this.dbSetup.ID = ID || false;
-			if(this.dbSetup.ID !== false) {
-			this.Find({"ID" : ID});
-			}
-		};
+	var that = this;
 
 	this.getID = function () {
 		return this.dbSetup.ID;
@@ -411,5 +395,12 @@ CRUD.Entity = function(options, methods) {
         return clone;
     }
 
+    return new Promise()
+	this.__setupDatabase = function (ID, dbSetup) {
+			this.dbSetup.ID = ID || false;
+			if(this.dbSetup.ID !== false) {
+				this.Find({"ID" : ID});
+			}
+		};
 	return this;
 };
