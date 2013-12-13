@@ -21,10 +21,10 @@
 		d.id = 'pres_'+this.getID();
 		document.body.appendChild(d);
 		// find slides for this presentation, it's a many:many relation.
-		this.Find(Slide, {}, { onSuccess: function(slides) {
+		this.Find(Slide, {}).then(function(slides) {
 			for(var i = 0; i< slides.length; i++) {
 				slides[i].display(d.id);
 			}
-		}});
+		});
 	}
 });

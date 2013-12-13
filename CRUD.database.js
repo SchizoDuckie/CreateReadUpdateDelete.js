@@ -31,34 +31,40 @@ Database = function(name, options) {
 	this.execute = function(sql, valueBindings){
 		if(!this.db) return;
 		var that = this;
-		return new Promise(resolve, fail) {
+		return new Promise(function(resolve, fail) {
+
 			that.db.transaction(function(transaction){
+				console.log("execing sql: ", sql);
 				transaction.executeSql(sql, valueBindings, function(transaction, rs){
 					try {
-						if(rs && insertId in rs) that.lastInsertRowId = rs.insertId;
-					} catch(E) {}
+						if(rs && 'insertId' in rs)  that.lastInsertRowId = rs.insertId;
+					} catch (E) {};
 					resolve(new Database.ResultSet(rs));
-			}, function(transaction, error) { 
-				fail(error, transaction) 
+				}, function(transaction, error) { 
+					fail(error, transaction) 
+				});
 			});
-		}
+		});
 	}
 
-	var that = this;
-	return new Promise(function(resolve, fail) { 
-		try {
-			that.db = openDatabase(that.dbName, that.options.version, '', that.options.estimatedSize);
-			if (!that.db) {
-				fail("could not open database "+that.dbName);
-			} else {
-				resolve(this);
+	this.connect= function() {
+		var that = this;
+		return new Promise(function(resolve, fail) { 
+			try {
+				that.db = openDatabase(that.dbName, that.options.version, '', that.options.estimatedSize);
+				if (!that.db) {
+					fail("could not open database "+that.dbName);
+				} else {
+					console.log("DB connection to ", that.dbName, " opened!");
+					resolve(this);
+				}
+			} catch(E) { 
+				console.error("ERROR "+E.toString()); 
+				fail('ERROR!'+e.toString(), E);
 			}
-		} catch(E) { 
-			console.error("ERROR "+E.toString()); 
-			fail('ERROR!'+e.toString(), E);
-		}
-	});
-};
+		});
+	};
+}
 
 Database.ResultSet = function(rs){
 	this.rs = rs;
@@ -82,4 +88,4 @@ Database.ResultSet.Row = function(row) {
 Database.ResultSet.Row.prototype.get = function(index, defaultValue) {
 	var col = this.row[index];
 	return (col) ? col : defaultValue;
-};
+}

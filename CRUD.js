@@ -6,6 +6,7 @@ if (!CRUD) var CRUD = {
 	RELATION_CUSTOM : 6
 };
 
+
 /** 
  * The main object proxy that returns either a fresh entity object or a promise that loads data, when you pass the primary key value to search for.
  *
@@ -15,13 +16,84 @@ if (!CRUD) var CRUD = {
  * new Project(20).then(function(project) { project with id 20 has been fetched from adapter, use it here. })
  */
 
-CRUD.define = function(opts, method) {
-   return function(ID) {
-		var el = new CRUD.Entity(opts, method);
+
+CRUD.EntityManager = (new function() {
+
+	this.entities = {};
+	this.cache = {};
+	this.connectionAdapter = false;
+
+	this.defaultSetup = {
+		className: 'CRUD.Entity',
+		ID: false,
+		table: false,
+		primary: false,
+		fields: [],
+		defaultValues: {},
+		adapter: false,
+		orderProperty: false,
+		orderDirection: false,
+		relations: {},
+		connectors: {},
+		createStatement: false,
+	};
+
+	/**
+	 * Register a new entity into the entity manager, which will manage it's properties, relations, and data.
+	 */
+	this.registerEntity = function(className, dbSetup) {
+		console.log("Register entity", dbSetup);
+		if(!(className in this.entities)) {
+			this.entities[className] = this.defaultSetup;
+		}
+		for(var i in dbSetup) {
+			this.entities[className][i] = dbSetup[i];
+		}
+	}
+
+	this.getPrimary = function(className) {
+		return this.entities[className].primary;
+	}
+
+	/** 
+	 * Set and initialize the connection adapter.
+	 */
+	this.setAdapter = function(adapter) {
+		this.connectionAdapter = adapter;
+		return new Promise(function(resolve, fail) {
+			this.connectionAdapter.Init().then(resolve, fail);
+		}.bind(this));
+	}
+
+	this.getAdapter = function() {
+		return this.connectionAdapter;
+	}
+
+	return this;
+
+
+
+}());
+
+CRUD.define = function(properties, methods) {
+	console.log("Define entity!", properties, methods);
+	CRUD.EntityManager.registerEntity(properties.className, properties);
+	var props = properties;
+    return function(ID) {
+    	console.log(props);
+	   var el = new CRUD.Entity(props.className, methods);
 	   return ID ? el.primaryKeyInit(ID) : el;
-  }
-}
+    }
+};
 	
+CRUD.setAdapter = function(adapter) {
+	return CRUD.EntityManager.setAdapter(adapter);
+}
+
+CRUD.getAdapter = function() {
+	return  CRUD.EntityManager.getAdapter();
+};
+
 
 /**
  * CRUD.Find is probably the function that you'll use most to query things:
@@ -84,8 +156,8 @@ CRUD.fromCache = function(obj, values) {
 		console.error("CRUD.fromCache cannot create for non-CRUD objects like "+obj+"! \n"+E);
 		return false;
 	}
-	obj.databaseValues = values;
-	obj.dbSetup.ID = obj.databaseValues[obj.dbSetup.primary];
+	obj.values = values;
+	obj.dbSetup.ID = obj.values[obj.dbSetup.primary];
 	return obj;
 };
 
@@ -97,53 +169,41 @@ CRUD.ConnectionAdapter = function(endpoint, options) {
 	this.endpoint = endpoint || false;
 	this.options = options || {};
 
+	this.Init = function() { console.log("The Init method for you connection adapter is not implemented!"); debugger; };
 	this.Delete = function(what, events) { console.log("The Delete method for your connection adaptor is not implemented!"); debugger; };
 	this.Persist = function(what) { console.log("The Persist method for your connection adaptor is not implemented!"); debugger;  }; 
 	this.Find = function(what, filters, sorting, justthese, options, filters) { console.log("The Find method for your connection adaptor is not!"); debugger;  };
-	this.onError = function(resultset, sqlerror, queryInfo) { console.log("The onError method for your connection adaptor is not!"); debugger; };
-	this.onComplete = function(ObjectToFind, resultSet, options) { console.log("The onComplete method for your connection adaptor is not!"); debugger; };
 	return this;
 };
 
-
-CRUD.Entity = function(options, methods) {
-	this.dbSetup = {
-		className: 'CRUD.Entity',
-		ID: false,
-		table: false,
-		primary: false,
-		fields: [],
-		defaultValues: {},
-		adapter: 'dbAdapter',
-		orderProperty: false,
-		orderDirection: false,
-		relations: {},
-		connectors: {},
-		createStatement: false,
-	};
-	this.databaseValues = {};
+CRUD.Entity = function(className, methods) {
+	this.className = className;
+	
+	this.values = {};
 	this.changedValues = {};
 	this.isDirty = false;
 	this.customData = {};
 	this._customProperties = [];// custom properties to send along to the adapter (handy for form persists)
 
-	for(var i in options) {
-		if(i in this.dbSetup) this.dbSetup[i] = options[i];
-	}
 	for(var j in methods) {
 		this[j] = methods[j];
 	}
 	var that = this;
+	return this;
+};
 
-	this.getID = function () {
-		return this.dbSetup.ID;
-	};
 
-	this.getAdapter = function () {
+CRUD.Entity.prototype = {
+	
+	getID : function () {
+		return this.get(CRUD.EntityManager.getPrimary(this.getType()));
+	},
+
+	getAdapter : function () {
 		var adapter = typeof this.dbSetup.adapter == "string" ? window[this.dbSetup.adapter] : this.dbSetup.adapter;
 		if(!adapter) throw("[CRUD] Exception in getAdapter, cannot find an instance of "+this.dbSetup.adapter+" for entity "+this.dbSetup.className+ "- "+ window[this.dbSetup.adapter]);
 		return adapter;
-	};
+	},
 
 	/** 
 	 * Proxy find function, that can be run on the entity instance itself.
@@ -158,18 +218,18 @@ CRUD.Entity = function(options, methods) {
 	 *
 	 * @returns Promise
 	 */
-	this.Find = function(type, filters, options) {
+	Find : function(type, filters, options) {
 		filters = filters || {};
 		filters[this.getType()] = {} ;
 		filters[this.getType()][this.dbSetup.primary] = this.getID();
 		return CRUD.Find(type, filters, options);
-	};
+	},
 
 	/**
 	 * Get al list of all the values to display.
 	 */
-	this.getValues = function () {
-		var v = this.databaseValues;
+	getValues: function () {
+		var v = this.values;
 		if(this.changedValues && Array.from(this.changedValues).length > 0) {
 			for(var k in this.changedValues) {
 				v[k] = this.changedValues[k];
@@ -177,39 +237,39 @@ CRUD.Entity = function(options, methods) {
 		}
 		v.ID = this.getID();
 		return v;
-	};
+	}, 
 
-	this.hasField = function (fieldname) {
+	hasField: function (fieldname) {
 		return(this.dbSetup.fields.indexOf(fieldname) > -1);
-	};
+	},
 
-	this.importValues = function (values) {
+	importValues: function (values) {
 		var fields = this.dbSetup.fields, pri = this.dbSetup.primary;
 		for(var i= 0; i < fields.length; i++) {
 			var field = fields[i];
-			this.databaseValues[field] = values[field];
+			this.values[field] = values[field];
 			if (field == pri) this.dbSetup.ID = values[field];
 		}
 		return this;
-	};
+	},
 
 	/**
 	 * Accessor. Gets one field, optionally returns the default value.
 	 */
-	this.get = function (field, def) {
+	get: function (field, def) {
 		if(this.changedValues[field]) { return this.changedValues[field] ;}
-		if(this.databaseValues[field]) { return this.databaseValues[field];}
+		if(this.values[field]) { return this.values[field];}
 		if(!this.hasField(field)) {
 			console.error("Could not find field '"+field+ "' in '"+ this.getType()+"' for getting.");
 		} else {
 			return def || '';
 		}
-	};
+	},
 
 	/**
 	 * Setter, accepts key / value or object with keys/values
 	 */
-	this.set = function (field, value) {
+	set: function (field, value) {
 		if(typeof field === "object") {
 			for(var i in field) {
 				if(field.hasOwnProperty(i) && this.hasField(i)) {
@@ -228,12 +288,12 @@ CRUD.Entity = function(options, methods) {
 		} else {
 			console.error("Could not find field '"+field+"' in '"+ this.getType()+"' for setting.");
 		}
-	};
+	}, 
 
 	/**
 	 * Persist changes on object using CRUD.Entity.set through the adapter.
 	 */
-	this.Persist = function (callbacks) {
+	Persist: function (callbacks) {
 		var that = this;
 		new Promise(function(resolve, fail) {
 
@@ -249,9 +309,24 @@ CRUD.Entity = function(options, methods) {
 				}
 			}
 
-			that.getAdapter().Persist(that).then(
-				function(result) {
-					that.onPersisted(result);
+			that.getAdapter().Persist(that).then(function(result) {
+					console.error("onPersisted! ", result);
+					this.isDirty = false;
+					if(result.Action == 'inserted' && this.getID() === false) {
+						this.values = result.Result;
+						this.changedValues = [];
+						this.dbSetup.ID = this.values[this.dbSetup.primary];
+					}
+					else if (result.Action == 'updated') {
+						this.changedValues = [];
+						for( var i in this.dbSetup.fields) {
+							var field = this.dbSetup.fields[i];
+							if(result.Result[0][field]) {
+								this.values[field] = result.Result[0][field];
+							}
+						}
+					}
+					console.warn(this.getType()+" has been persisted. Result: " + result.Action + ". New Values: "+JSON.stringify(this.values));
 					resolve(result);
 				}, function(e) {
 					console.error("Error saving CRUD", that, e);
@@ -260,70 +335,42 @@ CRUD.Entity = function(options, methods) {
 			);
 
 		});
-	};
-	
-	/**
-	 * Default persist callback. for internal use
-	 */
-	this.onPersisted = function (result) {
-		console.error("onPersisted! ", result);
-		this.isDirty = false;
-		if(result.Action == 'inserted' && this.getID() === false) {
-			this.databaseValues = result.Result;
-			this.changedValues = [];
-			this.dbSetup.ID = this.databaseValues[this.dbSetup.primary];
-		}
-		else if (result.Action == 'updated') {
-			this.changedValues = [];
-			for( var i in this.dbSetup.fields) {
-				var field = this.dbSetup.fields[i];
-				if(result.Result[0][field]) {
-					this.databaseValues[field] = result.Result[0][field];
-				}
-			}
-		}
-		console.warn(this.getType()+" has been persisted. Result: " + result.Action + ". New Values: "+JSON.stringify(this.databaseValues));
-		//alert('CRUD has been persisted! ', result);
-	};
+	},
 
-	/** 
-	 * Default delete callback, for internal use
-	 */
-	this.onDeleted = function (result) {
-		if(result.Action == 'deleted') {
-			console.warn(this.getType()+" "+this.getID()+" has been deleted! ");
-			this.dbSetup.ID = false;
-		}
-	};
+
+
 
 	/**
 	* Delete the object via the adapter.
 	* Allows you to call Persist() again on the same object by just setting the ID to false.
 	*/
-	this.Delete = function() {
+	Delete: function() {
 		var that = this;
-		new Promise(function(resolve, fail) {
-			that.getAdapter().Delete(that).then(function(e) {
-				that.onDeleted(e);
-				resolve(e)
+		return new Promise(function(resolve, fail) {
+			that.getAdapter().Delete(that).then(function(result) {
+				if(result.Action == 'deleted') {
+					console.warn(that.getType()+" "+that.getID()+" has been deleted! ");
+					this.dbSetup.ID = false;
+				};
+				resolve(result);
 			}, fail);
-		}
-	};
+		});
+	},
 
 	/**
 	 * override toString for easy detection of CRUDs
 	 */
-	this.toString = function () {
+	toString: function () {
 		return 'CRUD';
-	};
+	},
 
 	/** 
 	 * Returns the actual className. Should be provided in the entity object.
 	 * Might not look best, but saves a lot of hassle with reflection
 	 */
-	this.getType = function () {
-		return(this.dbSetup.className);
-	};
+	getType: function () {
+		return(this.className);
+	},
 
 	/** 
 	 * Connect 2 entities regardles of their relationship type.
@@ -331,7 +378,7 @@ CRUD.Entity = function(options, methods) {
 	 * this will find out what it needs to do to set the correct properties in your persistence layer.
 	 * @TODO: update thisPrimary, thatPrimary resolve functions to allow mapping using RELATION_CUSTOM, also, using identified_by propertys
 	 */
-	this.Connect = function(to, events) {
+	Connect: function(to, events) {
 		var targetType = to.getType();
 		var thisType = this.getType();
 		var thisPrimary = this.dbSetup.primary; 
@@ -368,9 +415,9 @@ CRUD.Entity = function(options, methods) {
 				}
 			}, fail);
 		});
-	};
+	},
 
-	this.Disconnect = function(from, events) {
+	Disconnect: function(from, events) {
 		var targetType = from.getType();
 		var thisType = this.getType();
 		var thisPrimary = this.dbSetup.primary;
@@ -409,24 +456,13 @@ CRUD.Entity = function(options, methods) {
 				Promise.all([that.Persist(), this.Persist()]).then(resolve, fail);
 			}, fail);
 		});
-	};
+	},
 
-	/** 
-	 * Tiny private clone function
-	 */
-    function _clone(obj) {
-		var clone = {};
-        for(var i in obj) {
-            clone[i] = (typeof(obj[i])=="object") ? _clone(obj[i]) : obj[i];
-        }
-        return clone;
-    }
 
-    this.primaryKeyInit = function (ID) {
+	primaryKeyInit: function (ID) {
 		this.dbSetup.ID = ID || false;
 		if(this.dbSetup.ID !== false) {
 			return this.Find({"ID" : ID});
 		}
-	};
-	return this;
-};
+	}
+}

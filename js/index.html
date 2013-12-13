@@ -9,12 +9,11 @@
 	Demo's
 	(Currently still requires a prefilled db)
 </p>
-
-<script src='CRUD.js'></script>
-<script src='CRUD.SqliteAdapter.js'></script>
-<script src='CRUD.QueryBuilder.js'></script>
-<script src='CRUD.database.js'></script>
-
+<script src="../promise-3.2.0.js"></script>
+<script src='../CRUD.js'></script>
+<script src='../CRUD.SqliteAdapter.js'></script>
+<script src='../CRUD.QueryBuilder.js'></script>
+<script src='../CRUD.database.js'></script>
 
 <script src='slide.js'></script>
 <script src='presentation.js'></script>
@@ -23,14 +22,19 @@
 <script>
 
 window.onload = function() {
-	window.dbAdapter = new CRUD.SQLiteAdapter('salesboard');
+	CRUD.setAdapter(new CRUD.SQLiteAdapter('crudjsdemo')).then(function() {
 
-	CRUD.Find(Presentation, {} , { onSuccess: function(result) {
+		CRUD.Find(Presentation, { ID: 1}).then(function(result) {
+			console.log("query executed!", result);
 			for (var i=0; i< result.length; i++) {
 				result[i].display();
 			}
-		}
-	});
+		});
+
+
+	})
+
+
 
 }
 </script>

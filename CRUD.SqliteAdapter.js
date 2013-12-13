@@ -1,9 +1,56 @@
-CRUD.SQLiteAdapter = function(database, options) {
-	console.log("Create new crud.sqliteadapter!");
-	CRUD.ConnectionAdapter.apply( this, arguments );
-	this.db = new Database(database, options);
+CRUD.SQLiteAdapter = function(database, dbOptions) {
+	this.databaseName = database;
+	this.dbOptions = dbOptions
 	this.lastQuery = false;
 
+	CRUD.ConnectionAdapter.apply( this, arguments );
+	
+	this.Init = function() {
+		console.log("Create new crud.sqliteadapter!");
+		var that = this;
+		return new Promise(function(resolve, fail) {
+			that.db = new Database(that.databaseName, that.dbOptions);
+			that.db.connect().then(function() {
+				that.verifyTables().then(resolve, fail);
+			}, fail);
+		});
+	};
+
+	this.verifyTables = function() {
+		console.log('verifying that tables exist');
+		var that = this;
+		for(var i in CRUD.EntityManager.entities) {
+			console.log(i);
+			that.db.execute("SELECT count(*), "+CRUD.EntityManager.entities[i].table+" as tblname FROM sqlite_master WHERE type='table' AND name= ?", [CRUD.EntityManager.entities[i].table, CRUD.EntityManager.entities[i].table]).then(function(resultSet) {
+		
+				var res = resultSet.next().row;
+				console.log("Rsult: ", res, res.existing, res.name, res);;
+			}, function(err) {
+				console.error("Failed!", err, entity);;
+			});
+			
+		}
+		//this.db.
+/*
+			console.log('SQL Error!!', sqlerror, resultset, [what, query, options, this]);
+			// @TODO: Move this to db adapter?
+			if(sqlError.message.indexOf('no such table') > -1) {
+				console.log(what, ": Table does not exist.");
+				var ojb = new window[queryInfo.what]();
+				if(!ojb.dbSetup.createStatement) {
+					console.log("No create statement found for "+queryInfo.what+". Don't know how to create table.");
+				} else {
+					console.log("Create statement found. Creating table for "+what, this.db);
+					this.db.execute(ojb.dbSetup.createStatement).then(function(rs) {
+							console.log("Table created successfully!!", ojb.dbSetup.createStatement, [what, quey, options, this]);
+							CRUD.Find(what, filters, options).then(resolve, fail);
+						 }.bind(this), fail);
+					return;
+				}	
+			}*/
+
+	},
+	
 	this.Find = function(what, filters, sorting, justthese, options, filters) {
 
 		var builder = new CRUD.QueryBuilder(what, filters, sorting, justthese, options);
@@ -23,22 +70,6 @@ CRUD.SQLiteAdapter = function(database, options) {
 				}
 				resolve(output);
 			}, function(resultSet, sqlError) {
-				console.log('SQL Error!!', sqlerror, resultset, [what, query, options, this);
-				// @TODO: Move this to db adapter?
-				if(sqlError.message.indexOf('no such table') > -1) {
-					console.log(what, ": Table does not exist.");
-					var ojb = new window[queryInfo.what]();
-					if(!ojb.dbSetup.createStatement) {
-						console.log("No create statement found for "+queryInfo.what+". Don't know how to create table.");
-					} else {
-						console.log("Create statement found. Creating table for "+what, this.db);
-						this.db.execute(ojb.dbSetup.createStatement).then(function(rs) {
-								console.log("Table created successfully!!", ojb.dbSetup.createStatement, [what, quey, options, this]);
-								CRUD.Find(what, filters, options).then(resolve, fail);
-							 }.bind(this), fail);
-						return;
-					}	
-				}
 				fail('SQL Error in FIND : ',sqlerror, resultset, what, this);
 			});
 		});
@@ -68,7 +99,7 @@ CRUD.SQLiteAdapter = function(database, options) {
 					resolve(resultSet);
 				}, function(err, tx) {
 					fail(err, tx);
-				}
+				});
 			});
 		} else {  // existing : build an update query.
 			query.push('update',what.dbSetup.table,'set');
@@ -95,12 +126,13 @@ CRUD.SQLiteAdapter = function(database, options) {
 			query.push('delete from',what.dbSetup.table,'where',what.dbSetup.primary,'= ?');
 			return new Promise(function(resolve, fail) {
 				this.db.execute(query.join(' '), [what.getID()]).then(function(resultSet) {
-				resultSet.Action = 'deleted';
-				resolve(resultSet);
-			}, function(e) {
-				console.error("error deleting element from db: ", e);
-				fail(e);
-			}
+					resultSet.Action = 'deleted';
+					resolve(resultSet);
+				}, function(e) {
+					console.error("error deleting element from db: ", e);
+					fail(e);
+				})
+			});
 		} else {
 			return false;
 		}
