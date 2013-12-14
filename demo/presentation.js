@@ -11,18 +11,23 @@
 		},
 		createStatement: 'CREATE TABLE "presentations" ("ID_Presentation" INTEGER PRIMARY KEY  NOT NULL ,"name" varchar(256) DEFAULT (NULL) ,"template" varchar(50) NOT NULL ,"forceUpdate" char(1) NULL  DEFAULT (1) ,"lastUpdated" timestamp NULL ,"lastAccessed" timestamp  NULL,"ID_Catalog" INTEGER NULL , "ID_Category" INTEGER NULL, "globalCSS" TEXT, "globalJS" TEXT)',
 		adapter: 'dbAdapter',
+		defaultValues: {
+			forceUpdate: 1,
+			globalCSS: 'border: 1px solid black;'
+		},
+
 		fixtures: [
 			{ 
+			  'ID_Presentation': 1,
 			  name: 'test1',
 			  template: 'test',
-			  forceUpdate: 1,
 			  lastUpdated: new Date()
 			},
 			{ 
+			  'ID_Presentation': 2,
 			  name: 'test2',
 			  template: 'test2',
-			  forceUpdate: 0,
-			  lastUpdated: new Date()
+			 lastUpdated: new Date()
 			}
 
 

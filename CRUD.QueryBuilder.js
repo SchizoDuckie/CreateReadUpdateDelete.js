@@ -26,10 +26,9 @@ CRUD.QueryBuilder.prototype = {
 	buildFilters : function(what, value, _class) {
 		var relatedClass = CRUD.EntityManager.hasRelation(_class, what);
 		if(relatedClass) {  
-			//console.warn("BuildFilters for sublcas! ", wtclass, value);
 			for(var val in value) {
-				this.buildFilters(val, value[val], relatedClass);
-				this.buildJoins(relatedClass,_class);
+				this.buildFilters(val, value[val], what);
+				this.buildJoins(_class,what);
 			}
 		}
 		else if(typeof what == "Number") { // it's a custom sql where clause, just field=>value). unsafe because parameters are unbound, but very for custom queries.
@@ -69,8 +68,8 @@ CRUD.QueryBuilder.prototype = {
 
 	buildJoins : function(theClass, parent) { // determine what joins to use
 		if(!parent) return;	// nothing to join on, skip.
-		var entity = CRUD.EntityManager[theClass];
-		var parent = CRUD.EntityManager[parent];
+		var entity = CRUD.EntityManager.entities[theClass];
+		var parent = CRUD.EntityManager.entities[parent];
 		
 		switch(parent.relations[entity.className]) { // then check the relationtype
 			case CRUD.RELATION_SINGLE:
@@ -85,7 +84,7 @@ CRUD.QueryBuilder.prototype = {
 			case CRUD.RELATION_MANY: // it's a many:many relation. Join the connector table and then the related one.
 				connectorClass = parent.connectors[entity.className];
 				conn = CRUD.EntityManager.entities[connectorClass];
-				this.addJoin(conn, parent).addJoin(conn, entity);
+				this.addJoin( conn, entity, entity.primary).addJoin(parent, conn, parent.primary)
 				break;
 			case CRUD.RELATION_CUSTOM:
 				var rel = parent.relations[entity.className];
@@ -96,8 +95,8 @@ CRUD.QueryBuilder.prototype = {
 		}
 	},
 
-	addJoin: function(what, on) {
-		this.joins.push(['LEFT JOIN',what.table,'ON',on.table+"."+on.primary,'=',what.table+'.'+what.primary].join(' '));
+	addJoin: function(what, on, fromPrimary, toPrimary) {
+		this.joins.push(['LEFT JOIN',what.table,'ON',on.table+"."+fromPrimary,'=',what.table+'.'+(toPrimary || fromPrimary)].join(' '));
 		return this;
 	},
 

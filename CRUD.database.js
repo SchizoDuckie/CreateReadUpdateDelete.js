@@ -34,7 +34,7 @@ Database = function(name, options) {
 		return new Promise(function(resolve, fail) {
 
 			that.db.transaction(function(transaction){
-				console.log("execing sql: ", sql);
+				CRUD.log("execing sql: ", sql);
 				transaction.executeSql(sql, valueBindings, function(transaction, rs){
 					resolve(new Database.ResultSet(rs));
 				}, function(transaction, error) { 
@@ -52,11 +52,11 @@ Database = function(name, options) {
 				if (!that.db) {
 					fail("could not open database "+that.dbName);
 				} else {
-					console.log("DB connection to ", that.dbName, " opened!");
+					CRUD.log("DB connection to ", that.dbName, " opened!");
 					resolve(this);
 				}
 			} catch(E) { 
-				console.error("ERROR "+E.toString()); 
+				CRUD.log("DB ERROR "+E.toString()); 
 				fail('ERROR!'+e.toString(), E);
 			}
 		});

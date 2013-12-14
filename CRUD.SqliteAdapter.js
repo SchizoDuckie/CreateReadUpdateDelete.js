@@ -6,18 +6,18 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 	CRUD.ConnectionAdapter.apply( this, arguments );
 	
 	this.Init = function() {
-		console.log("Create new crud.sqliteadapter!");
 		var that = this;
 		return new Promise(function(resolve, fail) {
 			that.db = new Database(that.databaseName, that.dbOptions);
 			that.db.connect().then(function() {
+				CRUD.log("SQLITE connection created to ", that.databaseName);
 				that.verifyTables().then(resolve, fail);
 			}, fail);
 		});
 	};
 
 	this.verifyTables = function() {
-		console.log('verifying that tables exist');
+		CRUD.log('verifying that tables exist');
 		var that = this;
 		var PromiseQueue = [];
 	
@@ -30,24 +30,29 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 
 					var res = resultSet.next().row;
 					if(res.existing === 0) {
-						console.log(entity, ": Table does not exist.");
+						CRUD.log(entity, ": Table does not exist.");
 						if(!entity.createStatement) {
-							console.log("No create statement found for "+entity.className+". Don't know how to create table.");
+							CRUD.log("No create statement found for "+entity.className+". Don't know how to create table.");
+							fail();
 						} else {
-							console.log("Create statement found. Creating table for "+entity.className);
+							CRUD.log("Create statement found. Creating table for "+entity.className);
 							that.db.execute(entity.createStatement).then(function() {
-								console.log(entity.className+" table created.");
+								CRUD.log(entity.className+" table created.");
 								if(entity.fixtures) {
+									var pq = [];
+									CRUD.log(entity.fixtures.length + ' Fixtures found for '+entity.className+' inserting.')
 									for(var i=0; i<entity.fixtures.length; i++) {
-										CRUD.fromCache(entity.className, entity.fixtures[i]).Persist(true);
+										pq.push(CRUD.fromCache(entity.className, entity.fixtures[i]).Persist(true, 'INSERT'));
 									}
+								    Promise.all(pq).then(resolve);
 								}
-							}, function(err) { console.error("Error creating "+entity.className, err); })
+							}, function(err) { CRUD.log("Error creating "+entity.className, err); fail(); });
 						}	
+					} else {
+						resolve();
 					}
-					resolve();
 				}, function(err) {
-					console.error("Failed!", err, entity);;
+					CRUD.log("Failed!", err, entity);;
 					fail();
 				});
 			}));
@@ -60,7 +65,7 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 	
 		//this.db.
 /*
-			console.log('SQL Error!!', sqlerror, resultset, [what, query, options, this]);
+			CRUD.log('SQL Error!!', sqlerror, resultset, [what, query, options, this]);
 			// @TODO: Move this to db adapter?
 			if(sqlError.message.indexOf('no su3h table') > -1) {
 				
@@ -76,7 +81,7 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 		this.lastQuery = query;
 		var that = this;
 		
-		console.log("Executing query via sqliteadapter: ", options, query);
+		CRUD.log("Executing query via sqliteadapter: ", options, query);
 		return new Promise(function(resolve, fail) {
 			that.db.execute(query.query, query.parameters).then(function(resultset) {
 				var row, output = [];
@@ -86,11 +91,13 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 				}
 				resolve(output);
 			}, function(resultSet, sqlError) {
-				fail('SQL Error in FIND : ',sqlerror, resultset, what, this);
+				CRUD.log('SQL Error in FIND : ',sqlError, resultSet, what, this, query);
+				debugger;
+				fail();
 			});
 		});
 	},
-	this.Persist = function(what) {
+	this.Persist = function(what, forceInsert) {
 		var query = [], valCount =0, values = [], valmap = [], names =[], that=this;
 		
 		for(var i in what.changedValues) {
@@ -107,11 +114,11 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 			valmap.push(defaults[i]);
 		}
 
-		if(what.getID() === false || undefined ==  what.getID()) { // new object : insert.
+		if(what.getID() === false || undefined ==  what.getID() || forceInsert) { // new object : insert.
 			// insert
 			query.push('INSERT INTO ',CRUD.EntityManager.entities[what.className].table,'(', names.join(","),') VALUES (', values.join(","), ');');
 			
-			console.log(query.join(' '), valmap);
+			CRUD.log(query.join(' '), valmap);
 			return new Promise(function(resolve, fail) { 
 				that.db.execute(query.join(' '), valmap).then(function(resultSet) {
 					resultSet.Action = 'inserted';
@@ -147,7 +154,7 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 					resultSet.Action = 'deleted';
 					resolve(resultSet);
 				}, function(e) {
-					console.error("error deleting element from db: ", e);
+					CRUD.log("error deleting element from db: ", e);
 					fail(e);
 				})
 			});
