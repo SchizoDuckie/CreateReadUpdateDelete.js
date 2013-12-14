@@ -2,15 +2,34 @@
 		className: 'Presentation',
 		table : 'presentations',
 		primary : 'ID_Presentation',
-		fields: ['ID_Presentation','ID_Client','name','template','forceUpdate', 'lastUpdated','lastAccessed','ID_Catalog', 'ID_Category', 'globalCSS','globalJS'],
+		fields: ['ID_Presentation','name','template','forceUpdate', 'lastUpdated','lastAccessed','ID_Catalog', 'ID_Category', 'globalCSS','globalJS'],
 		relations: {
 			'Slide': CRUD.RELATION_MANY
 		},
 		connectors: {
 			'Slide' : 'Presentationslide'
 		},
-		createStatement: 'CREATE TABLE "presentations" ("ID_Presentation" INTEGER PRIMARY KEY  NOT NULL ,"ID_Client" int(4) NOT NULL ,"name" varchar(256) DEFAULT (NULL) ,"template" varchar(50) NOT NULL ,"forceUpdate" char(1) NOT NULL  DEFAULT ("1") ,"lastUpdated" timestamp NOT NULL  DEFAULT ("0000-00-00 00:00:00") ,"lastAccessed" timestamp NOT NULL  DEFAULT ("0000-00-00 00:00:00") ,"ID_Catalog" INTEGER NOT NULL , "ID_Category" INTEGER, "globalCSS" TEXT, "globalJS" TEXT)',
-		adapter: 'dbAdapter'
+		createStatement: 'CREATE TABLE "presentations" ("ID_Presentation" INTEGER PRIMARY KEY  NOT NULL ,"name" varchar(256) DEFAULT (NULL) ,"template" varchar(50) NOT NULL ,"forceUpdate" char(1) NULL  DEFAULT (1) ,"lastUpdated" timestamp NULL ,"lastAccessed" timestamp  NULL,"ID_Catalog" INTEGER NULL , "ID_Category" INTEGER NULL, "globalCSS" TEXT, "globalJS" TEXT)',
+		adapter: 'dbAdapter',
+		fixtures: [
+			{ 
+			  'ID_Presentation': 1,
+			  name: 'test1',
+			  template: 'test',
+			  forceUpdate: 1,
+			  lastUpdated: new Date()
+			},
+			{ 
+			  'ID_Presentation': 2,
+			  name: 'test2',
+			  template: 'test2',
+			  forceUpdate: 0,
+			  lastUpdated: new Date()
+			}
+
+
+		]
+		
 	}, {
 
 	display: function() {

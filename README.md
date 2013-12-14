@@ -9,10 +9,10 @@ Written in Plain Old JavaScript without any framework dependencies, you can use 
 ActiveRecord? Orm?
 ==================
 ActiveRecord/ORM is a technique that fits perfectly into the DRY (Don't Repeat Yourself) paradigm. 
-It takes away all the hassle of creating Insert, Select, Update and Delete database queries. You create your class, set some properties, call Save, and a database record is created automagicaly.
+It takes away all the hassle of creating Insert, Select, Update and Delete database queries. You create your class, set some properties, call Persist, and a database record is created automagicaly.
 If the object you're referring to already exists in the database, it will be updated.
 
-Want to find related data? Instantiate an object, call Find() on it with the filters you need, and the onComplete callback returns you your data.
+Want to find related data? Instantiate an object, call Find() on it with the filters you need. the Promise that is returned will fire when your data has been fetched.
 
 If you're doing data storage right, you don't have to write *any* SQL, at all.
 
@@ -22,8 +22,9 @@ Example, connecting to sqlite
 First, define an adapter. In this case we use an SQLiteAdapter to the database 'myDbName '
 
 ```javascript
-window.dbAdapter = new CRUD.SQLiteAdapter('myDbName');
+CRUD.setAdapter(new CRUD.SQLiteAdapter('myDbName'))
 ```
+This will return a new Promise that 
 
 Then, define some entity objects using CRUD.define
 
@@ -50,11 +51,11 @@ var Presentation = CRUD.define({
 		d.id = 'pres_'+this.getID();
 		document.body.appendChild(d);
 		// find slides for this presentation, it's a many:many relation.
-		this.Find(Slide, {}, { onSuccess: function(slides) {
+		this.Find(Slide, {}).then(function(slides) {
 			for(var i = 0; i< slides.length; i++) {
 				slides[i].display(d.id);
 			}
-		}});
+		});
 	}
 });
 ```
@@ -117,16 +118,15 @@ We initialize the whole stuff on onload or domready like this:
 
 ```javascript
 window.onload = function() {
-	window.dbAdapter = new CRUD.SQLiteAdapter('myDbName');
+	CRUD.setAdapter(new CRUD.SQLiteAdapter('myDbName')).then(function() {
 	// This will return an array with Presentation objects on success.
-	CRUD.Find(Presentation, {} , { onSuccess: function(result) {
+	CRUD.Find(Presentation, {}).then(function(result) {
 			for (var i=0; i< result.length; i++) {
 				result[i].display();
 			}
-		}
-	});
+		});
 
-}
+});
 ```
 
 To create a new Presentation, this is enough:
@@ -134,7 +134,7 @@ To create a new Presentation, this is enough:
 ```javascript
 var pres = new Presentation();
 pres.set('name', 'test');
-pres.Save();
+pres.Persist();
 ```
 
 A more advanced example: Create a Presentation and a Slide, and use Connect to automagically create the relation between them, in this many:many case a Presentationslide object.
@@ -153,8 +153,8 @@ slide.set({
 	SubTitle: 'Test SubTitle'
 });
 
-pres.Connect(slide, { onComplete: function(r) {
+pres.Connect(slide).then(function(r) {
           console.log("CREATED connection between presentation "+pres.getID()+" and slide "+slide.getID());
       }
-});
+);
 ```

@@ -19,37 +19,55 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 	this.verifyTables = function() {
 		console.log('verifying that tables exist');
 		var that = this;
+		var PromiseQueue = [];
+	
 		for(var i in CRUD.EntityManager.entities) {
-			console.log(i);
-			that.db.execute("SELECT count(*), "+CRUD.EntityManager.entities[i].table+" as tblname FROM sqlite_master WHERE type='table' AND name= ?", [CRUD.EntityManager.entities[i].table, CRUD.EntityManager.entities[i].table]).then(function(resultSet) {
-		
-				var res = resultSet.next().row;
-				console.log("Rsult: ", res, res.existing, res.name, res);;
-			}, function(err) {
-				console.error("Failed!", err, entity);;
-			});
+
+			PromiseQueue.push(new Promise(function(resolve, fail) {
+				var entity = CRUD.EntityManager.entities[i];
+			
+				console.log("Myent!", entity);
+				that.db.execute("SELECT count(*) as existing FROM sqlite_master WHERE type='table' AND name= ?", [entity.table]).then(function(resultSet) {
+
+					var res = resultSet.next().row;
+					if(res.existing === 0) {
+						console.log(entity, ": Table does not exist.");
+						if(!entity.createStatement) {
+							console.log("No create statement found for "+entity.className+". Don't know how to create table.");
+						} else {
+							console.log("Create statement found. Creating table for "+entity.className);
+							that.db.execute(entity.createStatement).then(function() {
+								console.log(entity.className+" table created.");
+								if(entity.fixtures) {
+									for(var i=0; i<entity.fixtures.length; i++) {
+										CRUD.fromCache(entity.className, entity.fixtures[i]).Persist(true);
+									}
+								}
+							}, function(err) { console.error("Error creating "+entity.className, err); })
+						}	
+					}
+					resolve();
+				}, function(err) {
+					console.error("Failed!", err, entity);;
+					fail();
+				});
+			}));
 			
 		}
+
+		return Promise.all(PromiseQueue);
+			
+
+	
 		//this.db.
 /*
 			console.log('SQL Error!!', sqlerror, resultset, [what, query, options, this]);
 			// @TODO: Move this to db adapter?
-			if(sqlError.message.indexOf('no such table') > -1) {
-				console.log(what, ": Table does not exist.");
-				var ojb = new window[queryInfo.what]();
-				if(!ojb.dbSetup.createStatement) {
-					console.log("No create statement found for "+queryInfo.what+". Don't know how to create table.");
-				} else {
-					console.log("Create statement found. Creating table for "+what, this.db);
-					this.db.execute(ojb.dbSetup.createStatement).then(function(rs) {
-							console.log("Table created successfully!!", ojb.dbSetup.createStatement, [what, quey, options, this]);
-							CRUD.Find(what, filters, options).then(resolve, fail);
-						 }.bind(this), fail);
-					return;
-				}	
+			if(sqlError.message.indexOf('no su3h table') > -1) {
+				
 			}*/
 
-	},
+	};
 	
 	this.Find = function(what, filters, sorting, justthese, options, filters) {
 

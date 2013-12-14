@@ -2,7 +2,7 @@
  * The Query builder ported to JS :D
  */
 CRUD.QueryBuilder = function(className, filters, extras, justthese) {
-	this.origin = className;
+	this.origin = className instanceof CRUD.Entity ? this.origin.className : className;
 	this.filters = filters || {};
 	this.extras = extras || [];
 	justthese = justthese || [];
@@ -13,8 +13,8 @@ CRUD.QueryBuilder = function(className, filters, extras, justthese) {
 		this.origin = new window[className]();
 	}
 
-	var tableName = this.origin.dbSetup.table;
-	justthese = justthese.length > 0 ? justthese : this.origin.dbSetup.fields;
+	var tableName = CRUD.EntityManager.entities[this.origin.className].table;
+	justthese = justthese.length > 0 ? justthese : CRUD.EntityManager.entities[this.origin.className].fields;
 	for(var i=0; i<justthese.length; i++) {
 		this.fields.push(tableName+'.'+justthese[i]);
 	}
@@ -27,7 +27,7 @@ CRUD.QueryBuilder = function(className, filters, extras, justthese) {
 
 CRUD.QueryBuilder.prototype = {
 	buildFilters : function(what, value, _class) {
-		var wtclass = _class.dbSetup.relations[what] ? new window[what]() : false;
+		var wtclass = _class.relations[what] ? new window[what]() : false;
 		if(wtclass) {  // filter by a property of a subclass
 			//console.warn("BuildFilters for sublcas! ", wtclass, value);
 			for(var val in value) {
@@ -43,8 +43,8 @@ CRUD.QueryBuilder.prototype = {
 		}
 		else { // standard field=>value whereclause. Prefix with tablename for speed.
 			if(_class.toString() !== "CRUD") _class = new _class();
-			if(what == 'ID') what = _class.dbSetup.primary;
-			this.wheres.push(_class.dbSetup.table+'.'+what+" = '"+value+"'");
+			if(what == 'ID') what = _class.primary;
+			this.wheres.push(_class.table+'.'+what+" = '"+value+"'");
 		}
 	},
 
@@ -67,8 +67,8 @@ CRUD.QueryBuilder.prototype = {
 				delete this.extras[key];
 			}
 		}
-		if(this.origin.dbSetup.orderProperty && this.origin.dbSetup.orderDirection && this.orders.length === 0) {
-			this.orders.push(this.origin.dbSetup.orderProperty+" "+this.origin.dbSetup.orderDirection);
+		if(CRUD.EntityManager.entities[this.origin.className].orderProperty && CRUD.EntityManager.entities[this.origin.className].orderDirection && this.orders.length === 0) {
+			this.orders.push(CRUD.EntityManager.entities[this.origin.className].orderProperty+" "+CRUD.EntityManager.entities[this.origin.className].orderDirection);
 		}
 	},
 
@@ -77,34 +77,34 @@ CRUD.QueryBuilder.prototype = {
 		if(!(theClass.dbSetup)) theClass = new theClass();
 		if(!(parent.dbSetup)) parent = new parent();
 		var _class = theClass.getType();
-		var theTable = theClass.dbSetup.table;
-		var thePrimary = theClass.dbSetup.primary;
-		var parentTable = parent.dbSetup.table;
-		var parentPrimary = parent.dbSetup.primary;
+		var theTable = theClass.table;
+		var thePrimary = theClass.primary;
+		var parentTable = parent.table;
+		var parentPrimary = parent.primary;
 
-		switch(parent.dbSetup.relations[_class]) { // then check the relationtype
+		switch(parent.relations[_class]) { // then check the relationtype
 			case CRUD.RELATION_SINGLE:
 			case CRUD.RELATION_FOREIGN:
-				if(theClass.dbSetup.fields.indexOf(parentPrimary) > -1) {
+				if(theClass.fields.indexOf(parentPrimary) > -1) {
 					this.joins.push("LEFT JOIN \n\t "+theTable+ " on "+ parentTable+ "."+ parentPrimary+" = "+theTable+ "."+ parentPrimary);
 				}
-				else if(parent.dbSetup.fields.indexOf(thePrimary) > -1) {
+				else if(parent.fields.indexOf(thePrimary) > -1) {
 					this.joins.push("LEFT JOIN \n\t "+theTable+ " on "+theTable+ "."+thePrimary+ " = "+ parentTable+ "."+thePrimary+ "");
 				}
 			break;
 			case CRUD.RELATION_MANY: // it's a many:many relation. Join the connector table and then the other one.
-				connectorClass = parent.dbSetup.connectors[_class];
+				connectorClass = parent.connectors[_class];
 				conn = new window[connectorClass](false);
-				this.joins.push("LEFT JOIN \n\t "+ conn.dbSetup.table+ " on  "+ conn.dbSetup.table+ "."+ parentPrimary+ " = "+ parentTable+ "."+ parentPrimary+ "");
-				this.joins.push("LEFT JOIN \n\t "+theTable+ " on "+ conn.dbSetup.table+ "."+thePrimary+ " = "+theTable+ "."+thePrimary+ "");
+				this.joins.push("LEFT JOIN \n\t "+ conn.table+ " on  "+ conn.table+ "."+ parentPrimary+ " = "+ parentTable+ "."+ parentPrimary+ "");
+				this.joins.push("LEFT JOIN \n\t "+theTable+ " on "+ conn.table+ "."+thePrimary+ " = "+theTable+ "."+thePrimary+ "");
 			break;
 			case CRUD.RELATION_CUSTOM:
-				var rel = parent.dbSetup.relations[_class];
+				var rel = parent.relations[_class];
 				this.joins = this.joins.unshift("LEFT JOIN \n\t "+theTable+ " on "+ parentTable+ "."+ rel.sourceProperty+ " = "+theTable+ "."+ rel.targetProperty+ "");
 				this.joins.push("LEFT JOIN \n\t "+theTable+ " on "+ parentTable+ "."+ rel.sourceProperty+ " = "+theTable+ "."+ rel.targetProperty+ "");
 			break;
 			default:
-				throw new Exception("Warning! class "+parent.dbSetup.className+" probably has no relation defined for class "+ _class+ "  or you did something terribly wrong..." + JSON.encode(parent.dbSetup.relations[_class]));
+				throw new Exception("Warning! class "+parent.className+" probably has no relation defined for class "+ _class+ "  or you did something terribly wrong..." + JSON.encode(parent.relations[_class]));
 		}
 	},
 
@@ -112,7 +112,7 @@ CRUD.QueryBuilder.prototype = {
 		var where = this.wheres.length > 0 ? ' WHERE '+ this.wheres.join(" \n AND \n\t") : '';
 		var order = (this.orders.length > 0) ? ' ORDER BY '+ this.orders.join(", ") : '' ;
 		var group = (this.groups.length > 0) ? ' GROUP BY '+ this.groups.join(", ") : '' ;
-		var query = 'SELECT '+this.fields.join(", \n\t")+"\n FROM \n\t"+this.origin.dbSetup.table+"\n "+this.joins.join("\n ")+where+' '+group+' '+order+' '+this.limit;
+		var query = 'SELECT '+this.fields.join(", \n\t")+"\n FROM \n\t"+CRUD.EntityManager.entities[this.origin.className].table+"\n "+this.joins.join("\n ")+where+' '+group+' '+order+' '+this.limit;
 		return(query);
 	},
 
@@ -120,7 +120,7 @@ CRUD.QueryBuilder.prototype = {
 		var where = (this.wheres.length > 0) ? ' WHERE '+this.wheres.join(" \n AND \n\t") : '';
 		var order = '';
 		var group = (this.groups.length> 0) ? ' GROUP BY '+this.groups.join(", ") : '' ;
-		var query = "SELECT count(*) FROM \n\t"+this.origin.dbSetup.table+"\n "+this.joins.join("\n ")+where+' '+group+' '+order+' ';
+		var query = "SELECT count(*) FROM \n\t"+CRUD.EntityManager.entities[this.origin.className].table+"\n "+this.joins.join("\n ")+where+' '+group+' '+order+' ';
 		return(query);
 	}
 }

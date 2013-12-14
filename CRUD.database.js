@@ -36,9 +36,6 @@ Database = function(name, options) {
 			that.db.transaction(function(transaction){
 				console.log("execing sql: ", sql);
 				transaction.executeSql(sql, valueBindings, function(transaction, rs){
-					try {
-						if(rs && 'insertId' in rs)  that.lastInsertRowId = rs.insertId;
-					} catch (E) {};
 					resolve(new Database.ResultSet(rs));
 				}, function(transaction, error) { 
 					fail(error, transaction) 
