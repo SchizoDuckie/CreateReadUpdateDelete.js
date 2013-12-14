@@ -14,7 +14,6 @@ If the object you're referring to already exists in the database, it will be upd
 
 Want to find related data? Instantiate an object, call Find() on it with the filters you need. the Promise that is returned will fire when your data has been fetched.
 
-If you're doing data storage right, you don't have to write *any* SQL, at all.
 
 Example, connecting to sqlite
 =============================
@@ -24,7 +23,20 @@ First, define an adapter. In this case we use an SQLiteAdapter to the database '
 ```javascript
 CRUD.setAdapter(new CRUD.SQLiteAdapter('myDbName'))
 ```
-This will return a new Promise that 
+This will return a new Promise that fires when the adapter is connected.
+
+Don't want to read from SQLite but from a remote service? Simply instantiate a CRUD.XHRAdapter that points to an endpoint
+
+```javascript
+CRUD.setAdapter(new CRUD.XHRAdapter('http://www.myurl.com/jsonEndpoint/'))
+```
+
+Writing your own adapter is easy, just implement these methods:
+
+```javascript
+//todo
+```
+
 
 Then, define some entity objects using CRUD.define
 

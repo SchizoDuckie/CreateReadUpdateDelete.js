@@ -13,14 +13,12 @@
 		adapter: 'dbAdapter',
 		fixtures: [
 			{ 
-			  'ID_Presentation': 1,
 			  name: 'test1',
 			  template: 'test',
 			  forceUpdate: 1,
 			  lastUpdated: new Date()
 			},
 			{ 
-			  'ID_Presentation': 2,
 			  name: 'test2',
 			  template: 'test2',
 			  forceUpdate: 0,

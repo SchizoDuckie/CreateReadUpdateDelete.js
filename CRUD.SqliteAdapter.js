@@ -26,7 +26,6 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 			PromiseQueue.push(new Promise(function(resolve, fail) {
 				var entity = CRUD.EntityManager.entities[i];
 			
-				console.log("Myent!", entity);
 				that.db.execute("SELECT count(*) as existing FROM sqlite_master WHERE type='table' AND name= ?", [entity.table]).then(function(resultSet) {
 
 					var res = resultSet.next().row;
@@ -79,11 +78,10 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 		
 		console.log("Executing query via sqliteadapter: ", options, query);
 		return new Promise(function(resolve, fail) {
-			that.db.execute(query).then(function(resultset) {
+			that.db.execute(query.query, query.parameters).then(function(resultset) {
 				var row, output = [];
-				while (row = resultSet.next()) {
+				while (row = resultset.next()) {
 					var obj = new window[what]().importValues(row.row);
-					obj.dbSetup.adapter = this;
 					output.push(obj);
 				}
 				resolve(output);
@@ -99,39 +97,41 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 			if( what.changedValues.hasOwnProperty(i)) {
 				names.push(i);
 				values.push('?');
-				valmap.push(changes[i]);
-				valCount++;
+				valmap.push(what.changedValues[i]);
 			}
 		}
+		var defaults = CRUD.EntityManager.entities[what.className].defaults || {};
+		for(var i in defaults) {
+			names.push(i);
+			values.push('?');
+			valmap.push(defaults[i]);
+		}
 
-		if(what.getID() === false) { // new object : insert.
+		if(what.getID() === false || undefined ==  what.getID()) { // new object : insert.
 			// insert
-			query.push('INSERT INTO ',what.dbSetup.table,'(', names.join(","),') VALUES (', values.join(","), ');');
+			query.push('INSERT INTO ',CRUD.EntityManager.entities[what.className].table,'(', names.join(","),') VALUES (', values.join(","), ');');
 			
 			console.log(query.join(' '), valmap);
 			return new Promise(function(resolve, fail) { 
 				that.db.execute(query.join(' '), valmap).then(function(resultSet) {
 					resultSet.Action = 'inserted';
-					resultSet.Result = Objectmerge(what.databaseValues, what.changedValues);
-					resultSet.Result[what.dbSetup.primary] = resultSet.rs.insertId;
 					resolve(resultSet);
 				}, function(err, tx) {
 					fail(err, tx);
 				});
 			});
 		} else {  // existing : build an update query.
-			query.push('update',what.dbSetup.table,'set');
+			query.push('UPDATE',CRUD.EntityManager.entities[what.className].table,'SET');
 			for(i=0; i< names.length; i++) {
 				query.push(names[i]+ ' = ?');
 				if(i < names.length -1) query.push(',');
 			}
 			valmap.push(what.getID());
-			query.push('where',what.dbSetup.primary, '= ?');
+			query.push('WHERE',CRUD.EntityManager.getPrimary(what.className), '= ?');
 
 			return new Promise(function(resolve, fail) {
 				that.db.execute(query.join(' '), valmap).then(function(resultSet) {
 					resultSet.Action = 'updated';
-					resultSet.Result = Objectmerge(what.databaseValues, what.changedValues);
 					resolve(resultSet);
 				}, fail);
 			});
@@ -139,9 +139,9 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 	}
 	this.Delete = function(what, events) {
 		var query = [], values = [], valmap = [], names=[], that=this;
-		if(what.dbSetup.ID !== false) {
+		if(what.getID() !== false) {
 			// insert
-			query.push('delete from',what.dbSetup.table,'where',what.dbSetup.primary,'= ?');
+			query.push('delete from',CRUD.EntityManager.entities[what.clasName].table,'where',CRUD.EntityManager.getPrimary(what.className),'= ?');
 			return new Promise(function(resolve, fail) {
 				this.db.execute(query.join(' '), [what.getID()]).then(function(resultSet) {
 					resultSet.Action = 'deleted';
