@@ -137,7 +137,8 @@ CRUD.setAdapter(new CRUD.SQLiteAdapter('crudjsdemo'+new Date().getTime())).then(
     <!--/.fluid-container-->
     <script src="../promise-3.2.0.js"></script>
 	<script src='../CRUD.js'></script>
-	<script src='../CRUD.SqliteAdapter.js'></script>
+	<script src='../CRUD.IndexedDBAdapter.js'></script>
+	
 	<script src='slide.js'></script>
 	<script src='presentation.js'></script>
 	<script src='presentationslide.js'></script>
@@ -145,7 +146,7 @@ CRUD.setAdapter(new CRUD.SQLiteAdapter('crudjsdemo'+new Date().getTime())).then(
 	<script>
 
 	window.onload = function() {
-		CRUD.setAdapter(new CRUD.SQLiteAdapter('crudjsdemo'+new Date().getTime())).then(function() {
+		CRUD.setAdapter(new CRUD.IndexedDBAdapter('crudjsdemo'+new Date().getTime())).then(function() {
 
 			CRUD.Find(Presentation, { ID: 1 }).then(function(result) {
 				for (var i=0; i< result.length; i++) {

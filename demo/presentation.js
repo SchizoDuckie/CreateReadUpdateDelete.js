@@ -36,17 +36,16 @@
 	}, {
 
 	display: function() {
-		//console.log("Displaying presentation "+this.get('name'));
-		//console.log(this.databaseValues);
-		var d = document.createElement('div');
-		d.innerHTML = 'Presentation:'+ this.get('name');
-		d.id = 'pres_'+this.getID();
-		document.body.appendChild(d);
+		
+		document.getElementById('presentations').innerHTML += this.get('name')+'<br>';
+
+		document.getElementById('presentationTitle'+this.getID()).innerHTML = this.get('name');
 		// find slides for this presentation, it's a many:many relation.
 		this.Find(Slide, {}).then(function(slides) {
+			document.getElementById('presentation'+this.getID()).innerHTML = 'Content loaded at '+new  Date().toJSON()+'!<br>';
 			for(var i = 0; i< slides.length; i++) {
-				slides[i].display(d.id);
+				slides[i].display('presentation'+this.getID());
 			}
-		});
+		}.bind(this));
 	}
 });

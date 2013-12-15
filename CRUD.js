@@ -4,10 +4,10 @@ if (!CRUD)  var CRUD = {
 	RELATION_FOREIGN : 2,
 	RELATION_MANY : 3,
 	RELATION_CUSTOM : 'banana',
-	DEBUG: false,
+	DEBUG: true,
 	log: function() {
 		if(CRUD.DEBUG) {
-			console.log('[CRUD.js]',arguments);
+			console.log.apply(console, arguments);
 		}
 	}
 };
@@ -26,6 +26,7 @@ if (!CRUD)  var CRUD = {
 CRUD.EntityManager = (new function() {
 
 	this.entities = {};
+	this.constructors = {};
 	this.cache = {};
 	this.connectionAdapter = false;
 
@@ -41,13 +42,14 @@ CRUD.EntityManager = (new function() {
 		orderDirection: false,
 		relations: {},
 		connectors: {},
-		createStatement: false
+		createStatement: false,
+		keys: []
 	};
 
 	/**
 	 * Register a new entity into the entity manager, which will manage it's properties, relations, and data.
 	 */
-	this.registerEntity = function(className, dbSetup) {
+	this.registerEntity = function(className, dbSetup, methods) {
 		CRUD.log("Register entity", dbSetup, className);
 		if(!(className in this.entities)) {
 			this.entities[className] = Object.clone(this.defaultSetup);
@@ -55,6 +57,9 @@ CRUD.EntityManager = (new function() {
 		for(var prop in dbSetup) {
 			this.entities[className][prop] = dbSetup[prop];
 		}
+		return this.constructors[className] = function(ID) {
+		   return ID ?  new CRUD.Entity(className, methods).primaryKeyInit(ID) : new CRUD.Entity(className, methods);
+	    };
 	}
 
 	this.getPrimary = function(className) {
@@ -101,21 +106,13 @@ CRUD.EntityManager = (new function() {
 }());
 
 CRUD.define = function(properties, methods) {
-	CRUD.EntityManager.registerEntity(properties.className, properties);
-	var props = properties;
-    return function(ID) {
-       var el = new CRUD.Entity(props.className, methods);
-	   return ID ? el.primaryKeyInit(ID) : el;
-    }
+	return CRUD.EntityManager.registerEntity(properties.className, properties, methods);
+	
 };
 	
 CRUD.setAdapter = function(adapter) {
 	return CRUD.EntityManager.setAdapter(adapter);
 }
-
-CRUD.getAdapter = function() {
-	return  CRUD.EntityManager.getAdapter();
-};
 
 
 /**
@@ -161,7 +158,7 @@ CRUD.Find = function(obj, filters, options) {
 		extras.limit = (options.start || 0) + "," + options.limit;
 	}
 	var justthese = options.justthese || [];
-	return CRUD.getAdapter().Find(type, filters, extras, justthese, options, filters);
+	return CRUD.EntityManager.getAdapter().Find(type, filters, extras, justthese, options, filters);
 };
 
 /** 
@@ -182,7 +179,7 @@ CRUD.FindOne = function(obj, filters, options) {
 
 CRUD.fromCache = function(obj, values) {
 	try {
-		obj = (typeof obj == 'function') ? new obj() : new window[obj]();
+		obj = (typeof obj == 'function') ? new obj() : new CRUD.EntityManager.constructors[obj]();
 		type = (obj && obj.toString() == 'CRUD') ? obj.getType() : false;
 	} catch (E) {
 		CRUD.log("CRUD.fromCache cannot create for non-CRUD objects like "+obj+"! \n"+E);
@@ -227,12 +224,6 @@ CRUD.Entity.prototype = {
 	
 	getID : function () {
 		return this.get(CRUD.EntityManager.getPrimary(this.getType()));
-	},
-
-	getAdapter : function () {
-		var adapter = typeof this.dbSetup.adapter == "string" ? window[this.dbSetup.adapter] : this.dbSetup.adapter;
-		if(!adapter) throw("[CRUD] Exception in getAdapter, cannot find an instance of "+this.dbSetup.adapter+" for entity "+this.dbSetup.className+ "- "+ window[this.dbSetup.adapter]);
-		return adapter;
 	},
 
 	/** 
@@ -331,7 +322,6 @@ CRUD.Entity.prototype = {
 			if(!forceInsert && !that._isDirty) return resolve();
 
 			if(that.get(CRUD.EntityManager.getPrimary(that.className)) === false || forceInsert) {
-				CRUD.log("primary key is not defined, adding defaults.");
 				var defaults = CRUD.EntityManager.entities[that.className].defaultValues;
 				if(Object.keys(defaults).length > 0) {
 					for(var i in defaults) {
@@ -342,7 +332,7 @@ CRUD.Entity.prototype = {
 				}
 			}
 
-			CRUD.getAdapter().Persist(that, forceInsert).then(function(result) {
+			CRUD.EntityManager.getAdapter().Persist(that, forceInsert).then(function(result) {
 					CRUD.log(that.getType()+" has been persisted. Result: " + result.Action + ". New Values: "+JSON.stringify(that.changedValues));
 					that._isDirty = false;
 					for(var i in that.changedValues) {
@@ -360,8 +350,6 @@ CRUD.Entity.prototype = {
 
 		});
 	},
-
-
 
 
 	/**
