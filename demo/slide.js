@@ -25,7 +25,11 @@
 		],
 		createStatement: 'CREATE TABLE slides ( ID_Slide INTEGER PRIMARY KEY NOT NULL,  Title varchar(250) NOT NULL,  SubTitle varchar(1024) NULL,  Content mediumtext NULL, lastUpdated timestamp NULL)',
 	}, {
-	display: function() {
-		document.body.innerHTML += "<br>- > "+this.get('Title');
+	display: function(target) {
+
+		document.getElementById('slides').innerHTML += this.get('ID_Slide')+ " - "+this.get('Title')+'<br>';
+
+		document.getElementById(target).innerHTML += this.get('ID_Slide')+ " - "+this.get('Title')+'<br>';
+	
 	}
 });
