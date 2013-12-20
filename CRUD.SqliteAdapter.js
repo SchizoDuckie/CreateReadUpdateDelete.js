@@ -42,7 +42,7 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 						}	
 					} else {
 						resolve();
-					}ø
+					}
 				}, function(err) {
 					CRUD.log("Failed!", err, entity);;
 					fail();
