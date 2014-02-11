@@ -3,7 +3,7 @@ if (!CRUD)  var CRUD = {
 	RELATION_SINGLE : 1,
 	RELATION_FOREIGN : 2,
 	RELATION_MANY : 3,
-	RELATION_CUSTOM : 'banana',
+	RELATION_CUSTOM : 4,
 	DEBUG: true,
 	log: function() {
 		if(CRUD.DEBUG) {
@@ -215,6 +215,10 @@ CRUD.Entity = function(className, methods) {
 
 		for(var j in methods) {
 			this[j] = methods[j];
+		}
+
+		this.asObject = function() {
+			return this.values;
 		}
 		return this;
 }
