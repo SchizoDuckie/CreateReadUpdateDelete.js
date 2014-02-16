@@ -29,7 +29,6 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 			PromiseQueue.push(new Promise(function(resolve, fail) {
 				var entity = CRUD.EntityManager.entities[i];
 				that.db.execute("SELECT count(*) as existing FROM sqlite_master WHERE type='table' AND name= ?", [entity.table]).then(function(resultSet) {
-
 					var res = resultSet.next().row;
 					if(res.existing === 0) {
 						CRUD.log(entity, ": Table does not exist.");
@@ -107,7 +106,7 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 		var query = [], valCount =0, values = [], valmap = [], names =[], that=this;
 		
 		for(var i in what.changedValues) {
-			if( what.changedValues.hasOwnProperty(i) && what.hasField(i)) {
+			if( what.changedValues.hasOwnProperty(i) && what.hasField(i) && undefined !== what.changedValues[i]) {
 				names.push(i);
 				values.push('?');
 				valmap.push(what.changedValues[i]);
@@ -123,11 +122,11 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 		if(what.getID() === false || undefined ==  what.getID() || forceInsert) { // new object : insert.
 			// insert
 			query.push('INSERT INTO ',CRUD.EntityManager.entities[what.className].table,'(', names.join(","),') VALUES (', values.join(","), ');');
-			
 			CRUD.log(query.join(' '), valmap);
 			return new Promise(function(resolve, fail) { 
 				that.db.execute(query.join(' '), valmap).then(function(resultSet) {
 					resultSet.Action = 'inserted';
+					resultSet.ID = resultSet.rs.insertId;
 					resolve(resultSet);
 				}, function(err, tx) {
 					err.query = query.join(' ');
@@ -297,7 +296,7 @@ CRUD.Database.SQLBuilder.prototype = {
 				this.buildJoins(_class,what);
 			}
 		}
-		else if(typeof what == "Number") { // it's a custom sql where clause, just field=>value). unsafe because parameters are unbound, but very for custom queries.
+		else if(!isNaN(parseInt(what, 10))) { // it's a custom sql where clause, just field=>value). unsafe because parameters are unbound, but very for custom queries.
 			this.wheres.push(value);
 		}
 		else { // standard field=>value whereclause. Prefix with tablename for easy joins and push a value to the .
@@ -344,7 +343,7 @@ CRUD.Database.SQLBuilder.prototype = {
 					this.addJoin(parent, entity, parent.primary);
 				}
 				else if(parent.fields.indexOf(entity.primary) > -1) {
-					this.addJoin(parent,entity);
+					this.addJoin(parent, entity, entity.primary);
 				}
 			break;
 			case CRUD.RELATION_MANY: // it's a many:many relation. Join the connector table and then the related one.

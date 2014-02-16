@@ -4,7 +4,7 @@ if (!CRUD)  var CRUD = {
 	RELATION_FOREIGN : 2,
 	RELATION_MANY : 3,
 	RELATION_CUSTOM : 4,
-	DEBUG: true,
+	DEBUG: false,
 	log: function() {
 		if(CRUD.DEBUG) {
 			console.log.apply(console, arguments);
@@ -310,7 +310,7 @@ CRUD.Entity.prototype = {
 			return;
 		}
 		if(this.hasField(field)) {
-			if(this.get(field) != value) {
+			if(!this.get('field') || this.get(field) != value) {
 				this.changedValues[field] = value;
 				this._isDirty = true;
 			}
@@ -342,6 +342,9 @@ CRUD.Entity.prototype = {
 
 			return CRUD.EntityManager.getAdapter().Persist(that, forceInsert).then(function(result) {
 					CRUD.log(that.getType()+" has been persisted. Result: " + result.Action + ". New Values: "+JSON.stringify(that.changedValues));
+					if(result.Action == "inserted") { 
+						that.changedValues[CRUD.EntityManager.getPrimary(that.className)] = result.ID;
+					}
 					that._isDirty = false;
 					for(var i in that.changedValues) {
 						that.values[i] = that.changedValues[i];
