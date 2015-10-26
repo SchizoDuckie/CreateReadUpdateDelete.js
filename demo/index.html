@@ -1,0 +1,106 @@
+<html>
+<head>
+<title>	CreateReadUpdateDelete.js Demos </title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+<script src='../CRUD.js'></script>
+<script src='../CRUD.SqliteAdapter.js'></script>
+
+<script src='Episode.js'></script>
+<script src='Season.js'></script>
+<script src='Serie.js'></script>
+</head>
+<body>
+<div class="container">
+<div class="row">
+	<div class="col col-md-12">
+		<div class="jumbotron">
+		<h1>
+			CreateReadUpdateDelete.js
+		</h1>
+		<p>a tiny WebSQL ORM for Javascript that offers everything you need</p>
+
+		<ul>
+		<li>Simple access to WebSQL database rows as if they're plain javascript objects</li>
+		<li>A simplified query language, but the freedom to execute plain SQL</li>
+		<li>Support for indexes, fixtures and migrations</li>
+		<li>Completely promise-based. (Use promise.js for browsers that don't have a native Promise object)
+		<li>Built-in caching layer
+		</ul>
+		</div>
+
+	</div>
+</div>
+
+<div class="row">
+<div class="col col-md-10">
+	<h3>Debug info for this page</h3>
+	<pre id="debugInfo"></pre>
+
+</div>
+<div class="col col-md-2">
+        <button type="button" id='wipe' class="btn btn-warning">Delete all tables and restart</button>
+<!-- <p>
+        <button type="button" class="btn btn-default">Default</button>
+        <button type="button" class="btn btn-primary">Primary</button>
+        <button type="button" class="btn btn-success">Success</button>
+        <button type="button" class="btn btn-info">Info</button>
+        <button type="button" class="btn btn-danger">Danger</button>
+        <button type="button" class="btn btn-link">Link</button>
+      </p>-->
+      </div>
+</div>
+
+<script type="text/javascript">
+
+window.onload = function() {
+
+	// enable CRUD Debug mode so that all queries and debug info is appended to the debug info element
+	CRUD.DEBUG = true;
+	
+	function $(id) {
+		return  document.getElementById(id);
+	}
+	
+	function $$(selector) {
+		return document.querySelectorAll(selector);
+	}
+
+	var logElement = $('debugInfo');
+
+	CRUD.log = function() {
+        	hasObjects = false;
+        	var str = [];
+        	for(var i=0; i< arguments.length; i++) {
+        		if(typeof(arguments[i]) !== "string") {
+        			str.push("\n");
+        			str.push(JSON.stringify(arguments[i], null, ' '));
+        		} else {
+        			str.push(arguments[i]);
+        		}
+        	}
+        	logElement.innerHTML += new Date().getTime()+" CRUD.Log: "+str.join(' ')+"\n";
+        
+    };
+
+	// Initialize the database with a name and an estimated size
+	CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete', {
+	    estimatedSize: 25 * 1024 * 1024
+	}));
+
+	$('wipe').onclick = function() {
+		Promise.all([
+			CRUD.executeQuery('DROP TABLE Series'),
+			CRUD.executeQuery('DROP TABLE Episodes'),
+			CRUD.executeQuery('DROP TABLE Seasons')
+		]).then(function() {
+			window.location.reload();
+		});
+	};
+
+};
+
+</script>
+</div>
+
+</body>
+</html>
