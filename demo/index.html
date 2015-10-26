@@ -1,7 +1,13 @@
+<!doctype html>
 <html>
 <head>
 <title>	CreateReadUpdateDelete.js Demos </title>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+<script src="prism.js"></script>
+<link rel="stylesheet" href="prism.css" />
+
+
+<!-- demo scripts -->
 <script src='../CRUD.js'></script>
 <script src='../CRUD.SqliteAdapter.js'></script>
 
@@ -17,7 +23,7 @@
 		<h1>
 			CreateReadUpdateDelete.js
 		</h1>
-		<p>a tiny WebSQL ORM for Javascript that offers everything you need</p>
+		<p>A tiny Promise-Based WebSQL ORM for Javascript that offers everything you need for 99% of the use cases</p>
 
 		<ul>
 		<li>Simple access to WebSQL database rows as if they're plain javascript objects</li>
@@ -26,15 +32,80 @@
 		<li>Completely promise-based. (Use promise.js for browsers that don't have a native Promise object)
 		<li>Built-in caching layer
 		</ul>
-		</div>
+		
+				<h3>Create</h3>
 
+				<pre><code class="language-js">
+var serie = new Serie();
+serie.name = 'Arrow';
+serie.TVDB_ID = '257655';
+serie.actors = [
+	"Stephen Amell (Oliver Queen / Arrow)",
+	"Katie Cassidy (Laurel Lance)",
+	"Paul Blackthorne (Detective Quentin Lance)",
+	"David Ramsey (John Diggle)",
+	"Willa Holland (Thea Queen)",
+	"Emily Bett Rickards (Felicity Smoak)",
+	"John Barrowman (Malcolm Merlyn)"
+];
+
+serie.Persist().then(function(result) {
+	console.log("Serie persisted! ", result);
+});
+
+				</code></pre>
+
+				<h3>Read</h3>
+<pre><code class="language-js">
+CRUD.Find(Serie, { name: 'Arrow' }).then(function(series) {
+	console.log("Found results: ", series);
+});
+</code></pre>
+
+			
+				<h3>Update</h3>
+				<pre><code class="language-js">
+CRUD.FindOne(Serie, {name: 'Arrow'}).then(function(arrow) {
+	arrow.overview = [
+		"Oliver Queen and his father are lost at sea when their luxury yacht sinks.",
+		"His father doesn't survive. Oliver survives on an uncharted island for five years learning to fight,",
+		"but also learning about his father's corruption and unscrupulous business dealings.",
+		"He returns to civilization a changed man, determined to put things right.",
+		"He disguises himself with the hood of one of his mysterious island mentors,",
+		"arms himself with a bow and sets about hunting down the men and women who have corrupted his city."
+	].join(' ');
+	return arrow.Persist();
+}).then(function(result) {
+	console.log("Arrow update persisted!", result);
+})</code></pre>
+
+			
+
+				<h3>Delete</h3>
+<pre><code class="language-js">
+CRUD.FindOne(Serie, {name: 'Arrow'}).then(function(arrow) {
+	return arrow.Delete();
+}).then(function(result) {
+	console.log("Arrow deleted!");
+});
+</code></pre>
+				<h3>Execute plain SQL</h3>
+<pre><code class="language-js">
+CRUD.ExecuteQuery("DELETE FROM Series where 1");
+</code></pre>
+
+				<h3>Execute custom SQL and 
+
+
+			</div>
+		</div>
 	</div>
 </div>
 
 <div class="row">
 <div class="col col-md-10">
 	<h3>Debug info for this page</h3>
-	<pre id="debugInfo"></pre>
+	<pre><code id="debugInfo"></code></pre>
 
 </div>
 <div class="col col-md-2">
