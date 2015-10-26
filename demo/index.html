@@ -32,6 +32,63 @@
 		<li>Completely promise-based. (Use promise.js for browsers that don't have a native Promise object)
 		<li>Built-in caching layer
 		</ul>
+
+		<h3>A simple entity</h3>
+
+		<pre><code class="language-js">
+/**
+ * Create a nice Native function so that we can do console.log and see a Serie object
+ */
+function Serie() {
+    CRUD.Entity.call(this);
+}
+
+/**
+ * Allow CRUD.js to register itself and the properties defined on each named function.
+ */
+
+CRUD.define(Serie, {
+    className: 'Serie',
+    table: 'Series',
+    primary: 'ID_Serie',
+    fields: ['ID_Serie', 'name', 'banner', 'overview', 'TVDB_ID', 'actors'],
+    autoSerialize: ['actors'],
+    relations: {
+        'Episode': CRUD.RELATION_FOREIGN,
+        'Season': CRUD.RELATION_FOREIGN
+    },
+    indexes: [
+        'fanart',
+    ],
+    createStatement: 'CREATE TABLE Series (ID_Serie INTEGER PRIMARY KEY NOT NULL, name VARCHAR(250) DEFAULT(NULL), banner VARCHAR(1024) DEFAULT(NULL), overview TEXT DEFAULT(NULL), TVDB_ID INTEGER UNIQUE NOT NULL, actors VARCHAR(1024) DEFAULT(NULL))',
+    adapter: 'dbAdapter',
+    defaultValues: {},
+    fixtures: [],
+    migrations: {}
+}, {
+    getEpisodes: function() {
+        return Episode.findBySerie({
+            ID_Serie: this.getID()
+        }, {
+            limit: 100000
+        });
+    },
+
+    getSeasons: function() {
+        return Season.findByID_Serie(this.getID());
+    },
+
+    getLastEpisode: function() {
+        var filter = ['(Episodes.firstaired > 0 and Episodes.firstAired < ' + new Date().getTime() + ')'];
+        filter.ID_Serie = this.getID();
+        return CRUD.FindOne('Episode', filter, {
+            orderBy: 'seasonnumber desc, episodenumber desc, firstaired desc'
+        }).then(function(result) {
+            return result;
+        });
+    }
+});
+</code></pre>
 		
 				<h3>Create</h3>
 
@@ -52,8 +109,7 @@ serie.actors = [
 serie.Persist().then(function(result) {
 	console.log("Serie persisted! ", result);
 });
-
-				</code></pre>
+</code></pre>
 
 				<h3>Read</h3>
 <pre><code class="language-js">
@@ -64,7 +120,7 @@ CRUD.Find(Serie, { name: 'Arrow' }).then(function(series) {
 
 			
 				<h3>Update</h3>
-				<pre><code class="language-js">
+<pre><code class="language-js">
 CRUD.FindOne(Serie, {name: 'Arrow'}).then(function(arrow) {
 	arrow.overview = [
 		"Oliver Queen and his father are lost at sea when their luxury yacht sinks.",
