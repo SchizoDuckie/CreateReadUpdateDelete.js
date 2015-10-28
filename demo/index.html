@@ -8,8 +8,8 @@
 
 
 <!-- demo scripts -->
-<script src='../CRUD.js'></script>
-<script src='../CRUD.SqliteAdapter.js'></script>
+<script src='../src/CRUD.js'></script>
+<script src='../src/CRUD.SqliteAdapter.js'></script>
 
 <script src='Episode.js'></script>
 <script src='Season.js'></script>
@@ -29,10 +29,9 @@
 		<li>Simple access to WebSQL database rows as if they're plain javascript objects</li>
 		<li>A simplified query language, but the freedom to execute plain SQL</li>
 		<li>Support for indexes, fixtures and migrations</li>
-		<li>Completely promise-based. (Use promise.js for browsers that don't have a native Promise object)
-		<li>Built-in caching layer
-		<li>Supports 1:1, 1:many, many:1 and many:many relations
-		<li>
+		<li>Completely promise-based. (Use promise.js for browsers that don't have a native Promise object)</li>
+		<li>Built-in caching / entity manager layer makes sure you'll get a handle to the same entity when it's fetched again</li>
+		<li>Supports 1:1, 1:many, many:1 and many:many relations</li>
 		</ul>
 
 		<h3>A simple entity</h3>

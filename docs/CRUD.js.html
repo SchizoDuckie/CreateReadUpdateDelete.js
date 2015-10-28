@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>CreateReadUpdateDelete.js</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/3.0.3/normalize.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" type="text/css">
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="css/cayman.css">
+    <link rel="stylesheet" href="css/prism.css">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">CreateReadUpdateDelete.js</h1>
+      <h2 class="project-tagline"></h2>
+    </section>
+    <section data-spy="scroll" data-target=".scrollspy" class="main-content">
+      <div class="row">
+        <div class="col-md-3 col-xs-3 bs-docs-sidebar">
+          <ul id="sidebar" class="nav nav-stacked fixed">
+            <li><a href="index.html">Main</a></li>
+            <li><a href="CRUD.SqliteAdapter.js.html">CRUD.SqliteAdapter.js</a></li>
+            <li class="active"><a href="CRUD.js.html">CRUD.js
+                <ul class="nav nav-stacked">
+                  <li><a href="#CRUD"><i class="alert alert-success"></i><span>CRUD</span></a>
+                  </li>
+                  <li><a href="#EntityManager"><i class="alert alert-info"></i><span>EntityManager</span></a>
+                  </li>
+                  <li><a href="#registerEntity"><i class="alert alert-info"></i><span>registerEntity</span></a>
+                  </li>
+                  <li><a href="#setAdapter"><i class="alert alert-info"></i><span>setAdapter</span></a>
+                  </li>
+                  <li><a href="#Find"><i class="alert alert-info"></i><span>Find</span></a>
+                  </li>
+                  <li><a href="#FindOne"><i class="alert alert-info"></i><span>FindOne</span></a>
+                  </li>
+                  <li><a href="#ConnectionAdapter"><i class="alert alert-info"></i><span>ConnectionAdapter</span></a>
+                  </li>
+                  <li><a href="#Find"><i class="alert alert-info"></i><span>Find</span></a>
+                  </li>
+                  <li><a href="#getValues"><i class="alert alert-info"></i><span>getValues</span></a>
+                  </li>
+                  <li><a href="#get"><i class="alert alert-info"></i><span>get</span></a>
+                  </li>
+                  <li><a href="#set"><i class="alert alert-info"></i><span>set</span></a>
+                  </li>
+                  <li><a href="#Persist"><i class="alert alert-info"></i><span>Persist</span></a>
+                  </li>
+                  <li><a href="#Delete"><i class="alert alert-info"></i><span>Delete</span></a>
+                  </li>
+                  <li><a href="#Connect"><i class="alert alert-info"></i><span>Connect</span></a>
+                  </li>
+                </ul></a></li>
+          </ul>
+        </div>
+        <div class="col-md-9">
+          <section id="CRUD">
+            <h1>CRUD</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-success radius ctx-type">declaration</div><span>&nbsp;</span><span>CRUD</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>CreateReadUpdateDelete.js</p><p>Promise-Based WebSQL ORM by SchizoDuckie</p><p><a href="http://schizoduckie.github.io/CreateReadUpdateDelete.js/">http://schizoduckie.github.io/CreateReadUpdateDelete.js/</a></p></div>
+          <pre><code class="language-javascript">var CRUD = {
+    RELATION_SINGLE: 1,
+    RELATION_FOREIGN: 2,
+    RELATION_MANY: 3,
+    RELATION_CUSTOM: 4,
+    DEBUG: false,
+    stats: {
+        writesQueued: 0,
+        writesExecuted: 0
+    },
+    log: function() {
+        if (CRUD.DEBUG) {
+            console.log.apply(console, arguments);
+        }
+    }
+};</code></pre>
+          <section id="EntityManager">
+            <h1>EntityManager</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>CRUD.EntityManager()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>The main object proxy that returns either a fresh entity object or a promise that loads data, when you pass the primary key value to search for.</p><p>The main idea behind this is that you can do:<br />var Project = CRUD.define(dbSetup, methods)<br />var p = new Project(); // now you can use get/set on p, after which you can use p.Persist().then(function() {} );<br />new Project(20).then(function(project) { project with id 20 has been fetched from adapter, use it here. })</p></div>
+          <pre><code class="language-javascript">CRUD.EntityManager = function() {
+    this.entities = {};
+    this.constructors = {};
+    this.cache = {};
+    this.connectionAdapter = false;
+    this.defaultSetup = {
+        className: 'CRUD.Entity',
+        ID: false,
+        table: false,
+        primary: false,
+        fields: [],
+        indexes: [],
+        autoSerialize: [],
+        defaultValues: {},
+        adapter: false,
+        orderProperty: false,
+        orderDirection: false,
+        relations: {},
+        connectors: {},
+        createStatement: false,
+        keys: []
+    };
+    var ucFirst = function(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    };</code></pre>
+          <section id="registerEntity">
+            <h1>registerEntity</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>this.registerEntity()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>Register a new entity into the entity manager, which will manage it&#39;s properties, relations, and data.</p></div>
+          <pre><code class="language-javascript">this.registerEntity = function(namedFunction, dbSetup, methods) {
+    namedFunction.prototype = Object.create(CRUD.Entity.prototype);
+    namedFunction.prototype.constructor = CRUD.Entity;
+    dbSetup.fields.map(function(field) {
+        Object.defineProperty(namedFunction.prototype, field, {
+            get: field in methods &amp;&amp; 'get' in methods[field] ? methods[field].get : function() {
+                return this.get(field);
+            },
+            set: field in methods &amp;&amp; 'set' in methods[field] ? methods[field].set : function(newValue) {
+                this.set(field, newValue);
+            },
+            enumerable: false,
+            configurable: true
+        });
+    }, namedFunction);
+    for (var j in methods) {
+        if (dbSetup.fields.indexOf(j) == -1) {
+            namedFunction.prototype[j] = methods[j];
+        }
+    }
+    var className = dbSetup.className;
+    Object.defineProperty(namedFunction.prototype, '__className__', {
+        get: function() {
+            return className;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    CRUD.log('Register entity', namedFunction, dbSetup, className);
+    if (!(className in this.entities)) {
+        this.entities[className] = JSON.parse(JSON.stringify(this.defaultSetup));
+    }
+    for (var prop in dbSetup) {
+        this.entities[className][prop] = dbSetup[prop];
+    }
+    this.constructors[className] = function(ID) {
+        var instance = new namedFunction();
+        if (ID) {
+            instance.primaryKeyInit(ID);
+        }
+        return instance;
+    };
+    namedFunction.findByID = function(id) {
+        var filters = {};
+        filters[dbSetup.primary] = id;
+        return CRUD.FindOne(className, filters);
+    };
+    namedFunction.Find = function(filters, options) {
+        return CRUD.Find(className, filters, options);
+    };
+    namedFunction.FindOne = function(filters, options) {
+        return CRUD.FindOne(className, filters, options);
+    };
+    dbSetup.fields.map(function(field) {
+        namedFunction['findOneBy' + ucFirst(field)] = function(value, options) {
+            var filter = {};
+            filter[field] = value;
+            return CRUD.FindOne(className, filter, options || {});
+        };
+        namedFunction['findBy' + ucFirst(field)] = function(value, options) {
+            var filter = {};
+            filter[field] = value;
+            return CRUD.Find(className, filter, options || {});
+        };
+    });
+    Object.keys(dbSetup.relations).map(function(name) {
+        CRUD.log('creating relation search for ', name, ' to ', className);
+        namedFunction['findBy' + name] = function(filter) {
+            var filters = {};
+            filters[name] = filter;
+            return CRUD.Find(className, filters);
+        };
+        namedFunction['findOneBy' + name] = function(filter) {
+            var filters = {};
+            filters[name] = filter;
+            return CRUD.FindOne(className, filters);
+        };
+    });
+    return namedFunction;
+};
+this.getPrimary = function(className) {
+    if (!className || !this.entities[className]) {
+        throw 'Invalid className passed to CRUD.EntityManager.getPrimary : ' + className;
+    }
+    return this.entities[className].primary;
+};
+this.getDefaultValues = function(className) {
+    if (!className || !this.entities[className]) {
+        throw 'Invalid className passed to CRUD.EntityManager.getDefaultValues : ' + className;
+    }
+    return this.entities[className].defaultValues;
+};</code></pre>
+          <section id="setAdapter">
+            <h1>setAdapter</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>this.setAdapter()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>Set and initialize the connection adapter.</p></div>
+          <pre><code class="language-javascript">this.setAdapter = function(adapter) {
+    this.connectionAdapter = adapter;
+    return this.connectionAdapter.Init();
+};
+this.getAdapter = function() {
+    return this.connectionAdapter;
+};
+this.getFields = function(className) {
+    return this.entities[className].fields;
+};
+this.hasRelation = function(className, related) {
+    return related in this.entities[className].relations;
+};
+return this;
+}();
+CRUD.define = function(namedFunction, properties, methods) {
+return CRUD.EntityManager.registerEntity(namedFunction, properties, methods);
+};
+CRUD.setAdapter = function(adapter) {
+return CRUD.EntityManager.setAdapter(adapter);
+};</code></pre>
+          <section id="Find">
+            <h1>Find</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>CRUD.Find()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>CRUD.Find is probably the function that you&#39;ll use most to query things:</p><p>Syntax:<br />CRUD.Find(Product, { Catalog: { ID: 1 }} ).then( function(products) {<br />        for(var i=0; i&lt; products.length; i++) {<br />            $$(&quot;.body&quot;)[0].adopt(products[i].display());<br />        }<br />    }, function(error) { CRUD.log(&quot;ERROR IN CRUD.FIND for catalog 1 &quot;, error); });</p></div>
+          <pre><code class="language-javascript">CRUD.Find = function(obj, filters, options) {
+    var type = null;
+    if (obj instanceof CRUD.Entity || obj.prototype instanceof CRUD.Entity) {
+        type = obj.getType();
+        if (obj.getID() !== false) {
+            CRUD.log('Object has an ID! ', ID, type);
+            filters.ID = obj.getID();
+            filters.type = filters;
+        }
+    } else if (obj in CRUD.EntityManager.entities) {
+        type = obj;
+    } else {
+        throw 'CRUD.Find cannot search for non-CRUD objects like ' + obj + '!';
+    }
+    return CRUD.EntityManager.getAdapter().Find(type, filters, options).then(function(results) {
+        return results.map(function(el) {
+            if (!(type in CRUD.EntityManager.cache)) {
+                CRUD.EntityManager.cache[type] = {};
+            }
+            var idProp = CRUD.EntityManager.entities[type].primary;
+            if (!(el[idProp] in CRUD.EntityManager.cache[type])) {
+                CRUD.EntityManager.cache[type][el[idProp]] = new CRUD.EntityManager.constructors[type]();
+            }
+            return CRUD.EntityManager.cache[type][el[idProp]].importValues(el);
+        });
+    });
+};</code></pre>
+          <section id="FindOne">
+            <h1>FindOne</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>CRUD.FindOne()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>Uses CRUD.find with a limit 0,1 and returns the first result.</p></div>
+          <pre><code class="language-javascript">CRUD.FindOne = function(obj, filters, options) {
+    options = options || {};
+    options.limit = 1;
+    return this.Find(obj, filters, options).then(function(result) {
+        return result[0];
+    });
+};
+CRUD.fromCache = function(obj, values) {
+    try {
+        obj = typeof obj == 'function' ? new obj() : new CRUD.EntityManager.constructors[obj]();
+        type = obj instanceof CRUD.Entity ? obj.getType() : false;
+    } catch (E) {
+        CRUD.log('CRUD.fromCache cannot create for non-CRUD objects like ' + obj + '! \n' + E);
+        return false;
+    }
+    obj.importValues(values, true);
+    return obj;
+};</code></pre>
+          <section id="ConnectionAdapter">
+            <h1>ConnectionAdapter</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>CRUD.ConnectionAdapter()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>Default interface for a connection.<br />Implement these methods for a new adapter.</p></div>
+          <pre><code class="language-javascript">CRUD.ConnectionAdapter = function(endpoint, options) {
+    this.endpoint = endpoint || false;
+    this.options = options || {};
+    this.Init = function() {
+        CRUD.log('The Init method for you connection adapter is not implemented!');
+    };
+    this.Delete = function(what) {
+        CRUD.log('The Delete method for your connection adaptor is not implemented!');
+    };
+    this.Persist = function(what) {
+        CRUD.log('The Persist method for your connection adaptor is not implemented!');
+    };
+    this.Find = function(what, filters, sorting, justthese, options, filters) {
+        CRUD.log('The Find method for your connection adaptor is not!');
+    };
+    return this;
+};
+CRUD.Entity = function(className, methods) {
+    this.__values__ = {};
+    this.__dirtyValues__ = {};
+    return this;
+};
+CRUD.Entity.prototype = {
+    getID: function() {
+        return this.get(CRUD.EntityManager.getPrimary(this.getType())) || false;
+    },
+    asObject: function() {
+        return this.__values__;
+    },</code></pre>
+          <section id="Find">
+            <h1>Find</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>Find()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>Proxy find function, that can be run on the entity instance itself.<br />Makes sure you can create object A, and find just relations connected to it.<br />example:</p><p>var Project = new Project(1).then(function(proj) {  proj.find(Catalog).then(function( catalogs) { CRUD.log(&quot;Fetched catalogs!&quot;, catalogs); }});<br />// versus<br />var Project = CRUD.Find(Project, { ID : 1 }).then(function(proj) { CRUD.log(&quot;Found project 1&quot;, proj); });<br />// or use a join:<br />CRUD.Find(Project, { Catalog: { ID: 1 }}).then(function(projects) { CRUD.log(&quot;Found projects connected to catalog 1 !&quot;, projects); });</p></div>
+          <pre><code class="language-javascript">Find: function(type, filters, options) {
+    options = options || {};
+    filters = filters || {};
+    filters[this.getType()] = {};
+    filters[this.getType()][CRUD.EntityManager.getPrimary(this.getType())] = this.getID();
+    return CRUD.Find(type, filters, options);
+},</code></pre>
+          <section id="getValues">
+            <h1>getValues</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>getValues()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>Get al list of all the values to display.</p></div>
+          <pre><code class="language-javascript">getValues: function() {
+    var v = this.__values__;
+    if (this.____dirtyValues____ &amp;&amp; Array.from(this.____dirtyValues____).length &gt; 0) {
+        for (var k in this.__dirtyValues__) {
+            v[k] = this.__dirtyValues__[k];
+        }
+    }
+    v.ID = this.getID();
+    return v;
+},
+importValues: function(values, dirty) {
+    for (var field in values) {
+        this.__values__[field] = CRUD.EntityManager.entities[this.getType()].autoSerialize.indexOf(field) &gt; -1 ? JSON.parse(values[field]) : values[field];
+    }
+    if (dirty) {
+        this.__dirtyValues__ = this.__values__;
+        this.__values__ = {};
+    }
+    return this;
+},</code></pre>
+          <section id="get">
+            <h1>get</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>get()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>Accessor. Gets one field, optionally returns the default value.</p></div>
+          <pre><code class="language-javascript">get: function(field, def) {
+    var ret;
+    if (field in this.__dirtyValues__) {
+        ret = this.__dirtyValues__[field];
+    } else if (field in this.__values__) {
+        ret = this.__values__[field];
+    } else {
+        CRUD.log('Could not find field \'' + field + '\' in \'' + this.getType() + '\' (for get)');
+    }
+    return ret;
+},</code></pre>
+          <section id="set">
+            <h1>set</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>set()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>Setter, accepts key / value or object with keys/values</p></div>
+          <pre><code class="language-javascript">set: function(field, value) {
+    if (field in this) {
+        if (this.get(field) !== value &amp;&amp; !([
+            null,
+            undefined
+        ].indexOf(this.get(field)) &gt; -1 &amp;&amp; [
+            null,
+            undefined
+        ].indexOf(value) &gt; -1)) {
+            if (CRUD.EntityManager.entities[this.getType()].autoSerialize.indexOf(field) &gt; -1) {
+                if (JSON.stringify(this.get(field)) != JSON.stringify(value)) {
+                    this.__dirtyValues__[field] = value;
+                }
+            } else {
+                this.__dirtyValues__[field] = value;
+            }
+        }
+    } else {
+        CRUD.log('Could not find field \'' + field + '\' in \'' + this.getType() + '\' (for set)');
+    }
+},</code></pre>
+          <section id="Persist">
+            <h1>Persist</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>Persist()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>Persist changes on object using CRUD.Entity.set through the adapter.</p></div>
+          <pre><code class="language-javascript">Persist: function(forceInsert) {
+    var that = this,
+        thatType = this.getType();
+    return new Promise(function(resolve, fail) {
+        if (!forceInsert &amp;&amp; Object.keys(that.__dirtyValues__).length === 0)
+            return resolve();
+        if (that.get(CRUD.EntityManager.getPrimary(that.getType())) === false || forceInsert) {
+            var defaults = CRUD.EntityManager.entities[that.getType()].defaultValues;
+            if (Object.keys(defaults).length &gt; 0) {
+                for (var i in defaults) {
+                    if (i in that &amp;&amp; !that.__dirtyValues__[i]) {
+                        that.__dirtyValues__[i] = defaults[i];
+                    }
+                }
+            }
+        }
+        return CRUD.EntityManager.getAdapter().Persist(that, forceInsert).then(function(result) {
+            CRUD.log(that.getType() + ' has been persisted. Result: ' + result.Action + '. New Values: ' + JSON.stringify(that.__dirtyValues__));
+            if (result.Action == 'inserted') {
+                that.__dirtyValues__[CRUD.EntityManager.getPrimary(thatType)] = result.ID;
+                if (!(thatType in CRUD.EntityManager.cache)) {
+                    CRUD.EntityManager.cache[thatType] = {};
+                }
+                CRUD.EntityManager.cache[thatType][result.ID] = that;
+            }
+            for (var i in that.__dirtyValues__) {
+                that.__values__[i] = that.__dirtyValues__[i];
+            }
+            that.__dirtyValues__ = {};
+            that.ID = that.__values__[CRUD.EntityManager.getPrimary(thatType)];
+            resolve(result);
+        }, function(e) {
+            CRUD.log('Error saving CRUD', that, e);
+            fail(e);
+        });
+    });
+},</code></pre>
+          <section id="Delete">
+            <h1>Delete</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>Delete()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>Delete the object via the adapter.<br />Allows you to call Persist() again on the same object by just setting the ID to false.</p></div>
+          <pre><code class="language-javascript">Delete: function() {
+    var that = this;
+    return CRUD.EntityManager.getAdapter().Delete(that).then(function(result) {
+        if (result.Action == 'deleted') {
+            CRUD.log(that.getType() + ' ' + that.getID() + ' has been deleted! ');
+            delete CRUD.EntityManager.cache[that.getType()][that.getID()];
+            that.__values__[CRUD.EntityManager.getPrimary(that.getType())].ID = false;
+        }
+        return result;
+    });
+},
+getType: function() {
+    return this.__className__;
+},</code></pre>
+          <section id="Connect">
+            <h1>Connect</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>Connect()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>Connect 2 entities regardles of their relationship type.<br />Pass the object you want to connect this entity to to this function and<br />this will find out what it needs to do to set the correct properties in your persistence layer.</p></div>
+          <pre><code class="language-javascript">Connect: function(to) {
+    var targetType = to.getType();
+    var thisType = this.getType();
+    var thisPrimary = this.dbSetup.primary;
+    var targetPrimary = to.dbSetup.primary;
+    var that = this;
+    new Promise(function(resolve, fail) {
+        Promise.all([
+            that.Persist(),
+            to.Persist()
+        ]).then(function() {
+            switch (that.dbSetup.relations[targetType]) {
+                case CRUD.RELATION_SINGLE:
+                    to.set(thisPrimary, that.getID());
+                    that.set(targetPrimary, to.getID());
+                    break;
+                case CRUD.RELATION_FOREIGN:
+                    if (thisPrimary in to) {
+                        to.set(thisPrimary, that.getID());
+                    }
+                    if (targetPrimary in that) {
+                        that.set(targetPrimary, to.getID());
+                    }
+                    break;
+                case CRUD.RELATION_MANY:
+                    var connector = new window[that.dbSetup.connectors[targetType]]();
+                    connector.set(thisPrimary, that.getID());
+                    connector.set(targetPrimary, to.getID());
+                    connector.Persist().then(resolve, fail);
+                    return;
+                case CRUD.RELATION_CUSTOM:
+                    //@TODO
+                    break;
+            }
+            if (that.dbSetup.relations[to.getType()] != CRUD.RELATION_MANY) {
+                Promise.all([
+                    to.Persist(),
+                    from.Persist()
+                ]).then(resolve, fail);
+            }
+        }, fail);
+    });
+},
+Disconnect: function(from) {
+    var targetType = from.getType();
+    var thisType = this.getType();
+    var thisPrimary = CRUD.EntityManager.getPrimary(this);
+    var targetPrimary = CRUD.Entitymanager.getPrimary(from);
+    var that = this;
+    new Promise(function(resolve, fail) {
+        Promise.all([
+            that.Persist(),
+            from.Persist()
+        ]).then(function() {
+            switch (this.dbSetup.relations[from.getType()]) {
+                case CRUD.RELATION_SINGLE:
+                    from.set(thisPrimary, null);
+                    that.set(targetPrimary, null);
+                    break;
+                case CRUD.RELATION_FOREIGN:
+                    if (thisPrimary in from) {
+                        from.set(thisPrimary, null);
+                    }
+                    if (targetPrimary in that) {
+                        that.set(targetPrimary, null);
+                    }
+                    break;
+                case CRUD.RELATION_MANY:
+                    var filters = {};
+                    filters[thisPrimary] = this.getID();
+                    filters[targetPrimary] = from.getID();
+                    CRUD.FindOne(this.dbSetup.connectors[targetType], filters).then(function(target) {
+                        target.Delete().then(resolve, fail);
+                    }, fail);
+                    return;
+                case CRUD.RELATION_CUSTOM:
+                    // TODO: implement.
+                    break;
+            }
+            Promise.all([
+                that.Persist(),
+                this.Persist()
+            ]).then(resolve, fail);
+        }, fail);
+    });
+},
+primaryKeyInit: function(ID) {
+    this.ID = ID || false;
+    if (this.ID !== false) {
+        return this.Find({
+            'ID': ID
+        });
+    }
+}
+};
+
+if (!('clone' in Object)) {
+Object.clone = function(el) {
+    return;
+};
+}</code></pre>
+          <div class="footer site-footer">
+            <div class="span site-footer-owner"><a href="https://github.com/mr-doc/mr-doc-theme-cayman">Cayman</a> is maintained by <a href="https://github.com/iwatakeshi">iwatakeshi</a>.</div>
+            <div class="span site-footer-credits">This page was generated by <a href="https://github.com/mr-doc/mr-doc">Mr. Doc</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/affix.js"></script>
+    <script src="js/dropdown.js"></script>
+    <script src="js/scrollspy.js"></script>
+    <script src="js/prism.js"></script>
+    <script src="js/prism-bash.js"></script>
+    <script>
+      $(document).ready(function(){
+        $('body').scrollspy({
+          target: ".bs-docs-sidebar",
+          offset: 40
+        });
+        $('#sidebar').affix({
+          offset:{
+            bottom:60,
+            top: 60
+          }
+        }) 
+      });
+    </script>
+  </body>
+</html>

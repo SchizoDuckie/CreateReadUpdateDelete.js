@@ -1,9 +1,9 @@
 /**
  * Handy Shorthand function to execute a raw SQL query and return the result with a promise.
  *
- * @param  string query Query to execute. Optionally use bound parameters with ? as a placeholder.
- * @param  array bindings Optional array with query for the query
- * @return Promise promise that resolves when query was executed
+ * @param  {string} query Query to execute. Optionally use bound parameters with ? as a placeholder.
+ * @param  {array} bindings Optional array with query for the query
+ * @return {Promise} promise that resolves when query was executed
  */
 CRUD.executeQuery = function(query, bindings) {
     return CRUD.EntityManager.getAdapter().db.execute(query, bindings || []);
@@ -15,8 +15,8 @@ CRUD.executeQuery = function(query, bindings) {
  *
  * This is called from CRUD.setAdapter()
  * @see CRUD.setAdapter
- * @param string database Database Name
- * @param object dbOptions options to pass to window.openDatabase.
+ * @param {string} database Database Name
+ * @param {object} dbOptions options to pass to window.openDatabase.
  */
 CRUD.SQLiteAdapter = function(database, dbOptions) {
     this.databaseName = database;
@@ -42,8 +42,8 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 
     /**
      * Generic update query callback that logs writesExecuted and sets update action.
-     * @param  resultSet resultSet resulting from an update query.
-     * @return resultSet enriched resultSet with Action executed.
+     * @param  {resultSet} resultSet resulting from an update query.
+     * @return {resultSet} enriched resultSet with Action executed.
      */
     function updateQuerySuccess(resultSet) {
         CRUD.stats.writesExecuted++;
@@ -53,9 +53,9 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 
     /**
      * Generic update query error callback that logs writesExecuted and the error.
-     * @param  Error err WebSQL error
-     * @param  Transaction tx WebSQL Transaction
-     * @return void
+     * @param  {Error} err WebSQL error
+     * @param  {Transaction} tx WebSQL Transaction
+     * @return {void}
      */
     function updateQueryError(err, tx) {
         console.error("Update query error!", err);
@@ -65,8 +65,8 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 
     /**
      * Generic insert query callback that logs writesExecuted and sets inserted action + id
-     * @param  resultSet resultSet resulting from an insert query.
-     * @return resultSet enriched resultSet with Action executed and ID property
+     * @param  {resultSet} resultSet resulting from an insert query.
+     * @return {resultSet} enriched resultSet with Action executed and ID property
      */
     function insertQuerySuccess(resultSet) {
         resultSet.Action = 'inserted';
@@ -77,9 +77,9 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 
     /**
      * Generic insert query error callback that logs writesExecuted and the error.
-     * @param  Error err WebSQL error
-     * @param  Transaction tx WebSQL Transaction
-     * @return error
+     * @param  {Error} err WebSQL error
+     * @param  {Transaction} tx WebSQL Transaction
+     * @return {error}
      */
     function insertQueryError(err, tx) {
         CRUD.stats.writesExecuted++;
@@ -97,7 +97,7 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
      *   - Compare the list of indexes and create the ones that don't exist
      *   - Insert fixtures if the table has been freshly created
      *
-     * @return Promise that resolves when all initialization is done
+     * @return {Promise} that resolves when all initialization is done
      */
     function verifyTables() {
         CRUD.log('verifying that tables exist');
@@ -201,8 +201,8 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 
     /**
      * Insert fixtures for an entity if they exist
-     * @param  CRUD.Entity entity entity to insert fixtures for
-     * @return Promise that resolves when all fixtures were inserted or immediately when none are defined
+     * @param  {CRUD}.Entity entity entity to insert fixtures for
+     * @return {Promise} that resolves when all fixtures were inserted or immediately when none are defined
      */
     function createFixtures(entity) {
         return new Promise(function(resolve, reject) {
@@ -217,8 +217,8 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
      * Non-blocking delay function that waits for execution until all initialization is done
      * This places all calls to CRUD.Find in a setTimeout loop until the tables are created and fixtures are inserted.
      * When setup is done, the callback is executed immediately.
-     * @param callback to run when setup is done
-     * @return void
+     * @param {callback} to run when setup is done
+     * @return {void}
      */
     function delayUntilSetupDone(func) {
         if (!self.initializing) {

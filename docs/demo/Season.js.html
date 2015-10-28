@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>CreateReadUpdateDelete.js</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/3.0.3/normalize.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" type="text/css">
+    <link rel="stylesheet" href="../css/bootstrap.css">
+    <link rel="stylesheet" href="../css/cayman.css">
+    <link rel="stylesheet" href="../css/prism.css">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">CreateReadUpdateDelete.js</h1>
+      <h2 class="project-tagline"></h2>
+    </section>
+    <section data-spy="scroll" data-target=".scrollspy" class="main-content">
+      <div class="row">
+        <div class="col-md-3 col-xs-3 bs-docs-sidebar">
+          <ul id="sidebar" class="nav nav-stacked fixed">
+            <li><a href="../index.html">Main</a></li>
+            <li><a href="../CRUD.SqliteAdapter.js.html">CRUD.SqliteAdapter.js</a></li>
+            <li><a href="../CRUD.entities.js.html">CRUD.entities.js</a></li>
+            <li><a href="../CRUD.js.html">CRUD.js</a></li>
+            <li><a href="../demo/Episode.js.html">demo/Episode.js</a></li>
+            <li class="active"><a href="../demo/Season.js.html">demo/Season.js
+                <ul class="nav nav-stacked">
+                  <li><a href="#Season"><i class="alert alert-info"></i><span>Season</span></a>
+                  </li>
+                </ul></a></li>
+            <li><a href="../demo/Serie.js.html">demo/Serie.js</a></li>
+            <li><a href="../demo/prism.js.html">demo/prism.js</a></li>
+            <li><a href="../dist/CreateReadUpdateDelete.js.html">dist/CreateReadUpdateDelete.js</a></li>
+            <li><a href="../docs/docs/js.html">docs/docs/js</a></li>
+            <li><a href="../docs/js.html">docs/js</a></li>
+            <li><a href="../docs/js/affix.js.html">docs/js/affix.js</a></li>
+            <li><a href="../docs/js/bootstrap.min.js.html">docs/js/bootstrap.min.js</a></li>
+            <li><a href="../docs/js/dropdown.js.html">docs/js/dropdown.js</a></li>
+            <li><a href="../docs/js/jquery.min.js.html">docs/js/jquery.min.js</a></li>
+            <li><a href="../docs/js/prism-bash.js.html">docs/js/prism-bash.js</a></li>
+            <li><a href="../docs/js/prism-jade.js.html">docs/js/prism-jade.js</a></li>
+            <li><a href="../docs/js/prism.js.html">docs/js/prism.js</a></li>
+            <li><a href="../docs/js/scrollspy.js.html">docs/js/scrollspy.js</a></li>
+            <li><a href="../tests/tests.js.html">tests/tests.js</a></li>
+          </ul>
+        </div>
+        <div class="col-md-9">
+          <section id="Season">
+            <h1>Season</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">function</div><span>&nbsp;</span><span>Season()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"></div>
+          <pre><code class="language-javascript">function Season() {
+    CRUD.Entity.call(this);
+}
+
+CRUD.define(Season, {
+    className: 'Season',
+    table: 'Seasons',
+    primary: 'ID_Season',
+    fields: ['ID_Season', 'ID_Serie', 'poster', 'overview', 'seasonnumber', 'ratings', 'ratingcount', 'watched', 'notWatchedCount'],
+    relations: {
+        'Serie': CRUD.RELATION_FOREIGN,
+        'Episode': CRUD.RELATION_FOREIGN
+    },
+    indexes: [
+        'ID_Serie'
+    ],
+    orderProperty: 'seasonnumber',
+    orderDirection: 'DESC',
+    createStatement: 'CREATE TABLE Seasons ( ID_Season INTEGER PRIMARY KEY NOT NULL,ID_Serie INTEGER NOT NULL, poster VARCHAR(255), overview TEXT NULL, seasonnumber INTEGER, ratings INTEGER NULL, ratingcount INTEGER NULL, watched TINYINT DEFAULT(0), notWatchedCount INTEGER DEFAULT(0), UNIQUE (ID_Serie, seasonnumber) ON CONFLICT REPLACE )',
+    adapter: 'dbAdapter',
+    defaultValues: {},
+    migrations: {
+        2: [
+            'ALTER TABLE Seasons RENAME TO Seasons_bak',
+            'CREATE TABLE Seasons ( ID_Season INTEGER PRIMARY KEY NOT NULL,ID_Serie INTEGER NOT NULL, poster VARCHAR(255), seasonnumber INTEGER, UNIQUE (ID_Serie, seasonnumber) ON CONFLICT REPLACE)',
+            'INSERT OR IGNORE INTO Seasons (ID_Season, ID_Serie, poster, seasonnumber) select ID_Season, ID_Serie, poster, seasonnumber from Seasons_bak',
+            'DROP TABLE Seasons_bak'
+        ],
+        3: [
+            'ALTER TABLE Seasons RENAME TO Seasons_bak',
+            'CREATE TABLE Seasons ( ID_Season INTEGER PRIMARY KEY NOT NULL,ID_Serie INTEGER NOT NULL, poster VARCHAR(255), seasonnumber INTEGER, overview TEXT NULL, ratings INTEGER NULL, ratingcount INTEGER NULL, UNIQUE (ID_Serie, seasonnumber) ON CONFLICT REPLACE)',
+            'INSERT OR IGNORE INTO Seasons (ID_Season, ID_Serie, poster, seasonnumber) select ID_Season, ID_Serie, poster, seasonnumber from Seasons_bak',
+            'DROP TABLE Seasons_bak'
+        ],
+        4: [
+            'ALTER TABLE Seasons RENAME TO Seasons_bak',
+            'CREATE TABLE Seasons ( ID_Season INTEGER PRIMARY KEY NOT NULL,ID_Serie INTEGER NOT NULL, poster VARCHAR(255), seasonnumber INTEGER, overview TEXT NULL, ratings INTEGER NULL, ratingcount INTEGER NULL, watched TINYINT DEFAULT(0), UNIQUE (ID_Serie, seasonnumber) ON CONFLICT REPLACE)',
+            'INSERT OR IGNORE INTO Seasons (ID_Season, ID_Serie, poster, overview, seasonnumber, ratings, ratingcount) select ID_Season, ID_Serie, poster, overview, seasonnumber, ratings, ratingcount from Seasons_bak',
+            'DROP TABLE Seasons_bak'
+        ],
+        5: [
+            'ALTER TABLE Seasons RENAME TO Seasons_bak',
+            'CREATE TABLE Seasons ( ID_Season INTEGER PRIMARY KEY NOT NULL,ID_Serie INTEGER NOT NULL, poster VARCHAR(255), overview TEXT NULL, seasonnumber INTEGER, ratings INTEGER NULL, ratingcount INTEGER NULL, watched TINYINT DEFAULT(0), notWatchedCount INTEGER DEFAULT(0), UNIQUE (ID_Serie, seasonnumber) ON CONFLICT REPLACE )',
+            'INSERT OR IGNORE INTO Seasons (ID_Season, ID_Serie, poster, overview, seasonnumber, ratings, ratingcount,watched) select ID_Season, ID_Serie, poster, overview, seasonnumber, ratings, ratingcount,watched from Seasons_bak',
+            'DROP TABLE Seasons_bak'
+        ]
+    }
+}, {
+    getEpisodes: function() {
+        return Episode.findByID_Season(this.getID());
+    }
+});</code></pre>
+          <div class="footer site-footer">
+            <div class="span site-footer-owner"><a href="https://github.com/mr-doc/mr-doc-theme-cayman">Cayman</a> is maintained by <a href="https://github.com/iwatakeshi">iwatakeshi</a>.</div>
+            <div class="span site-footer-credits">This page was generated by <a href="https://github.com/mr-doc/mr-doc">Mr. Doc</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <script src="../js/jquery.min.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
+    <script src="../js/affix.js"></script>
+    <script src="../js/dropdown.js"></script>
+    <script src="../js/scrollspy.js"></script>
+    <script src="../js/prism.js"></script>
+    <script src="../js/prism-bash.js"></script>
+    <script>
+      $(document).ready(function(){
+        $('body').scrollspy({
+          target: ".bs-docs-sidebar",
+          offset: 40
+        });
+        $('#sidebar').affix({
+          offset:{
+            bottom:60,
+            top: 60
+          }
+        }) 
+      });
+    </script>
+  </body>
+</html>

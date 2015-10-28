@@ -6,9 +6,7 @@
  * http://schizoduckie.github.io/CreateReadUpdateDelete.js/
  *
  */
-
-
-if (!CRUD) var CRUD = {
+var CRUD = {
     RELATION_SINGLE: 1,
     RELATION_FOREIGN: 2,
     RELATION_MANY: 3,
@@ -24,8 +22,6 @@ if (!CRUD) var CRUD = {
         }
     }
 };
-
-
 /** 
  * The main object proxy that returns either a fresh entity object or a promise that loads data, when you pass the primary key value to search for.
  *
@@ -34,15 +30,11 @@ if (!CRUD) var CRUD = {
  * var p = new Project(); // now you can use get/set on p, after which you can use p.Persist().then(function() {} );
  * new Project(20).then(function(project) { project with id 20 has been fetched from adapter, use it here. })
  */
-
-
-CRUD.EntityManager = (function() {
-
+CRUD.EntityManager = function() {
     this.entities = {};
     this.constructors = {};
     this.cache = {};
     this.connectionAdapter = false;
-
     this.defaultSetup = {
         className: 'CRUD.Entity',
         ID: false,
@@ -60,32 +52,27 @@ CRUD.EntityManager = (function() {
         createStatement: false,
         keys: []
     };
-
     var ucFirst = function(str) {
         return str.charAt(0).toUpperCase() + str.slice(1);
     };
-
     /**
      * Register a new entity into the entity manager, which will manage it's properties, relations, and data.
      */
     this.registerEntity = function(namedFunction, dbSetup, methods) {
-
         namedFunction.prototype = Object.create(CRUD.Entity.prototype);
         namedFunction.prototype.constructor = CRUD.Entity;
-
         dbSetup.fields.map(function(field) {
             Object.defineProperty(namedFunction.prototype, field, {
-                get: ((field in methods) && 'get' in methods[field]) ? methods[field].get : function() {
+                get: field in methods && 'get' in methods[field] ? methods[field].get : function() {
                     return this.get(field);
                 },
-                set: ((field in methods) && 'set' in methods[field]) ? methods[field].set : function(newValue) {
+                set: field in methods && 'set' in methods[field] ? methods[field].set : function(newValue) {
                     this.set(field, newValue);
                 },
                 enumerable: false,
                 configurable: true
             });
         }, namedFunction);
-
         for (var j in methods) {
             if (dbSetup.fields.indexOf(j) == -1) {
                 namedFunction.prototype[j] = methods[j];
@@ -99,38 +86,31 @@ CRUD.EntityManager = (function() {
             enumerable: false,
             configurable: true
         });
-
-        CRUD.log("Register entity", namedFunction, dbSetup, className);
+        CRUD.log('Register entity', namedFunction, dbSetup, className);
         if (!(className in this.entities)) {
-            this.entities[className] = Object.clone(this.defaultSetup);
+            this.entities[className] = JSON.parse(JSON.stringify(this.defaultSetup));
         }
         for (var prop in dbSetup) {
             this.entities[className][prop] = dbSetup[prop];
         }
-
         this.constructors[className] = function(ID) {
             var instance = new namedFunction();
-
             if (ID) {
                 instance.primaryKeyInit(ID);
             }
             return instance;
         };
-
         namedFunction.findByID = function(id) {
             var filters = {};
             filters[dbSetup.primary] = id;
             return CRUD.FindOne(className, filters);
         };
-
         namedFunction.Find = function(filters, options) {
             return CRUD.Find(className, filters, options);
         };
-
         namedFunction.FindOne = function(filters, options) {
             return CRUD.FindOne(className, filters, options);
         };
-
         dbSetup.fields.map(function(field) {
             namedFunction['findOneBy' + ucFirst(field)] = function(value, options) {
                 var filter = {};
@@ -143,9 +123,8 @@ CRUD.EntityManager = (function() {
                 return CRUD.Find(className, filter, options || {});
             };
         });
-
         Object.keys(dbSetup.relations).map(function(name) {
-            CRUD.log("creating relation search for ", name, " to ", className);
+            CRUD.log('creating relation search for ', name, ' to ', className);
             namedFunction['findBy' + name] = function(filter) {
                 var filters = {};
                 filters[name] = filter;
@@ -157,24 +136,20 @@ CRUD.EntityManager = (function() {
                 return CRUD.FindOne(className, filters);
             };
         });
-
         return namedFunction;
     };
-
     this.getPrimary = function(className) {
         if (!className || !this.entities[className]) {
-            throw "Invalid className passed to CRUD.EntityManager.getPrimary : " + className;
+            throw 'Invalid className passed to CRUD.EntityManager.getPrimary : ' + className;
         }
         return this.entities[className].primary;
     };
-
     this.getDefaultValues = function(className) {
         if (!className || !this.entities[className]) {
-            throw "Invalid className passed to CRUD.EntityManager.getDefaultValues : " + className;
+            throw 'Invalid className passed to CRUD.EntityManager.getDefaultValues : ' + className;
         }
         return this.entities[className].defaultValues;
     };
-
     /** 
      * Set and initialize the connection adapter.
      */
@@ -182,32 +157,23 @@ CRUD.EntityManager = (function() {
         this.connectionAdapter = adapter;
         return this.connectionAdapter.Init();
     };
-
     this.getAdapter = function() {
         return this.connectionAdapter;
     };
-
     this.getFields = function(className) {
         return this.entities[className].fields;
     };
     this.hasRelation = function(className, related) {
-        return ((related in this.entities[className].relations));
+        return related in this.entities[className].relations;
     };
-
     return this;
-
-}());
-
+}();
 CRUD.define = function(namedFunction, properties, methods) {
     return CRUD.EntityManager.registerEntity(namedFunction, properties, methods);
-
 };
-
 CRUD.setAdapter = function(adapter) {
     return CRUD.EntityManager.setAdapter(adapter);
 };
-
-
 /**
  * CRUD.Find is probably the function that you'll use most to query things:
  *
@@ -220,21 +186,18 @@ CRUD.setAdapter = function(adapter) {
  */
 CRUD.Find = function(obj, filters, options) {
     var type = null;
-
     if (obj instanceof CRUD.Entity || obj.prototype instanceof CRUD.Entity) {
         type = obj.getType();
-
         if (obj.getID() !== false) {
-            CRUD.log("Object has an ID! ", ID, type);
+            CRUD.log('Object has an ID! ', ID, type);
             filters.ID = obj.getID();
             filters.type = filters;
         }
-    } else if ((obj in CRUD.EntityManager.entities)) {
+    } else if (obj in CRUD.EntityManager.entities) {
         type = obj;
     } else {
-        throw "CRUD.Find cannot search for non-CRUD objects like " + obj + "!";
+        throw 'CRUD.Find cannot search for non-CRUD objects like ' + obj + '!';
     }
-
     return CRUD.EntityManager.getAdapter().Find(type, filters, options).then(function(results) {
         return results.map(function(el) {
             if (!(type in CRUD.EntityManager.cache)) {
@@ -248,7 +211,6 @@ CRUD.Find = function(obj, filters, options) {
         });
     });
 };
-
 /** 
  * Uses CRUD.find with a limit 0,1 and returns the first result.
  * @returns Promise
@@ -260,20 +222,17 @@ CRUD.FindOne = function(obj, filters, options) {
         return result[0];
     });
 };
-
-
 CRUD.fromCache = function(obj, values) {
     try {
-        obj = (typeof obj == 'function') ? new obj() : new CRUD.EntityManager.constructors[obj]();
-        type = (obj instanceof CRUD.Entity) ? obj.getType() : false;
+        obj = typeof obj == 'function' ? new obj() : new CRUD.EntityManager.constructors[obj]();
+        type = obj instanceof CRUD.Entity ? obj.getType() : false;
     } catch (E) {
-        CRUD.log("CRUD.fromCache cannot create for non-CRUD objects like " + obj + "! \n" + E);
+        CRUD.log('CRUD.fromCache cannot create for non-CRUD objects like ' + obj + '! \n' + E);
         return false;
     }
     obj.importValues(values, true);
     return obj;
 };
-
 /**
  * Default interface for a connection.
  * Implement these methods for a new adapter.
@@ -281,43 +240,32 @@ CRUD.fromCache = function(obj, values) {
 CRUD.ConnectionAdapter = function(endpoint, options) {
     this.endpoint = endpoint || false;
     this.options = options || {};
-
     this.Init = function() {
-        CRUD.log("The Init method for you connection adapter is not implemented!");
-        debugger;
+        CRUD.log('The Init method for you connection adapter is not implemented!');
     };
     this.Delete = function(what) {
-        CRUD.log("The Delete method for your connection adaptor is not implemented!");
-        debugger;
+        CRUD.log('The Delete method for your connection adaptor is not implemented!');
     };
     this.Persist = function(what) {
-        CRUD.log("The Persist method for your connection adaptor is not implemented!");
-        debugger;
+        CRUD.log('The Persist method for your connection adaptor is not implemented!');
     };
     this.Find = function(what, filters, sorting, justthese, options, filters) {
-        CRUD.log("The Find method for your connection adaptor is not!");
-        debugger;
+        CRUD.log('The Find method for your connection adaptor is not!');
     };
     return this;
 };
-
 CRUD.Entity = function(className, methods) {
     this.__values__ = {};
     this.__dirtyValues__ = {};
     return this;
 };
-
-
 CRUD.Entity.prototype = {
-
     getID: function() {
         return this.get(CRUD.EntityManager.getPrimary(this.getType())) || false;
     },
-
     asObject: function() {
         return this.__values__;
     },
-
     /** 
      * Proxy find function, that can be run on the entity instance itself.
      * Makes sure you can create object A, and find just relations connected to it.
@@ -338,7 +286,6 @@ CRUD.Entity.prototype = {
         filters[this.getType()][CRUD.EntityManager.getPrimary(this.getType())] = this.getID();
         return CRUD.Find(type, filters, options);
     },
-
     /**
      * Get al list of all the values to display.
      */
@@ -352,7 +299,6 @@ CRUD.Entity.prototype = {
         v.ID = this.getID();
         return v;
     },
-
     importValues: function(values, dirty) {
         for (var field in values) {
             this.__values__[field] = CRUD.EntityManager.entities[this.getType()].autoSerialize.indexOf(field) > -1 ? JSON.parse(values[field]) : values[field];
@@ -363,7 +309,6 @@ CRUD.Entity.prototype = {
         }
         return this;
     },
-
     /**
      * Accessor. Gets one field, optionally returns the default value.
      */
@@ -371,20 +316,25 @@ CRUD.Entity.prototype = {
         var ret;
         if (field in this.__dirtyValues__) {
             ret = this.__dirtyValues__[field];
-        } else if ((field in this.__values__)) {
+        } else if (field in this.__values__) {
             ret = this.__values__[field];
         } else {
-            CRUD.log("Could not find field '" + field + "' in '" + this.getType() + "' (for get)");
+            CRUD.log('Could not find field \'' + field + '\' in \'' + this.getType() + '\' (for get)');
         }
         return ret;
     },
-
     /**
      * Setter, accepts key / value or object with keys/values
      */
     set: function(field, value) {
-        if ((field in this)) {
-            if (this.get(field) !== value && !([null, undefined].indexOf(this.get(field)) > -1 && [null, undefined].indexOf(value) > -1)) {
+        if (field in this) {
+            if (this.get(field) !== value && !([
+                null,
+                undefined
+            ].indexOf(this.get(field)) > -1 && [
+                null,
+                undefined
+            ].indexOf(value) > -1)) {
                 if (CRUD.EntityManager.entities[this.getType()].autoSerialize.indexOf(field) > -1) {
                     if (JSON.stringify(this.get(field)) != JSON.stringify(value)) {
                         this.__dirtyValues__[field] = value;
@@ -394,10 +344,9 @@ CRUD.Entity.prototype = {
                 }
             }
         } else {
-            CRUD.log("Could not find field '" + field + "' in '" + this.getType() + "' (for set)");
+            CRUD.log('Could not find field \'' + field + '\' in \'' + this.getType() + '\' (for set)');
         }
     },
-
     /**
      * Persist changes on object using CRUD.Entity.set through the adapter.
      */
@@ -405,22 +354,21 @@ CRUD.Entity.prototype = {
         var that = this,
             thatType = this.getType();
         return new Promise(function(resolve, fail) {
-            if (!forceInsert && Object.keys(that.__dirtyValues__).length == 0) return resolve();
-
+            if (!forceInsert && Object.keys(that.__dirtyValues__).length === 0)
+                return resolve();
             if (that.get(CRUD.EntityManager.getPrimary(that.getType())) === false || forceInsert) {
                 var defaults = CRUD.EntityManager.entities[that.getType()].defaultValues;
                 if (Object.keys(defaults).length > 0) {
                     for (var i in defaults) {
-                        if ((i in that) && !that.__dirtyValues__[i]) {
+                        if (i in that && !that.__dirtyValues__[i]) {
                             that.__dirtyValues__[i] = defaults[i];
                         }
                     }
                 }
             }
-
             return CRUD.EntityManager.getAdapter().Persist(that, forceInsert).then(function(result) {
-                CRUD.log(that.getType() + " has been persisted. Result: " + result.Action + ". New Values: " + JSON.stringify(that.__dirtyValues__));
-                if (result.Action == "inserted") {
+                CRUD.log(that.getType() + ' has been persisted. Result: ' + result.Action + '. New Values: ' + JSON.stringify(that.__dirtyValues__));
+                if (result.Action == 'inserted') {
                     that.__dirtyValues__[CRUD.EntityManager.getPrimary(thatType)] = result.ID;
                     if (!(thatType in CRUD.EntityManager.cache)) {
                         CRUD.EntityManager.cache[thatType] = {};
@@ -432,17 +380,13 @@ CRUD.Entity.prototype = {
                 }
                 that.__dirtyValues__ = {};
                 that.ID = that.__values__[CRUD.EntityManager.getPrimary(thatType)];
-
                 resolve(result);
             }, function(e) {
-                CRUD.log("Error saving CRUD", that, e);
+                CRUD.log('Error saving CRUD', that, e);
                 fail(e);
             });
-
         });
     },
-
-
     /**
      * Delete the object via the adapter.
      * Allows you to call Persist() again on the same object by just setting the ID to false.
@@ -451,19 +395,16 @@ CRUD.Entity.prototype = {
         var that = this;
         return CRUD.EntityManager.getAdapter().Delete(that).then(function(result) {
             if (result.Action == 'deleted') {
-                CRUD.log(that.getType() + " " + that.getID() + " has been deleted! ");
+                CRUD.log(that.getType() + ' ' + that.getID() + ' has been deleted! ');
                 delete CRUD.EntityManager.cache[that.getType()][that.getID()];
                 that.__values__[CRUD.EntityManager.getPrimary(that.getType())].ID = false;
-            };
+            }
             return result;
         });
     },
-
     getType: function() {
         return this.__className__;
     },
-
-
     /** 
      * Connect 2 entities regardles of their relationship type.
      * Pass the object you want to connect this entity to to this function and
@@ -479,17 +420,20 @@ CRUD.Entity.prototype = {
         var targetPrimary = to.dbSetup.primary;
         var that = this;
         new Promise(function(resolve, fail) {
-            Promise.all([that.Persist(), to.Persist()]).then(function() {
+            Promise.all([
+                that.Persist(),
+                to.Persist()
+            ]).then(function() {
                 switch (that.dbSetup.relations[targetType]) {
                     case CRUD.RELATION_SINGLE:
                         to.set(thisPrimary, that.getID());
                         that.set(targetPrimary, to.getID());
                         break;
                     case CRUD.RELATION_FOREIGN:
-                        if ((thisPrimary in to)) {
+                        if (thisPrimary in to) {
                             to.set(thisPrimary, that.getID());
                         }
-                        if ((targetPrimary in that)) {
+                        if (targetPrimary in that) {
                             that.set(targetPrimary, to.getID());
                         }
                         break;
@@ -499,37 +443,40 @@ CRUD.Entity.prototype = {
                         connector.set(targetPrimary, to.getID());
                         connector.Persist().then(resolve, fail);
                         return;
-                        break;
                     case CRUD.RELATION_CUSTOM:
                         //@TODO
                         break;
                 }
                 if (that.dbSetup.relations[to.getType()] != CRUD.RELATION_MANY) {
-                    Promise.all([to.Persist(), from.Persist()]).then(resolve, fail);
+                    Promise.all([
+                        to.Persist(),
+                        from.Persist()
+                    ]).then(resolve, fail);
                 }
             }, fail);
         });
     },
-
     Disconnect: function(from) {
         var targetType = from.getType();
         var thisType = this.getType();
         var thisPrimary = CRUD.EntityManager.getPrimary(this);
         var targetPrimary = CRUD.Entitymanager.getPrimary(from);
         var that = this;
-
         new Promise(function(resolve, fail) {
-            Promise.all([that.Persist(), from.Persist()]).then(function() {
+            Promise.all([
+                that.Persist(),
+                from.Persist()
+            ]).then(function() {
                 switch (this.dbSetup.relations[from.getType()]) {
                     case CRUD.RELATION_SINGLE:
                         from.set(thisPrimary, null);
                         that.set(targetPrimary, null);
                         break;
                     case CRUD.RELATION_FOREIGN:
-                        if ((thisPrimary in from)) {
+                        if (thisPrimary in from) {
                             from.set(thisPrimary, null);
                         }
-                        if ((targetPrimary in that)) {
+                        if (targetPrimary in that) {
                             that.set(targetPrimary, null);
                         }
                         break;
@@ -537,27 +484,26 @@ CRUD.Entity.prototype = {
                         var filters = {};
                         filters[thisPrimary] = this.getID();
                         filters[targetPrimary] = from.getID();
-
                         CRUD.FindOne(this.dbSetup.connectors[targetType], filters).then(function(target) {
                             target.Delete().then(resolve, fail);
                         }, fail);
                         return;
-                        break;
                     case CRUD.RELATION_CUSTOM:
                         // TODO: implement.
                         break;
                 }
-                Promise.all([that.Persist(), this.Persist()]).then(resolve, fail);
+                Promise.all([
+                    that.Persist(),
+                    this.Persist()
+                ]).then(resolve, fail);
             }, fail);
         });
     },
-
-
     primaryKeyInit: function(ID) {
         this.ID = ID || false;
         if (this.ID !== false) {
             return this.Find({
-                "ID": ID
+                'ID': ID
             });
         }
     }
@@ -565,6 +511,6 @@ CRUD.Entity.prototype = {
 
 if (!('clone' in Object)) {
     Object.clone = function(el) {
-        return JSON.parse(JSON.stringify(el));
+        return;
     };
 }

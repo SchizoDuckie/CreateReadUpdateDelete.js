@@ -1,0 +1,268 @@
+doctype html
+html(lang='en-us')
+  head
+    meta(charset='UTF-8')
+    title Cayman
+    meta(name='viewport', content='width=device-width, initial-scale=1')
+    link(rel='stylesheet', href='css/normalize.css')
+    link(href='https://fonts.googleapis.com/css?family=Open+Sans:400,700', rel='stylesheet', type='text/css')
+    link(rel='stylesheet', href='css/cayman.css')
+  body
+    section.page-header
+      h1.project-name Cayman
+      h2.project-tagline A responsive theme for your project on GitHub Pages
+      a.btn(href='#') View on GitHub
+      a.btn(href='#') Download .zip
+      a.btn(href='#') Download .tar.gz
+    section.main-content
+      p
+        | Text can be 
+        strong bold
+        | , 
+        em italic
+        | , or 
+        del strikethrough
+        | . 
+        a(href='https://github.com') Links
+        |  should be blue with no underlines (unless hovered over).
+      p
+        | There should be whitespace between paragraphs. There should be whitespace between paragraphs. There should be whitespace between paragraphs. There should be whitespace between paragraphs.
+      p
+        | There should be whitespace between paragraphs. There should be whitespace between paragraphs. There should be whitespace between paragraphs. There should be whitespace between paragraphs.
+      blockquote
+        p There should be no margin above this first sentence.
+        p Blockquotes should be a lighter gray with a gray border along the left side.
+        p There should be no margin below this final sentence.
+      h1
+        a#user-content-header-1.anchor(href='#header-1', aria-hidden='true')
+          span.octicon.octicon-link
+        | Header 1
+      p
+        | This is a normal paragraph following a header. Bacon ipsum dolor sit amet t-bone doner shank drumstick, pork belly porchetta chuck sausage brisket ham hock rump pig. Chuck kielbasa leberkas, pork bresaola ham hock filet mignon cow shoulder short ribs biltong.
+      h2
+        a#user-content-header-2.anchor(href='#header-2', aria-hidden='true')
+          span.octicon.octicon-link
+        | Header 2
+      blockquote
+        p
+          | This is a blockquote following a header. Bacon ipsum dolor sit amet t-bone doner shank drumstick, pork belly porchetta chuck sausage brisket ham hock rump pig. Chuck kielbasa leberkas, pork bresaola ham hock filet mignon cow shoulder short ribs biltong.
+      h3
+        a#user-content-header-3.anchor(href='#header-3', aria-hidden='true')
+          span.octicon.octicon-link
+        | Header 3
+      pre.
+      h4
+        a#user-content-header-4.anchor(href='#header-4', aria-hidden='true')
+          span.octicon.octicon-link
+        | Header 4
+      ul.task-list
+        li This is an unordered list following a header.
+        li This is an unordered list following a header.
+        li This is an unordered list following a header.
+      h5
+        a#user-content-header-5.anchor(href='#header-5', aria-hidden='true')
+          span.octicon.octicon-link
+        | Header 5
+      ol.task-list
+        li This is an ordered list following a header.
+        li This is an ordered list following a header.
+        li This is an ordered list following a header.
+      h6
+        a#user-content-header-6.anchor(href='#header-6', aria-hidden='true')
+          span.octicon.octicon-link
+        | Header 6
+      table
+        thead
+          tr
+            th What
+            th Follows
+        tbody
+          tr
+            td A table
+            td A header
+          tr
+            td A table
+            td A header
+          tr
+            td A table
+            td A header
+      hr
+      p There's a horizontal rule above and below this.
+      hr
+      p Here is an unordered list:
+      ul.task-list
+        li Salt-n-Pepa
+        li Bel Biv DeVoe
+        li Kid 'N Play
+      p And an ordered list:
+      ol.task-list
+        li Michael Jackson
+        li Michael Bolton
+        li Michael Bublé
+      p And an unordered task list:
+      ul.task-list
+        li.task-list-item
+          input.task-list-item-checkbox(type='checkbox', checked='', disabled='')
+          |  Create a sample markdown document
+        li.task-list-item
+          input.task-list-item-checkbox(type='checkbox', checked='', disabled='')
+          |  Add task lists to it
+        li.task-list-item
+          input.task-list-item-checkbox(type='checkbox', disabled='')
+          |  Take a vacation
+      p And a "mixed" task list:
+      ul.task-list
+        li.task-list-item
+          input.task-list-item-checkbox(type='checkbox', disabled='')
+          |  Steal underpants
+        li ?
+        li.task-list-item
+          input.task-list-item-checkbox(type='checkbox', disabled='')
+          |  Profit!
+      p And a nested list:
+      ul.task-list
+        li
+          | Jackson 5
+          ul.task-list
+            li Michael
+            li Tito
+            li Jackie
+            li Marlon
+            li Jermaine
+        li
+          | TMNT
+          ul.task-list
+            li Leonardo
+            li Michelangelo
+            li Donatello
+            li Raphael
+      p
+        | Definition lists can be used with HTML syntax. Definition terms are bold and italic.
+      dl
+        dt Name
+        dd Godzilla
+        dt Born
+        dd 1952
+        dt Birthplace
+        dd Japan
+        dt Color
+        dd Green
+      hr
+      p Tables should have bold headings and alternating shaded rows.
+      table
+        thead
+          tr
+            th Artist
+            th Album
+            th Year
+        tbody
+          tr
+            td Michael Jackson
+            td Thriller
+            td 1982
+          tr
+            td Prince
+            td Purple Rain
+            td 1984
+          tr
+            td Beastie Boys
+            td License to Ill
+            td 1986
+      p If a table is too wide, it should condense down and/or scroll horizontally.
+      table
+        thead
+          tr
+            th Artist
+            th Album
+            th Year
+            th Label
+            th Awards
+            th Songs
+        tbody
+          tr
+            td Michael Jackson
+            td Thriller
+            td 1982
+            td Epic Records
+            td
+              | Grammy Award for Album of the Year, American Music Award for Favorite Pop/Rock Album, American Music Award for Favorite Soul/R&B Album, Brit Award for Best Selling Album, Grammy Award for Best Engineered Album, Non-Classical
+            td
+              | Wanna Be Startin' Somethin', Baby Be Mine, The Girl Is Mine, Thriller, Beat It, Billie Jean, Human Nature, P.Y.T. (Pretty Young Thing), The Lady in My Life
+          tr
+            td Prince
+            td Purple Rain
+            td 1984
+            td Warner Brothers Records
+            td
+              | Grammy Award for Best Score Soundtrack for Visual Media, American Music Award for Favorite Pop/Rock Album, American Music Award for Favorite Soul/R&B Album, Brit Award for Best Soundtrack/Cast Recording, Grammy Award for Best Rock Performance by a Duo or Group with Vocal
+            td
+              | Let's Go Crazy, Take Me With U, The Beautiful Ones, Computer Blue, Darling Nikki, When Doves Cry, I Would Die 4 U, Baby I'm a Star, Purple Rain
+          tr
+            td Beastie Boys
+            td License to Ill
+            td 1986
+            td Mercury Records
+            td noawardsbutthistablecelliswide
+            td
+              | Rhymin & Stealin, The New Style, She's Crafty, Posse in Effect, Slow Ride, Girls, (You Gotta) Fight for Your Right, No Sleep Till Brooklyn, Paul Revere, Hold It Now, Hit It, Brass Monkey, Slow and Low, Time to Get Ill
+      hr
+      p
+        | Code snippets like 
+        code var foo = "bar";
+        |  can be shown inline.
+      p
+        | Also, 
+        code this should vertically align
+        del
+          code with this
+        del and this
+        | .
+      p Code can also be shown in a block element.
+      pre.
+      p Code can also use syntax highlighting.
+      .highlight.highlight-Javascript
+        pre.
+          \n foo                      ;          
+      pre.
+      .highlight.highlight-Javascript
+        pre.
+          \n foo                      ;          
+      p Inline code inside table cells should still be distinguishable.
+      table
+        thead
+          tr
+            th Language
+            th Code
+        tbody
+          tr
+            td Javascript
+            td
+              code var foo = "bar";
+          tr
+            td Ruby
+            td
+              code foo = "bar"
+      hr
+      p Small images should be shown at their actual size.
+      p
+        a(href='https://camo.githubusercontent.com/16a9d5241f679b6429fc0597f10816dd2665bbb2/687474703a2f2f706c6163656b697474656e2e636f6d2f672f3330302f3230302f', target='_blank')
+          img(src='https://camo.githubusercontent.com/16a9d5241f679b6429fc0597f10816dd2665bbb2/687474703a2f2f706c6163656b697474656e2e636f6d2f672f3330302f3230302f', alt='', data-canonical-src='https://placekitten.com/g/300/200/', style='max-width:100%;')
+      p Large images should always scale down and fit in the content container.
+      p
+        a(href='https://camo.githubusercontent.com/afe46418285497605cf4f6376b75f8c818658fb1/687474703a2f2f706c6163656b697474656e2e636f6d2f672f313230302f3830302f', target='_blank')
+          img(src='https://camo.githubusercontent.com/afe46418285497605cf4f6376b75f8c818658fb1/687474703a2f2f706c6163656b697474656e2e636f6d2f672f313230302f3830302f', alt='', data-canonical-src='https://placekitten.com/g/1200/800/', style='max-width:100%;')
+      pre.
+      footer.site-footer
+        span.site-footer-owner
+          a(href='https://github.com/jasonlong/cayman-theme') Cayman
+          |  is maintained by 
+          a(href='https://github.com/jasonlong') jasonlong
+          | .
+        span.site-footer-credits
+          | This page was generated by 
+          a(href='https://pages.github.com') GitHub Pages
+          |  using the 
+          a(href='https://github.com/jasonlong/cayman-theme') Cayman theme
+          |  by 
+          a(href='https://twitter.com/jasonlong') Jason Long
+          | .
