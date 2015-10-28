@@ -22,8 +22,6 @@
             <li><a href="index.html">Main</a></li>
             <li class="active"><a href="CRUD.SqliteAdapter.js.html">CRUD.SqliteAdapter.js
                 <ul class="nav nav-stacked">
-                  <li><a href="#executeQuery"><i class="alert alert-info"></i><span>executeQuery</span></a>
-                  </li>
                   <li><a href="#SQLiteAdapter"><i class="alert alert-info"></i><span>SQLiteAdapter</span></a>
                   </li>
                   <li><a href="#Init"><i class="alert alert-info"></i><span>Init</span></a>
@@ -38,9 +36,17 @@
                   </li>
                   <li><a href="#verifyTables"><i class="alert alert-info"></i><span>verifyTables</span></a>
                   </li>
+                  <li><a href="#parseSchemaInfo"><i class="alert alert-info"></i><span>parseSchemaInfo</span></a>
+                  </li>
+                  <li><a href="#createTables"><i class="alert alert-info"></i><span>createTables</span></a>
+                  </li>
                   <li><a href="#createFixtures"><i class="alert alert-info"></i><span>createFixtures</span></a>
                   </li>
                   <li><a href="#delayUntilSetupDone"><i class="alert alert-info"></i><span>delayUntilSetupDone</span></a>
+                  </li>
+                  <li><a href="#Find"><i class="alert alert-info"></i><span>Find</span></a>
+                  </li>
+                  <li><a href="#executeQuery"><i class="alert alert-info"></i><span>executeQuery</span></a>
                   </li>
                   <li><a href="#Database"><i class="alert alert-info"></i><span>Database</span></a>
                   </li>
@@ -53,43 +59,6 @@
           </ul>
         </div>
         <div class="col-md-9">
-          <section id="executeQuery">
-            <h1>executeQuery</h1>
-            <h5 class="subheader"></h5>
-            <p>
-              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>CRUD.executeQuery()</span><span>&nbsp;</span>
-            </p>
-          </section>
-          <div class="description"><p>Handy Shorthand function to execute a raw SQL query and return the result with a promise.</p></div>
-          <table class="table table-bordered table-striped">
-            <thead>
-              <tr>
-                <th style="width:20%">Option name</th>
-                <th style="width:20%">Type</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>query</td>
-                <td>string</td>
-                <td><p>Query to execute. Optionally use bound parameters with ? as a placeholder.</p></td>
-              </tr>
-              <tr>
-                <td>bindings</td>
-                <td>array</td>
-                <td><p>Optional array with query for the query</p></td>
-              </tr>
-              <tr>
-                <td>return</td>
-                <td>Promise</td>
-                <td><p>promise that resolves when query was executed</p></td>
-              </tr>
-            </tbody>
-          </table>
-          <pre><code class="language-javascript">CRUD.executeQuery = function(query, bindings) {
-    return CRUD.EntityManager.getAdapter().db.execute(query, bindings || []);
-};</code></pre>
           <section id="SQLiteAdapter">
             <h1>SQLiteAdapter</h1>
             <h5 class="subheader"></h5>
@@ -97,7 +66,8 @@
               <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>CRUD.SQLiteAdapter()</span><span>&nbsp;</span>
             </p>
           </section>
-          <div class="description"><p>WebSQL adapter for CreateReadUpdateDelete.js<br />(Currently the only one available)</p><p>This is called from CRUD.setAdapter()</p></div>
+          <div class="description"><h2>CRUD.SQliteAdapter</h2>
+<p>WebSQL adapter for CreateReadUpdateDelete.js<br />(Currently the only one available)</p><p>This is called from CRUD.setAdapter()</p></div>
           <table class="table table-bordered table-striped">
             <thead>
               <tr>
@@ -312,115 +282,158 @@
           <pre><code class="language-javascript">function verifyTables() {
     CRUD.log('verifying that tables exist');
     var tables = [],
-        indexes = {};
-
-    function parseSchemaInfo(resultset) {
-        for (var i = 0; i &lt; resultset.rs.rows.length; i++) {
-            var row = resultset.rs.rows.item(i);
-            if (row.name.indexOf('sqlite_autoindex') &gt; -1 || row.name == '__WebKitDatabaseInfoTable__') continue;
-            if (row.type == 'table') {
-                tables.push(row.tbl_name);
-            } else if (row.type == 'index') {
-                if (!(row.tbl_name in indexes)) {
-                    indexes[row.tbl_name] = [];
-                }
-                indexes[row.tbl_name].push(row.name);
+        indexes = {};</code></pre>
+          <section id="parseSchemaInfo">
+            <h1>parseSchemaInfo</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">function</div><span>&nbsp;</span><span>parseSchemaInfo()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>Pre-Parse database schema info for further processing. Finds tables and indexes.</p></div>
+          <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th style="width:20%">Option name</th>
+                <th style="width:20%">Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>database</td>
+                <td>resultSet</td>
+                <td><p>description</p></td>
+              </tr>
+              <tr>
+                <td>return</td>
+                <td></td>
+                <td><p>void</p></td>
+              </tr>
+            </tbody>
+          </table>
+          <pre><code class="language-javascript">function parseSchemaInfo(resultset) {
+    for (var i = 0; i &lt; resultset.rs.rows.length; i++) {
+        var row = resultset.rs.rows.item(i);
+        if (row.name.indexOf('sqlite_autoindex') &gt; -1 || row.name == '__WebKitDatabaseInfoTable__') continue;
+        if (row.type == 'table') {
+            tables.push(row.tbl_name);
+        } else if (row.type == 'index') {
+            if (!(row.tbl_name in indexes)) {
+                indexes[row.tbl_name] = [];
             }
+            indexes[row.tbl_name].push(row.name);
+        }
+    }
+    return;
+}</code></pre>
+          <section id="createTables">
+            <h1>createTables</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">function</div><span>&nbsp;</span><span>createTables()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>Iterate the list of registered entities and creates their tables if they don&#39;t exist.<br />Run the migrations when needed if the table version is out of sync</p></div>
+          <pre><code class="language-javascript">function createTables() {
+    return Promise.all(Object.keys(CRUD.EntityManager.entities).map(function(entityName) {
+        var entity = CRUD.EntityManager.entities[entityName];
+        if (tables.indexOf(entity.table) == -1) {
+            if (!entity.createStatement) {
+                throw &quot;No create statement found for &quot; + entity.className + &quot;. Don't know how to create table.&quot;;
+            }
+            return db.execute(entity.createStatement).then(function() {
+                tables.push(entity.table);
+                localStorage.setItem('database.version.' + entity.table, ('migrations' in entity) ? Math.max.apply(Math, Object.keys(entity.migrations)) : 1);
+                CRUD.log(entity.className + &quot; table created.&quot;);
+                return entity;
+            }, function(err) {
+                CRUD.log(&quot;Error creating &quot; + entity.className, err);
+                throw &quot;Error creating table: &quot; + entity.table + &quot; for &quot; + entity.className;
+            }).then(createFixtures).then(function() {
+                CRUD.log(&quot;Table created and fixtures inserted for &quot;, entity.className);
+                return;
+            });
         }
         return;
-    }
+    }));
+}
 
-    function createTables() {
-        // verify that all tables exist
-        return Promise.all(Object.keys(CRUD.EntityManager.entities).map(function(entityName) {
-            var entity = CRUD.EntityManager.entities[entityName];
-            if (tables.indexOf(entity.table) == -1) {
-                if (!entity.createStatement) {
-                    throw &quot;No create statement found for &quot; + entity.className + &quot;. Don't know how to create table.&quot;;
-                }
-                return db.execute(entity.createStatement).then(function() {
-                    tables.push(entity.table);
-                    localStorage.setItem('database.version.' + entity.table, ('migrations' in entity) ? Math.max.apply(Math, Object.keys(entity.migrations)) : 1);
-                    CRUD.log(entity.className + &quot; table created.&quot;);
-                    return entity;
-                }, function(err) {
-                    CRUD.log(&quot;Error creating &quot; + entity.className, err);
-                    throw &quot;Error creating table: &quot; + entity.table + &quot; for &quot; + entity.className;
-                }).then(createFixtures).then(function() {
-                    CRUD.log(&quot;Table created and fixtures inserted for &quot;, entity.className);
-                    return;
-                });
+/**
+ * Run migrations for a table if the version stored in localStorage is out of sync.
+ * All tables created by CreateReadUpdateDelete.js are versioned this way.
+ * For more info on migrations see the docs.
+ * @return {void} void
+ */
+function runMigrations() {
+    return Promise.all(Object.keys(CRUD.EntityManager.entities).map(function(entityName) {
+        var entity = CRUD.EntityManager.entities[entityName];
+        if (entity.migrations) {
+            var currentVersion = !localStorage.getItem('database.version.' + entity.table) ? 1 : parseInt(localStorage.getItem('database.version.' + entity.table), 10);
+            if (isNaN(currentVersion)) {
+                currentVersion = 1;
             }
-            return;
-        }));
-    }
-
-    function runMigrations() {
-        // verify that all indexes exist.
-        return Promise.all(Object.keys(CRUD.EntityManager.entities).map(function(entityName) {
-            var entity = CRUD.EntityManager.entities[entityName];
-            if (entity.migrations) {
-                var currentVersion = !localStorage.getItem('database.version.' + entity.table) ? 1 : parseInt(localStorage.getItem('database.version.' + entity.table), 10);
-                if (isNaN(currentVersion)) {
-                    currentVersion = 1;
-                }
-                var highestVersion = Math.max.apply(Math, Object.keys(entity.migrations));
-                if (currentVersion == highestVersion) return;
-                return Promise.all(Object.keys(entity.migrations).map(function(version) {
-                    if (parseInt(version) &gt; currentVersion) {
-                        return Promise.all(entity.migrations[version].map(function(migration) {
-                            CRUD.log('Executing migration: ', migration);
-                            return db.execute(migration).then(function(result) {
-                                CRUD.log(&quot;Migration success!&quot;, result);
-                                return true;
-                            }, function(err) {
-                                throw &quot;Migration &quot; + version + &quot; failed for entity &quot; + entityName;
-                            });
-                        })).then(function() {
-                            CRUD.log(&quot;All migrations executed for version &quot;, version);
-                            localStorage.setItem('database.version.' + entity.table, version);
+            var highestVersion = Math.max.apply(Math, Object.keys(entity.migrations));
+            if (currentVersion == highestVersion) return;
+            return Promise.all(Object.keys(entity.migrations).map(function(version) {
+                if (parseInt(version) &gt; currentVersion) {
+                    return Promise.all(entity.migrations[version].map(function(migration) {
+                        CRUD.log('Executing migration: ', migration);
+                        return db.execute(migration).then(function(result) {
+                            CRUD.log(&quot;Migration success!&quot;, result);
                             return true;
+                        }, function(err) {
+                            throw &quot;Migration &quot; + version + &quot; failed for entity &quot; + entityName;
                         });
-                    }
-                    return true;
-                }));
-            }
-        }));
-    }
+                    })).then(function() {
+                        CRUD.log(&quot;All migrations executed for version &quot;, version);
+                        localStorage.setItem('database.version.' + entity.table, version);
+                        return true;
+                    });
+                }
+                return true;
+            }));
+        }
+    }));
+}
 
-    function createIndexes() {
-        // create listed indexes if they don't already exist.
-        return Promise.all(Object.keys(CRUD.EntityManager.entities).map(function(entityName) {
-            var entity = CRUD.EntityManager.entities[entityName];
-            if (('indexes' in entity)) {
-                return Promise.all(entity.indexes.map(function(index) {
-                    var indexName = index.replace(/\W/g, '') + '_idx';
-                    if (!(entity.table in indexes) || indexes[entity.table].indexOf(indexName) == -1) {
-                        return db.execute(&quot;create index if not exists &quot; + indexName + &quot; on &quot; + entity.table + &quot; (&quot; + index + &quot;)&quot;).then(function(result) {
-                            CRUD.log(&quot;index created: &quot;, entity.table, index, indexName);
-                            if (!(entity.table in indexes)) {
-                                indexes[entity.table] = [];
-                            }
-                            indexes[entity.table].push(indexName);
-                            return;
-                        });
-                    }
-                    return;
-                }));
-            }
-        }));
-    }
+/**
+ * Iterate the list of existing and non-existing indexes for each entity and create the ones that don't exist.
+ * @return {void} void
+ */
+function createIndexes() {
+    // create listed indexes if they don't already exist.
+    return Promise.all(Object.keys(CRUD.EntityManager.entities).map(function(entityName) {
+        var entity = CRUD.EntityManager.entities[entityName];
+        if (('indexes' in entity)) {
+            return Promise.all(entity.indexes.map(function(index) {
+                var indexName = index.replace(/\W/g, '') + '_idx';
+                if (!(entity.table in indexes) || indexes[entity.table].indexOf(indexName) == -1) {
+                    return db.execute(&quot;create index if not exists &quot; + indexName + &quot; on &quot; + entity.table + &quot; (&quot; + index + &quot;)&quot;).then(function(result) {
+                        CRUD.log(&quot;index created: &quot;, entity.table, index, indexName);
+                        if (!(entity.table in indexes)) {
+                            indexes[entity.table] = [];
+                        }
+                        indexes[entity.table].push(indexName);
+                        return;
+                    });
+                }
+                return;
+            }));
+        }
+    }));
+}
 
-
-    return db.execute(&quot;select type,name,tbl_name from sqlite_master&quot;)
-        .then(parseSchemaInfo)
-        .then(createTables)
-        .then(runMigrations)
-        .then(createIndexes).then(function(result) {
-            CRUD.log(&quot;All migrations are done!&quot;);
-            self.initializing = false;
-        });
-}</code></pre>
+// fetch schema info and perform setup sequence.
+return db.execute(&quot;select type,name,tbl_name from sqlite_master&quot;)
+    .then(parseSchemaInfo)
+    .then(createTables)
+    .then(runMigrations)
+    .then(createIndexes).then(function(result) {
+        CRUD.log(&quot;All migrations are done!&quot;);
+        self.initializing = false;
+    });
+    }</code></pre>
           <section id="createFixtures">
             <h1>createFixtures</h1>
             <h5 class="subheader"></h5>
@@ -493,10 +506,42 @@
     } else {
         setTimeout(delayUntilSetupDone, 50, func);
     }
-}
-
-
-this.Find = function(what, filters, options) {
+}</code></pre>
+          <section id="Find">
+            <h1>Find</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>this.Find()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"></div>
+          <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th style="width:20%">Option name</th>
+                <th style="width:20%">Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>what</td>
+                <td>CRUD.Entity</td>
+                <td><p>type of CRUD.Entity to query the database for</p></td>
+              </tr>
+              <tr>
+                <td>filters</td>
+                <td>object</td>
+                <td><p>Properties to create a WHERE statement from</p></td>
+              </tr>
+              <tr>
+                <td>options</td>
+                <td>object</td>
+                <td><p>Optional array of options: { orderBy, groupBy, limit, justthese }</p></td>
+              </tr>
+            </tbody>
+          </table>
+          <pre><code class="language-javascript">this.Find = function(what, filters, options) {
     var builder = new CRUD.Database.SQLBuilder(what, filters, options);
     var query = builder.buildQuery();
 
@@ -586,6 +631,43 @@ this.Delete = function(what, events) {
 
 return this;
 };</code></pre>
+          <section id="executeQuery">
+            <h1>executeQuery</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>CRUD.executeQuery()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>A Handy Shorthand function to execute a raw SQL query and return the result with a promise.</p></div>
+          <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th style="width:20%">Option name</th>
+                <th style="width:20%">Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>query</td>
+                <td>string</td>
+                <td><p>Query to execute. Optionally use bound parameters with ? as a placeholder.</p></td>
+              </tr>
+              <tr>
+                <td>bindings</td>
+                <td>array</td>
+                <td><p>Optional array with query for the query</p></td>
+              </tr>
+              <tr>
+                <td>return</td>
+                <td>Promise</td>
+                <td><p>promise that resolves when query was executed</p></td>
+              </tr>
+            </tbody>
+          </table>
+          <pre><code class="language-javascript">CRUD.executeQuery = function(query, bindings) {
+    return CRUD.EntityManager.getAdapter().db.execute(query, bindings || []);
+};</code></pre>
           <section id="Database">
             <h1>Database</h1>
             <h5 class="subheader"></h5>
@@ -594,7 +676,7 @@ return this;
             </p>
           </section>
           <div class="description"><hr>
-<p>CRUD.Database.js, a simple database abstraction layer.<br />Adapted from mootools Database.js by  Dipl.-Ing. (FH) AndrÃ© Fiedler <a href="&#x6d;&#x61;&#x69;&#x6c;&#116;&#x6f;&#x3a;&#x6b;&#x6f;&#110;&#x74;&#97;&#x6b;&#116;&#x40;&#118;&#105;&#x73;&#x75;&#x61;&#x6c;&#x64;&#x72;&#117;&#103;&#115;&#46;&#110;&#x65;&#116;">&#x6b;&#x6f;&#110;&#x74;&#97;&#x6b;&#116;&#x40;&#118;&#105;&#x73;&#x75;&#x61;&#x6c;&#x64;&#x72;&#117;&#103;&#115;&#46;&#110;&#x65;&#116;</a><br />Removed all moo dependencies and converted to POJS<br />December 2013: Updated for use of promises.<br />...</p></div>
+<p>CRUD.Database.js, a simple database abstraction layer.<br />Adapted from mootools Database.js by  Dipl.-Ing. (FH) AndrÃ© Fiedler <a href="&#x6d;&#97;&#105;&#108;&#116;&#111;&#x3a;&#x6b;&#x6f;&#110;&#116;&#97;&#x6b;&#x74;&#x40;&#118;&#x69;&#x73;&#x75;&#97;&#108;&#100;&#114;&#117;&#x67;&#115;&#x2e;&#110;&#x65;&#x74;">&#x6b;&#x6f;&#110;&#116;&#97;&#x6b;&#x74;&#x40;&#118;&#x69;&#x73;&#x75;&#97;&#108;&#100;&#114;&#117;&#x67;&#115;&#x2e;&#110;&#x65;&#x74;</a><br />Removed all moo dependencies and converted to POJS<br />December 2013: Updated for use of promises.<br />...</p></div>
           <pre><code class="language-javascript">CRUD.Database = function(name, options) {
     options = options || {
         version: '1.0',

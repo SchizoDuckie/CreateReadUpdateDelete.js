@@ -1,15 +1,7 @@
 /**
- * Handy Shorthand function to execute a raw SQL query and return the result with a promise.
+ * CRUD.SQliteAdapter
+ * ------------------
  *
- * @param  {string} query Query to execute. Optionally use bound parameters with ? as a placeholder.
- * @param  {array} bindings Optional array with query for the query
- * @return {Promise} promise that resolves when query was executed
- */
-CRUD.executeQuery = function(query, bindings) {
-    return CRUD.EntityManager.getAdapter().db.execute(query, bindings || []);
-};
-
-/**
  * WebSQL adapter for CreateReadUpdateDelete.js
  * (Currently the only one available)
  *
@@ -104,6 +96,11 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
         var tables = [],
             indexes = {};
 
+        /**
+         * Pre-Parse database schema info for further processing. Finds tables and indexes.
+         * @param  {resultSet} database description
+         * @return {void} void
+         */
         function parseSchemaInfo(resultset) {
             for (var i = 0; i < resultset.rs.rows.length; i++) {
                 var row = resultset.rs.rows.item(i);
@@ -120,8 +117,12 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
             return;
         }
 
+        /**
+         * Iterate the list of registered entities and creates their tables if they don't exist.
+         * Run the migrations when needed if the table version is out of sync
+         * @return {void} void
+         */
         function createTables() {
-            // verify that all tables exist
             return Promise.all(Object.keys(CRUD.EntityManager.entities).map(function(entityName) {
                 var entity = CRUD.EntityManager.entities[entityName];
                 if (tables.indexOf(entity.table) == -1) {
@@ -145,8 +146,13 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
             }));
         }
 
+        /**
+         * Run migrations for a table if the version stored in localStorage is out of sync.
+         * All tables created by CreateReadUpdateDelete.js are versioned this way.
+         * For more info on migrations see the docs.
+         * @return {void} void
+         */
         function runMigrations() {
-            // verify that all indexes exist.
             return Promise.all(Object.keys(CRUD.EntityManager.entities).map(function(entityName) {
                 var entity = CRUD.EntityManager.entities[entityName];
                 if (entity.migrations) {
@@ -178,6 +184,10 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
             }));
         }
 
+        /**
+         * Iterate the list of existing and non-existing indexes for each entity and create the ones that don't exist.
+         * @return {void} void
+         */
         function createIndexes() {
             // create listed indexes if they don't already exist.
             return Promise.all(Object.keys(CRUD.EntityManager.entities).map(function(entityName) {
@@ -201,7 +211,7 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
             }));
         }
 
-
+        // fetch schema info and perform setup sequence.
         return db.execute("select type,name,tbl_name from sqlite_master")
             .then(parseSchemaInfo)
             .then(createTables)
@@ -241,7 +251,11 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
         }
     }
 
-
+    /**
+     * @param {CRUD.Entity} what type of CRUD.Entity to query the database for
+     * @param {object} filters Properties to create a WHERE statement from
+     * @param {object} options Optional array of options: { orderBy, groupBy, limit, justthese }
+     */
     this.Find = function(what, filters, options) {
         var builder = new CRUD.Database.SQLBuilder(what, filters, options);
         var query = builder.buildQuery();
@@ -264,8 +278,9 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
         });
     };
 
-    this.Persist = function(what, forceInsert) {
+    this.Persist = function(what, forceInsert, mode) {
         CRUD.stats.writesQueued++;
+        mode = mode || 'INSERT';
         var query = [],
             values = [],
             valmap = [],
@@ -301,7 +316,7 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
 
         if (what.getID() === false || undefined === what.getID() || forceInsert) { // new object : insert.
             // insert
-            query.push('INSERT INTO ', CRUD.EntityManager.entities[what.getType()].table, '(', names.join(","), ') VALUES (', values.join(","), ');');
+            query.push(mode + ' INTO ', CRUD.EntityManager.entities[what.getType()].table, '(', names.join(","), ') VALUES (', values.join(","), ');');
             CRUD.log(query.join(' '), valmap);
             return db.execute(query.join(' '), valmap).then(insertQuerySuccess, insertQueryError);
         } else { // existing : build an update query.
@@ -331,6 +346,18 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
     };
 
     return this;
+};
+
+
+/**
+ * A Handy Shorthand function to execute a raw SQL query and return the result with a promise.
+ *
+ * @param  {string} query Query to execute. Optionally use bound parameters with ? as a placeholder.
+ * @param  {array} bindings Optional array with query for the query
+ * @return {Promise} promise that resolves when query was executed
+ */
+CRUD.executeQuery = function(query, bindings) {
+    return CRUD.EntityManager.getAdapter().db.execute(query, bindings || []);
 };
 
 

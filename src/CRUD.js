@@ -350,7 +350,7 @@ CRUD.Entity.prototype = {
     /**
      * Persist changes on object using CRUD.Entity.set through the adapter.
      */
-    Persist: function(forceInsert) {
+    Persist: function(forceInsert, insertMode) {
         var that = this,
             thatType = this.getType();
         return new Promise(function(resolve, fail) {
@@ -366,7 +366,7 @@ CRUD.Entity.prototype = {
                     }
                 }
             }
-            return CRUD.EntityManager.getAdapter().Persist(that, forceInsert).then(function(result) {
+            return CRUD.EntityManager.getAdapter().Persist(that, forceInsert, insertMode).then(function(result) {
                 CRUD.log(that.getType() + ' has been persisted. Result: ' + result.Action + '. New Values: ' + JSON.stringify(that.__dirtyValues__));
                 if (result.Action == 'inserted') {
                     that.__dirtyValues__[CRUD.EntityManager.getPrimary(thatType)] = result.ID;
