@@ -139,8 +139,16 @@ serie.Persist().then(function(result) {
 
 				<h3>Read</h3>
 <pre><code class="language-js">
-CRUD.Find(Serie, { name: 'Arrow' }).then(function(series) {
+CRUD.Find(Serie, { name: 'Arrow' }).then(function(series) { // Find returns an array by default
 	console.log("Found results: ", series);
+});
+
+CRUD.FindOne(Serie, { name: 'Arrow' }).then(function(serie) { // FindOne does  a limit 0,1
+	console.log("Found one result: ", serie);
+});
+
+CRUD.Find(Serie, ['name like "%Arr%"']).then(function(series) { // You can pass an array instead of mapped object to add custom sql 
+	console.log("Found wildcard results: ", serie);
 });
 </code></pre>
 

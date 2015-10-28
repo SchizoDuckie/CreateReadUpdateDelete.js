@@ -103,8 +103,8 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
         CRUD.log('verifying that tables exist');
         var tables = [],
             indexes = {};
-        // fetch existing tables
-        return db.execute("select type,name,tbl_name from sqlite_master").then(function(resultset) {
+
+        function parseSchemaInfo(resultset) {
             for (var i = 0; i < resultset.rs.rows.length; i++) {
                 var row = resultset.rs.rows.item(i);
                 if (row.name.indexOf('sqlite_autoindex') > -1 || row.name == '__WebKitDatabaseInfoTable__') continue;
@@ -118,7 +118,9 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
                 }
             }
             return;
-        }).then(function() {
+        }
+
+        function createTables() {
             // verify that all tables exist
             return Promise.all(Object.keys(CRUD.EntityManager.entities).map(function(entityName) {
                 var entity = CRUD.EntityManager.entities[entityName];
@@ -141,7 +143,9 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
                 }
                 return;
             }));
-        }).then(function() {
+        }
+
+        function runMigrations() {
             // verify that all indexes exist.
             return Promise.all(Object.keys(CRUD.EntityManager.entities).map(function(entityName) {
                 var entity = CRUD.EntityManager.entities[entityName];
@@ -172,7 +176,9 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
                     }));
                 }
             }));
-        }).then(function() {
+        }
+
+        function createIndexes() {
             // create listed indexes if they don't already exist.
             return Promise.all(Object.keys(CRUD.EntityManager.entities).map(function(entityName) {
                 var entity = CRUD.EntityManager.entities[entityName];
@@ -193,15 +199,22 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
                     }));
                 }
             }));
-        }).then(function(result) {
-            CRUD.log("All migrations are done!");
-            self.initializing = false;
-        });
+        }
+
+
+        return db.execute("select type,name,tbl_name from sqlite_master")
+            .then(parseSchemaInfo)
+            .then(createTables)
+            .then(runMigrations)
+            .then(createIndexes).then(function(result) {
+                CRUD.log("All migrations are done!");
+                self.initializing = false;
+            });
     }
 
     /**
      * Insert fixtures for an entity if they exist
-     * @param  {CRUD}.Entity entity entity to insert fixtures for
+     * @param {CRUD.Entity} entity entity to insert fixtures for
      * @return {Promise} that resolves when all fixtures were inserted or immediately when none are defined
      */
     function createFixtures(entity) {

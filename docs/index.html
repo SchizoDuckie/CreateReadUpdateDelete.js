@@ -33,128 +33,153 @@ or any flavor of remote database you can think of via serverside JSON API</p>
 <p>Written in Plain Old JavaScript without any framework dependencies, you can use this with Mootools, Jquery, Zepto, Ember, or whatever your drug of choice is.</p>
 <h1>ActiveRecord? Orm?</h1>
 <p>ActiveRecord/ORM is a technique that fits perfectly into the DRY (Don't Repeat Yourself) paradigm.
-It takes away all the hassle of creating Insert, Select, Update and Delete database queries. You create your class, set some properties, call Save, and a database record is created automagicaly.
+It takes away all the hassle of creating Insert, Select, Update and Delete database queries. You create your class, set some properties, call Persist, and a database record is created automagicaly.
 If the object you're referring to already exists in the database, it will be updated.</p>
 <p>Want to find related data? Instantiate an object, call Find() on it with the filters you need, and the onComplete callback returns you your data.</p>
 <p>If you're doing data storage right, you don't have to write <em>any</em> SQL, at all.</p>
-<h1>Example, connecting to sqlite</h1>
-<p>First, define an adapter. In this case we use an SQLiteAdapter to the database 'myDbName '</p>
-<pre><code class="language-javascript">window.dbAdapter = new CRUD.SQLiteAdapter('myDbName');
-</code></pre>
-<p>Then, define some entity objects using CRUD.define</p>
-<pre><code class="language-javascript">var Presentation = CRUD.define({
-		className: 'Presentation',
-		table : 'presentations',
-		primary : 'ID_Presentation',
-		fields: ['ID_Presentation','ID_Client','name','template','forceUpdate', 'lastUpdated','lastAccessed','ID_Catalog', 'ID_Category'],
-		relations: {
-			'Slide': CRUD.RELATION_MANY
-		},
-		connectors: {
-			'Slide' : 'Presentationslide' // connectors are the way for RELATION_MANY to see what the joining table is
-		},
-		adapter: 'dbAdapter'
-	}, {
-
-	display: function() {
-		//console.log(&quot;Displaying presentation &quot;+this.get('name'));
-		//console.log(this.databaseValues);
-		var d = document.createElement('div');
-		d.innerHTML = 'Presentation:'+ this.get('name');
-		d.id = 'pres_'+this.getID();
-		document.body.appendChild(d);
-		// find slides for this presentation, it's a many:many relation.
-		this.Find(Slide, {}, { onSuccess: function(slides) {
-			for(var i = 0; i&lt; slides.length; i++) {
-				slides[i].display(d.id);
-			}
-		}});
-	}
-});
-</code></pre>
-<p>These entity objects map directly to an Sqlite database table. In this case we're setting up a many:many relationship</p>
-<pre><code class="language-javascript">var Slide = CRUD.define({
-		className: 'Slide',
-		table : 'slides',
-		primary : 'ID_Slide',
-		fields: ['ID_Slide','ID_User','Title','SubTitle','Content1','Content2', 'Content3','ID_Slidetemplate'],
-		
-		relations: {
-			'Presentation': CRUD.RELATION_MANY,
-			'Slidetemplate': CRUD.RELATION_FOREIGN
-		},
-		connectors: {
-			'Presentation' : 'Presentationslide'
-		},
-		adapter: 'dbAdapter'
-	}, {
-
-	display : function(target) {
-		var d = document.createElement('div');
-		d.innerHTML = this.get('ID_Slide') + ' - '+ this.get('Title')  + ' - '+ this.get('SubTitle');
-
-		target = target ? document.getElementById(target) : document.body;
-		target.appendChild(d);
-	}
-
-});
-</code></pre>
-<p>The connecting table is also defined as an entity, but this has 2 foreign relations.</p>
-<pre><code class="language-javascript">var Presentationslide = CRUD.define({
-		className: 'Presentationslide',
-		table : 'presentations_slides',
-		primary : 'ID_PresentationSlide',
-		fields: ['ID_PresentationSlide', 'ID_Presentation', 'ID_Slide', 'slideIndex', 'subSlideIndex'],
-		relations: {
-			'Presentation': CRUD.RELATION_FOREIGN,
-			'Slide': CRUD.RELATION_FOREIGN
-		},
-		defaultValues: {
-			slideIndex: 0,
-			subSlideIndex: 0
-		},
-		adapter: 'dbAdapter'
-	}, {
-	display: function() {
-		return new Element(&quot;div&quot;, {html: &quot;Presentationslide: &quot;+this.get('Name') });
-	}
-});
-</code></pre>
-<p>We initialize the whole stuff on onload or domready like this:</p>
-<pre><code class="language-javascript">window.onload = function() {
-	window.dbAdapter = new CRUD.SQLiteAdapter('myDbName');
-	// This will return an array with Presentation objects on success.
-	CRUD.Find(Presentation, {} , { onSuccess: function(result) {
-			for (var i=0; i&lt; result.length; i++) {
-				result[i].display();
-			}
-		}
-	});
-
+<h1>Features</h1>
+<ul>
+<li>Simple access to WebSQL database rows as if they're plain javascript objects</li>
+<li>A simplified query language, but the freedom to execute plain SQL</li>
+<li>Support for indexes, fixtures and migrations</li>
+<li>Completely promise-based. (Use promise.js for browsers that don't have a native Promise object)</li>
+<li>Built-in caching / entity manager layer makes sure you'll get a handle to the same entity when it's fetched again</li>
+<li>Supports 1:1, 1:many, many:1 and many:many relations</li>
+</ul>
+<h1>Docs</h1>
+<p><a href="http://schizoduckie.github.io/CreateReadUpdateDelete/docs/">Check out the full jsdoc here</a></p>
+<h1>Examples</h1>
+<p><a href="http://schizoduckie.github.io/CreateReadUpdateDelete/demo/">Check out the annotated running demo here</a></p>
+<h2>An Entity</h2>
+<pre><code>/**
+ * Create a nice Native function so that we can do console.log and see a Serie object
+ */
+function Serie() {
+    CRUD.Entity.call(this);
 }
-</code></pre>
-<p>To create a new Presentation, this is enough:</p>
-<pre><code class="language-javascript">var pres = new Presentation();
-pres.set('name', 'test');
-pres.Save();
-</code></pre>
-<p>A more advanced example: Create a Presentation and a Slide, and use Connect to automagically create the relation between them, in this many:many case a Presentationslide object.</p>
-<pre><code class="language-javascript">var pres = new Presentation();
-pres.set({
-	name: 'test presentation',
-	template: 'ImageOnly'
-})
 
-var slide = new Slide();
-slide.set({
-	Content1: '&lt;h1&gt;Test!&lt;/h1&gt;',
-	Title : 'Test Slide',
-	SubTitle: 'Test SubTitle'
+/**
+ * Extend the Named Function with CRUD definitions and register it in the CRUD.EntityManager
+ * Signature:
+ * CRUD.Define(Entity, {options}, {prototypeMethods});
+ */
+CRUD.define(Serie, {
+    className: 'Serie', 	// String classname for the entity
+    table: 'Series',		// Database table this entity is bound to
+    primary: 'ID_Serie',	// Primary key. Make sure to use uniquely named keys, don't use 'id' on every table and refer to 'id_something'
+    fields: [ 				// List all individual properties. Accessors will be auto-created (but can be overwritten)
+    	'ID_Serie',
+    	'name',
+    	'banner',
+    	'overview',
+    	'TVDB_ID',
+    	'actors'
+    ],
+    autoSerialize: ['actors'], // optional array of properties that will be json_encoded / decoded automagically.
+    relations: {
+    	// Foreign keys will be matched automagically based on the primary key of this table
+        'Episode': CRUD.RELATION_FOREIGN,
+        'Season': CRUD.RELATION_FOREIGN,
+        // Many to many relations have a connecting CRUD entity that has a foreign key to both this primary and the foreign primary.
+        'Tag' : CRUD.RELATION_MANY 		  
+    },
+    indexes: [
+        'name', 			// A create index statement will be automagically run to add any columns you list here
+    ],
+    // Provide your CREATE TABLE statement. CreateReadUpdateDelete will not autogenerate this for you
+    createStatement: 'CREATE TABLE Series (ID_Serie INTEGER PRIMARY KEY NOT NULL, name VARCHAR(250) DEFAULT(NULL), banner VARCHAR(1024) DEFAULT(NULL), overview TEXT DEFAULT(NULL), TVDB_ID INTEGER UNIQUE NOT NULL, actors VARCHAR(1024) DEFAULT(NULL))',
+    defaultValues: { // You can create a map of default values that you don't have in your schema here 
+    	'actors': ['Some actor']
+    }, 
+    fixtures: [{ // Fixtures can be an optional array of objects that are inserted when the table is created
+    	name: 'Marvels Agents of S.H.I.E.L.D',
+    	TVDB_ID: 263365,
+    	actors: [
+	    	&quot;Clark Gregg (Phil Coulson)&quot;,
+	    	&quot;Ming-Na Wen (Melinda May / Agent 33)&quot;,
+	    	&quot;Brett Dalton (Grant Ward)&quot;,
+	    	&quot;Chloe Bennet (Skye)&quot;,
+	    	&quot;Iain De Caestecker (Leo Fitz)&quot;
+    	],
+    }], 
+    migrations: {
+    	// if you change your table schema, you can 
+    }
+}, {
+    getEpisodes: function() {
+        return Episode.findBySerie({
+            ID_Serie: this.getID()
+        }, {
+            limit: 100000
+        });
+    },
+
+    getSeasons: function() {
+        return Season.findByID_Serie(this.getID());
+    },
+
+    getLastEpisode: function() {
+        var filter = ['(Episodes.firstaired &gt; 0 and Episodes.firstAired &lt; ' + new Date().getTime() + ')'];
+        filter.ID_Serie = this.getID();
+        return CRUD.FindOne('Episode', filter, {
+            orderBy: 'seasonnumber desc, episodenumber desc, firstaired desc'
+        }).then(function(result) {
+            return result;
+        });
+    }
+});
+</code></pre>
+<h2>Create</h2>
+<pre><code>var serie = new Serie();
+serie.name = 'Arrow';
+serie.TVDB_ID = '257655';
+serie.actors = [
+	&quot;Stephen Amell (Oliver Queen / Arrow)&quot;,
+	&quot;Katie Cassidy (Laurel Lance)&quot;,
+	&quot;Paul Blackthorne (Detective Quentin Lance)&quot;,
+	&quot;David Ramsey (John Diggle)&quot;,
+	&quot;Willa Holland (Thea Queen)&quot;,
+	&quot;Emily Bett Rickards (Felicity Smoak)&quot;,
+	&quot;John Barrowman (Malcolm Merlyn)&quot;
+];
+
+serie.Persist().then(function(result) {
+	console.log(&quot;Serie persisted! &quot;, result);
+});
+</code></pre>
+<h2>Read</h2>
+<pre><code>CRUD.Find(Serie, { name: 'Arrow' }).then(function(series) { // Find returns an array by default
+	console.log(&quot;Found results: &quot;, series);
 });
 
-pres.Connect(slide, { onComplete: function(r) {
-          console.log(&quot;CREATED connection between presentation &quot;+pres.getID()+&quot; and slide &quot;+slide.getID());
-      }
+CRUD.FindOne(Serie, { name: 'Arrow' }).then(function(serie) { // FindOne does  a limit 0,1
+	console.log(&quot;Found one result: &quot;, serie);
+});
+
+CRUD.Find(Serie, ['name like &quot;%Arr%&quot;']).then(function(series) { // You can pass an array instead of mapped object to add custom sql 
+	console.log(&quot;Found wildcard results: &quot;, serie);
+});
+</code></pre>
+<h2>Update</h2>
+<pre><code>CRUD.FindOne(Serie, {name: 'Arrow'}).then(function(arrow) {
+	arrow.overview = [
+		&quot;Oliver Queen and his father are lost at sea when their luxury yacht sinks.&quot;,
+		&quot;His father doesn't survive. Oliver survives on an uncharted island for five years learning to fight,&quot;,
+		&quot;but also learning about his father's corruption and unscrupulous business dealings.&quot;,
+		&quot;He returns to civilization a changed man, determined to put things right.&quot;,
+		&quot;He disguises himself with the hood of one of his mysterious island mentors,&quot;,
+		&quot;arms himself with a bow and sets about hunting down the men and women who have corrupted his city.&quot;
+	].join(' ');
+	return arrow.Persist();
+}).then(function(result) {
+	console.log(&quot;Arrow update persisted!&quot;, result);
+});
+</code></pre>
+<h2>Delete</h2>
+<pre><code>CRUD.FindOne(Serie, {name: 'Arrow'}).then(function(arrow) {
+	return arrow.Delete();
+}).then(function(result) {
+	console.log(&quot;Arrow deleted!&quot;);
 });
 </code></pre>
 </section>

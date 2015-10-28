@@ -313,8 +313,8 @@
     CRUD.log('verifying that tables exist');
     var tables = [],
         indexes = {};
-    // fetch existing tables
-    return db.execute(&quot;select type,name,tbl_name from sqlite_master&quot;).then(function(resultset) {
+
+    function parseSchemaInfo(resultset) {
         for (var i = 0; i &lt; resultset.rs.rows.length; i++) {
             var row = resultset.rs.rows.item(i);
             if (row.name.indexOf('sqlite_autoindex') &gt; -1 || row.name == '__WebKitDatabaseInfoTable__') continue;
@@ -328,7 +328,9 @@
             }
         }
         return;
-    }).then(function() {
+    }
+
+    function createTables() {
         // verify that all tables exist
         return Promise.all(Object.keys(CRUD.EntityManager.entities).map(function(entityName) {
             var entity = CRUD.EntityManager.entities[entityName];
@@ -351,7 +353,9 @@
             }
             return;
         }));
-    }).then(function() {
+    }
+
+    function runMigrations() {
         // verify that all indexes exist.
         return Promise.all(Object.keys(CRUD.EntityManager.entities).map(function(entityName) {
             var entity = CRUD.EntityManager.entities[entityName];
@@ -382,7 +386,9 @@
                 }));
             }
         }));
-    }).then(function() {
+    }
+
+    function createIndexes() {
         // create listed indexes if they don't already exist.
         return Promise.all(Object.keys(CRUD.EntityManager.entities).map(function(entityName) {
             var entity = CRUD.EntityManager.entities[entityName];
@@ -403,10 +409,17 @@
                 }));
             }
         }));
-    }).then(function(result) {
-        CRUD.log(&quot;All migrations are done!&quot;);
-        self.initializing = false;
-    });
+    }
+
+
+    return db.execute(&quot;select type,name,tbl_name from sqlite_master&quot;)
+        .then(parseSchemaInfo)
+        .then(createTables)
+        .then(runMigrations)
+        .then(createIndexes).then(function(result) {
+            CRUD.log(&quot;All migrations are done!&quot;);
+            self.initializing = false;
+        });
 }</code></pre>
           <section id="createFixtures">
             <h1>createFixtures</h1>
@@ -426,9 +439,9 @@
             </thead>
             <tbody>
               <tr>
-                <td>{CRUD}.Entity</td>
-                <td></td>
-                <td><p>entity entity to insert fixtures for</p></td>
+                <td>entity</td>
+                <td>CRUD.Entity</td>
+                <td><p>entity to insert fixtures for</p></td>
               </tr>
               <tr>
                 <td>return</td>
@@ -581,7 +594,7 @@ return this;
             </p>
           </section>
           <div class="description"><hr>
-<p>CRUD.Database.js, a simple database abstraction layer.<br />Adapted from mootools Database.js by  Dipl.-Ing. (FH) AndrÃ© Fiedler <a href="&#x6d;&#97;&#x69;&#108;&#116;&#x6f;&#58;&#x6b;&#111;&#110;&#x74;&#97;&#107;&#x74;&#64;&#x76;&#x69;&#115;&#117;&#97;&#x6c;&#100;&#x72;&#117;&#103;&#115;&#46;&#110;&#x65;&#x74;">&#x6b;&#111;&#110;&#x74;&#97;&#107;&#x74;&#64;&#x76;&#x69;&#115;&#117;&#97;&#x6c;&#100;&#x72;&#117;&#103;&#115;&#46;&#110;&#x65;&#x74;</a><br />Removed all moo dependencies and converted to POJS<br />December 2013: Updated for use of promises.<br />...</p></div>
+<p>CRUD.Database.js, a simple database abstraction layer.<br />Adapted from mootools Database.js by  Dipl.-Ing. (FH) AndrÃ© Fiedler <a href="&#x6d;&#x61;&#x69;&#x6c;&#116;&#x6f;&#x3a;&#x6b;&#x6f;&#110;&#x74;&#97;&#x6b;&#116;&#x40;&#118;&#105;&#x73;&#x75;&#x61;&#x6c;&#x64;&#x72;&#117;&#103;&#115;&#46;&#110;&#x65;&#116;">&#x6b;&#x6f;&#110;&#x74;&#97;&#x6b;&#116;&#x40;&#118;&#105;&#x73;&#x75;&#x61;&#x6c;&#x64;&#x72;&#117;&#103;&#115;&#46;&#110;&#x65;&#116;</a><br />Removed all moo dependencies and converted to POJS<br />December 2013: Updated for use of promises.<br />...</p></div>
           <pre><code class="language-javascript">CRUD.Database = function(name, options) {
     options = options || {
         version: '1.0',
