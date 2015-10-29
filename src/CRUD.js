@@ -347,8 +347,11 @@ CRUD.Entity.prototype = {
             CRUD.log('Could not find field \'' + field + '\' in \'' + this.getType() + '\' (for set)');
         }
     },
+
     /**
      * Persist changes on object using CRUD.Entity.set through the adapter.
+     * @param {boolean} forceInsert flag all values as dirty to perform a full insert
+     * @param {string} insertMode Insert query method. 'INSERT' by default, can be 'REPLACE' if you need.
      */
     Persist: function(forceInsert, insertMode) {
         var that = this,

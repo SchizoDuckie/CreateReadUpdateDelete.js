@@ -84,12 +84,11 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
      * This starts a promise chain that executes the following steps:
      * - Fetch a list of all tables and indexes
      * - Iterate all known entities and:
-     *   - Execute their createStatements if they haven't been created.
-     *   - Execute any migrations in sequence if the localStorage value database.version.<table> is smaller than the highest migration number
-     *   - Compare the list of indexes and create the ones that don't exist
-     *   - Insert fixtures if the table has been freshly created
-     *
-     * @return {Promise} that resolves when all initialization is done
+     * - Execute their createStatements if they haven't been created.
+     * - Execute any migrations in sequence if the localStorage value database.version.<table> is smaller than the highest migration number
+     * - Compare the list of indexes and create the ones that don't exist
+     * - Insert fixtures if the table has been freshly created
+     * @return {Promise} Promise that resolves when all initialization is done
      */
     function verifyTables() {
         CRUD.log('verifying that tables exist');
@@ -278,6 +277,12 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
         });
     };
 
+    /**
+     * Save a changed or new entity into the database.
+     * @param {CRUD.Entity} what an instance of a CRUD.Entity
+     * @param {boolean} forceInsert (Optional) Flag all values dirty and append them to the query
+     * @param {string} mode (Optional) insert mode to use with forceInsert: Default: INSERT. Can also be REPLACE
+     */
     this.Persist = function(what, forceInsert, mode) {
         CRUD.stats.writesQueued++;
         mode = mode || 'INSERT';
@@ -330,7 +335,11 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
         }
     };
 
-    this.Delete = function(what, events) {
+    /**
+     * @param {CRUD.Entity} what Entity instance to delete
+     * @return {Promise} Promise that resolves when done
+     */
+    this.Delete = function(what) {
         if (what.getID() !== false) {
             query = ['delete from', CRUD.EntityManager.entities[what.getType()].table, 'where', CRUD.EntityManager.getPrimary(what.getType()), '= ?'].join(' ');
             return db.execute(query, [what.getID()]).then(function(resultSet) {

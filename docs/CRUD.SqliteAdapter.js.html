@@ -46,6 +46,8 @@
                   </li>
                   <li><a href="#Find"><i class="alert alert-info"></i><span>Find</span></a>
                   </li>
+                  <li><a href="#Persist"><i class="alert alert-info"></i><span>Persist</span></a>
+                  </li>
                   <li><a href="#executeQuery"><i class="alert alert-info"></i><span>executeQuery</span></a>
                   </li>
                   <li><a href="#Database"><i class="alert alert-info"></i><span>Database</span></a>
@@ -270,13 +272,11 @@
           </section>
           <div class="description"><p>Verify that all tables for registered entities exist.<br />This starts a promise chain that executes the following steps:</p><ul>
 <li>Fetch a list of all tables and indexes</li>
-<li>Iterate all known entities and:<ul>
+<li>Iterate all known entities and:</li>
 <li>Execute their createStatements if they haven&#39;t been created.</li>
 <li>Execute any migrations in sequence if the localStorage value database.version.<table> is smaller than the highest migration number</li>
 <li>Compare the list of indexes and create the ones that don&#39;t exist</li>
 <li>Insert fixtures if the table has been freshly created</li>
-</ul>
-</li>
 </ul>
 </div>
           <pre><code class="language-javascript">function verifyTables() {
@@ -561,10 +561,44 @@ return db.execute(&quot;select type,name,tbl_name from sqlite_master&quot;)
                 });
         });
     });
-};
-
-this.Persist = function(what, forceInsert) {
+};</code></pre>
+          <section id="Persist">
+            <h1>Persist</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>this.Persist()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>Save a changed or new entity into the database.</p></div>
+          <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th style="width:20%">Option name</th>
+                <th style="width:20%">Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>what</td>
+                <td>CRUD.Entity</td>
+                <td><p>an instance of a CRUD.Entity</p></td>
+              </tr>
+              <tr>
+                <td>forceInsert</td>
+                <td>boolean</td>
+                <td><p>(Optional) Flag all values dirty and append them to the query</p></td>
+              </tr>
+              <tr>
+                <td>mode</td>
+                <td>string</td>
+                <td><p>(Optional) insert mode to use with forceInsert: Default: INSERT. Can also be REPLACE</p></td>
+              </tr>
+            </tbody>
+          </table>
+          <pre><code class="language-javascript">this.Persist = function(what, forceInsert, mode) {
     CRUD.stats.writesQueued++;
+    mode = mode || 'INSERT';
     var query = [],
         values = [],
         valmap = [],
@@ -600,7 +634,7 @@ this.Persist = function(what, forceInsert) {
 
     if (what.getID() === false || undefined === what.getID() || forceInsert) { // new object : insert.
         // insert
-        query.push('INSERT INTO ', CRUD.EntityManager.entities[what.getType()].table, '(', names.join(&quot;,&quot;), ') VALUES (', values.join(&quot;,&quot;), ');');
+        query.push(mode + ' INTO ', CRUD.EntityManager.entities[what.getType()].table, '(', names.join(&quot;,&quot;), ') VALUES (', values.join(&quot;,&quot;), ');');
         CRUD.log(query.join(' '), valmap);
         return db.execute(query.join(' '), valmap).then(insertQuerySuccess, insertQueryError);
     } else { // existing : build an update query.
@@ -676,7 +710,7 @@ return this;
             </p>
           </section>
           <div class="description"><hr>
-<p>CRUD.Database.js, a simple database abstraction layer.<br />Adapted from mootools Database.js by  Dipl.-Ing. (FH) AndrÃ© Fiedler <a href="&#x6d;&#97;&#105;&#108;&#116;&#111;&#x3a;&#x6b;&#x6f;&#110;&#116;&#97;&#x6b;&#x74;&#x40;&#118;&#x69;&#x73;&#x75;&#97;&#108;&#100;&#114;&#117;&#x67;&#115;&#x2e;&#110;&#x65;&#x74;">&#x6b;&#x6f;&#110;&#116;&#97;&#x6b;&#x74;&#x40;&#118;&#x69;&#x73;&#x75;&#97;&#108;&#100;&#114;&#117;&#x67;&#115;&#x2e;&#110;&#x65;&#x74;</a><br />Removed all moo dependencies and converted to POJS<br />December 2013: Updated for use of promises.<br />...</p></div>
+<p>CRUD.Database.js, a simple database abstraction layer.<br />Adapted from mootools Database.js by  Dipl.-Ing. (FH) AndrÃ© Fiedler <a href="&#109;&#97;&#105;&#x6c;&#x74;&#111;&#58;&#107;&#x6f;&#110;&#x74;&#97;&#107;&#x74;&#x40;&#x76;&#x69;&#x73;&#117;&#97;&#x6c;&#100;&#x72;&#x75;&#x67;&#x73;&#x2e;&#x6e;&#101;&#116;">&#107;&#x6f;&#110;&#x74;&#97;&#107;&#x74;&#x40;&#x76;&#x69;&#x73;&#117;&#97;&#x6c;&#100;&#x72;&#x75;&#x67;&#x73;&#x2e;&#x6e;&#101;&#116;</a><br />Removed all moo dependencies and converted to POJS<br />December 2013: Updated for use of promises.<br />...</p></div>
           <pre><code class="language-javascript">CRUD.Database = function(name, options) {
     options = options || {
         version: '1.0',

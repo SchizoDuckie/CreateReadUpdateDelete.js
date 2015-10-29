@@ -438,7 +438,28 @@ importValues: function(values, dirty) {
             </p>
           </section>
           <div class="description"><p>Persist changes on object using CRUD.Entity.set through the adapter.</p></div>
-          <pre><code class="language-javascript">Persist: function(forceInsert) {
+          <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th style="width:20%">Option name</th>
+                <th style="width:20%">Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>forceInsert</td>
+                <td>boolean</td>
+                <td><p>flag all values as dirty to perform a full insert</p></td>
+              </tr>
+              <tr>
+                <td>insertMode</td>
+                <td>string</td>
+                <td><p>Insert query method. &#39;INSERT&#39; by default, can be &#39;REPLACE&#39; if you need.</p></td>
+              </tr>
+            </tbody>
+          </table>
+          <pre><code class="language-javascript">Persist: function(forceInsert, insertMode) {
     var that = this,
         thatType = this.getType();
     return new Promise(function(resolve, fail) {
@@ -454,7 +475,7 @@ importValues: function(values, dirty) {
                 }
             }
         }
-        return CRUD.EntityManager.getAdapter().Persist(that, forceInsert).then(function(result) {
+        return CRUD.EntityManager.getAdapter().Persist(that, forceInsert, insertMode).then(function(result) {
             CRUD.log(that.getType() + ' has been persisted. Result: ' + result.Action + '. New Values: ' + JSON.stringify(that.__dirtyValues__));
             if (result.Action == 'inserted') {
                 that.__dirtyValues__[CRUD.EntityManager.getPrimary(thatType)] = result.ID;
