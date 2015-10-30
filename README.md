@@ -31,10 +31,35 @@ Docs
 [Check out the full jsdoc here](http://schizoduckie.github.io/CreateReadUpdateDelete/docs/)
 
 
-Examples
-========
+Topics
+======
 
-[Check out the annotated running demo here](http://schizoduckie.github.io/CreateReadUpdateDelete/demo/)
+- CRUD.Define: Introduction and conventions
+- CRUD.Define: [basic setup of an entity](http://jsfiddle.net/SchizoDuckie/1fwntkhr/)
+- CRUD.Define: 1:1 relation
+- CRUD.Define: 1:many relation
+- CRUD.Define: many:1 relation
+- CRUD.Define: many:many relation
+- CRUD.Define: Default orderBy property and orderBy direction
+- CRUD.Define: Custom orderBy clause
+- CRUD.Define: Defining fixtures
+- CRUD.Define: Indexes
+- Usage: Opening a database connection
+- Usage: Using CRUD.Find and CRUD.FindOne
+- Usage: Using Find on an entity instance to fetch related entities
+- Usage: Using FindOne
+- Usage: Save changes to an entity to the database
+- Usage: Deleting an entity
+- Usage: Connecting entities
+- Advanced: Deep filters on related records using CRUD.Find
+- Advanced: Using CRUD.fromCache to convert a plain JavaScript Object into a CRUD Entity
+- Advanced: Loading data from JSON and inserting it into the database
+- Advanced: Using CRUD.executeQuery
+- Advanced: Active Query Monitor using Object.observe
+- Advanced: CRUD.EntityManager ensures you have handle to the same record in different contexts
+- Advanced: Migrations in WebSQL: Adding a column to the database
+
+
 
 An Entity
 ---------
