@@ -44,6 +44,7 @@ Topics
 - CRUD.Define: Custom orderBy clause
 - CRUD.Define: Defining fixtures
 - CRUD.Define: Indexes
+- CRUD.Define: Migrations
 - Usage: Opening a database connection
 - Usage: Using CRUD.Find and CRUD.FindOne
 - Usage: Using Find on an entity instance to fetch related entities
