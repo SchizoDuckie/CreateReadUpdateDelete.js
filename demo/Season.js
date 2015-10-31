@@ -3,7 +3,6 @@ function Season() {
 }
 
 CRUD.define(Season, {
-    className: 'Season',
     table: 'Seasons',
     primary: 'ID_Season',
     fields: ['ID_Season', 'ID_Serie', 'poster', 'overview', 'seasonnumber', 'ratings', 'ratingcount', 'watched', 'notWatchedCount'],
@@ -17,8 +16,6 @@ CRUD.define(Season, {
     orderProperty: 'seasonnumber',
     orderDirection: 'DESC',
     createStatement: 'CREATE TABLE Seasons ( ID_Season INTEGER PRIMARY KEY NOT NULL,ID_Serie INTEGER NOT NULL, poster VARCHAR(255), overview TEXT NULL, seasonnumber INTEGER, ratings INTEGER NULL, ratingcount INTEGER NULL, watched TINYINT DEFAULT(0), notWatchedCount INTEGER DEFAULT(0), UNIQUE (ID_Serie, seasonnumber) ON CONFLICT REPLACE )',
-    adapter: 'dbAdapter',
-    defaultValues: {},
     migrations: {
         2: [
             'ALTER TABLE Seasons RENAME TO Seasons_bak',

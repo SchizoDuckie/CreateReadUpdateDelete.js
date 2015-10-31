@@ -31,6 +31,8 @@
                   </li>
                   <li><a href="#setAdapter"><i class="alert alert-info"></i><span>setAdapter</span></a>
                   </li>
+                  <li><a href="#define"><i class="alert alert-info"></i><span>define</span></a>
+                  </li>
                   <li><a href="#Find"><i class="alert alert-info"></i><span>Find</span></a>
                   </li>
                   <li><a href="#FindOne"><i class="alert alert-info"></i><span>FindOne</span></a>
@@ -93,7 +95,6 @@
     this.cache = {};
     this.connectionAdapter = false;
     this.defaultSetup = {
-        className: 'CRUD.Entity',
         ID: false,
         table: false,
         primary: false,
@@ -106,8 +107,7 @@
         orderDirection: false,
         relations: {},
         connectors: {},
-        createStatement: false,
-        keys: []
+        createStatement: false
     };
     var ucFirst = function(str) {
         return str.charAt(0).toUpperCase() + str.slice(1);
@@ -120,7 +120,7 @@
             </p>
           </section>
           <div class="description"><p>Register a new entity into the entity manager, which will manage it&#39;s properties, relations, and data.</p></div>
-          <pre><code class="language-javascript">this.registerEntity = function(namedFunction, dbSetup, methods) {
+          <pre><code class="language-javascript">this.registerEntity = function(className, namedFunction, dbSetup, methods) {
     namedFunction.prototype = Object.create(CRUD.Entity.prototype);
     namedFunction.prototype.constructor = CRUD.Entity;
     dbSetup.fields.map(function(field) {
@@ -140,7 +140,6 @@
             namedFunction.prototype[j] = methods[j];
         }
     }
-    var className = dbSetup.className;
     Object.defineProperty(namedFunction.prototype, '__className__', {
         get: function() {
             return className;
@@ -173,6 +172,10 @@
     namedFunction.FindOne = function(filters, options) {
         return CRUD.FindOne(className, filters, options);
     };
+    namedFunction.getType = function() {
+        return className;
+    };
+    namedFunction.toString = namedFunction.getType;
     dbSetup.fields.map(function(field) {
         namedFunction['findOneBy' + ucFirst(field)] = function(value, options) {
             var filter = {};
@@ -185,7 +188,7 @@
             return CRUD.Find(className, filter, options || {});
         };
     });
-    Object.keys(dbSetup.relations).map(function(name) {
+    Object.keys(this.entities[className].relations).map(function(name) {
         CRUD.log('creating relation search for ', name, ' to ', className);
         namedFunction['findBy' + name] = function(filter) {
             var filters = {};
@@ -234,12 +237,66 @@ this.hasRelation = function(className, related) {
     return related in this.entities[className].relations;
 };
 return this;
-}();
-CRUD.define = function(namedFunction, properties, methods) {
-return CRUD.EntityManager.registerEntity(namedFunction, properties, methods);
+}();</code></pre>
+          <section id="define">
+            <h1>define</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>CRUD.define()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>CRUD.define forwards registration of an entity to CRUD.EntityManager.</p><p>Parameters passed to &#39;properties&#39; should be at least:</p><ul>
+<li>createStatement : String, Full CREATE TABLE SQL statement</li>
+<li>table : String, Table name used by createStatement</li>
+<li>primary : String, Primary key property</li>
+<li>fields : All properties (including primary key) created by the createStatement</li>
+</ul>
+<p>Optional properties can be:</p><ul>
+<li>indexes : Array, List of fields to create indexes on.</li>
+<li>relations : Array, List of (String) Entity names and CRUD.RELATION_* types</li>
+<li>autoSerialize : Array, properties to auto json_encode / json_decode on fetch/persist</li>
+<li>defaultValues : Object, property -&gt; default value list</li>
+<li>orderProperty : String, default orderBy propery to append to CRUD.Find queries</li>
+<li>orderDirection : String, default orderBy direction to append to CRUD.Find queries</li>
+<li>migrations : Object, with numeric keys and array of raw sql migrations to run in sequence when current version doesn&#39;t match lastest.</li>
+</ul>
+</div>
+          <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th style="width:20%">Option name</th>
+                <th style="width:20%">Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>namedFunction</td>
+                <td>Function</td>
+                <td><p>Named Function to register with the entity manager</p></td>
+              </tr>
+              <tr>
+                <td>properties</td>
+                <td>object</td>
+                <td><p>entity config properties like table, primary, fields, createStatement</p></td>
+              </tr>
+              <tr>
+                <td>methods</td>
+                <td>object</td>
+                <td><p>prototype methods to register on the entity instance</p></td>
+              </tr>
+              <tr>
+                <td>return</td>
+                <td>Function</td>
+                <td><p>namedFunction enriched with CRUD methods and prototype methods</p></td>
+              </tr>
+            </tbody>
+          </table>
+          <pre><code class="language-javascript">CRUD.define = function(namedFunction, properties, methods) {
+    return CRUD.EntityManager.registerEntity(namedFunction.prototype.constructor.name, namedFunction, properties, methods || {});
 };
 CRUD.setAdapter = function(adapter) {
-return CRUD.EntityManager.setAdapter(adapter);
+    return CRUD.EntityManager.setAdapter(adapter);
 };</code></pre>
           <section id="Find">
             <h1>Find</h1>
@@ -253,7 +310,7 @@ return CRUD.EntityManager.setAdapter(adapter);
     var type = null;
     if (obj instanceof CRUD.Entity || obj.prototype instanceof CRUD.Entity) {
         type = obj.getType();
-        if (obj.getID() !== false) {
+        if (obj.getID &amp;&amp; obj.getID() !== false) {
             CRUD.log('Object has an ID! ', ID, type);
             filters.ID = obj.getID();
             filters.type = filters;
@@ -327,9 +384,11 @@ CRUD.fromCache = function(obj, values) {
     };
     return this;
 };
+
 CRUD.Entity = function(className, methods) {
     this.__values__ = {};
     this.__dirtyValues__ = {};
+    console.log(&quot;Create entity: &quot;, this.constructor.name);
     return this;
 };
 CRUD.Entity.prototype = {

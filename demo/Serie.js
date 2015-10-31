@@ -11,7 +11,6 @@ function Serie() {
  * CRUD.Define(Entity, {options}, {prototypeMethods});
  */
 CRUD.define(Serie, {
-    className: 'Serie', // String classname for the entity
     table: 'Series', // Database table this entity is bound to
     primary: 'ID_Serie', // Primary key. Make sure to use uniquely named keys, don't use 'id' on every table and refer to 'id_something'
     fields: [ // List all individual properties. Accessors will be auto-created (but can be overwritten)
@@ -43,10 +42,7 @@ CRUD.define(Serie, {
         TVDB_ID: 263365,
         // since actors is an autoSerialized field, you should supply the pre-json-encoded field format for fixtures
         actors: '["Clark Gregg (Phil Coulson)","Ming-Na Wen (Melinda May / Agent 33)","Brett Dalton (Grant Ward)","Chloe Bennet (Skye)","Iain De Caestecker (Leo Fitz)"]'
-    }],
-    migrations: {
-        // if you change your table schema, you can 
-    }
+    }]
 }, {
     getEpisodes: function() {
         return Episode.findBySerie({

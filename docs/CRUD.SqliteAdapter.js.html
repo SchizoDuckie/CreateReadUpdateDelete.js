@@ -48,6 +48,8 @@
                   </li>
                   <li><a href="#Persist"><i class="alert alert-info"></i><span>Persist</span></a>
                   </li>
+                  <li><a href="#Delete"><i class="alert alert-info"></i><span>Delete</span></a>
+                  </li>
                   <li><a href="#executeQuery"><i class="alert alert-info"></i><span>executeQuery</span></a>
                   </li>
                   <li><a href="#Database"><i class="alert alert-info"></i><span>Database</span></a>
@@ -340,18 +342,18 @@
         var entity = CRUD.EntityManager.entities[entityName];
         if (tables.indexOf(entity.table) == -1) {
             if (!entity.createStatement) {
-                throw &quot;No create statement found for &quot; + entity.className + &quot;. Don't know how to create table.&quot;;
+                throw &quot;No create statement found for &quot; + entity.getType() + &quot;. Don't know how to create table.&quot;;
             }
             return db.execute(entity.createStatement).then(function() {
                 tables.push(entity.table);
                 localStorage.setItem('database.version.' + entity.table, ('migrations' in entity) ? Math.max.apply(Math, Object.keys(entity.migrations)) : 1);
-                CRUD.log(entity.className + &quot; table created.&quot;);
+                CRUD.log(entity.getType() + &quot; table created.&quot;);
                 return entity;
             }, function(err) {
-                CRUD.log(&quot;Error creating &quot; + entity.className, err);
-                throw &quot;Error creating table: &quot; + entity.table + &quot; for &quot; + entity.className;
+                CRUD.log(&quot;Error creating &quot; + entity.getType(), err);
+                throw &quot;Error creating table: &quot; + entity.table + &quot; for &quot; + entity.getType();
             }).then(createFixtures).then(function() {
-                CRUD.log(&quot;Table created and fixtures inserted for &quot;, entity.className);
+                CRUD.log(&quot;Table created and fixtures inserted for &quot;, entity.getType());
                 return;
             });
         }
@@ -467,7 +469,7 @@ return db.execute(&quot;select type,name,tbl_name from sqlite_master&quot;)
     return new Promise(function(resolve, reject) {
         if (!entity.fixtures) return resolve();
         return Promise.all(entity.fixtures.map(function(fixture) {
-            CRUD.fromCache(entity.className, fixture).Persist(true);
+            CRUD.fromCache(entity.getType(), fixture).Persist(true);
         })).then(resolve, reject);
     });
 }</code></pre>
@@ -646,9 +648,37 @@ return db.execute(&quot;select type,name,tbl_name from sqlite_master&quot;)
 
         return db.execute(query.join(' '), valmap).then(updateQuerySuccess, updateQueryError);
     }
-};
-
-this.Delete = function(what, events) {
+};</code></pre>
+          <section id="Delete">
+            <h1>Delete</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>this.Delete()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"></div>
+          <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th style="width:20%">Option name</th>
+                <th style="width:20%">Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>what</td>
+                <td>CRUD.Entity</td>
+                <td><p>Entity instance to delete</p></td>
+              </tr>
+              <tr>
+                <td>return</td>
+                <td>Promise</td>
+                <td><p>Promise that resolves when done</p></td>
+              </tr>
+            </tbody>
+          </table>
+          <pre><code class="language-javascript">this.Delete = function(what) {
     if (what.getID() !== false) {
         query = ['delete from', CRUD.EntityManager.entities[what.getType()].table, 'where', CRUD.EntityManager.getPrimary(what.getType()), '= ?'].join(' ');
         return db.execute(query, [what.getID()]).then(function(resultSet) {
@@ -710,7 +740,7 @@ return this;
             </p>
           </section>
           <div class="description"><hr>
-<p>CRUD.Database.js, a simple database abstraction layer.<br />Adapted from mootools Database.js by  Dipl.-Ing. (FH) AndrÃ© Fiedler <a href="&#109;&#97;&#105;&#x6c;&#x74;&#111;&#58;&#107;&#x6f;&#110;&#x74;&#97;&#107;&#x74;&#x40;&#x76;&#x69;&#x73;&#117;&#97;&#x6c;&#100;&#x72;&#x75;&#x67;&#x73;&#x2e;&#x6e;&#101;&#116;">&#107;&#x6f;&#110;&#x74;&#97;&#107;&#x74;&#x40;&#x76;&#x69;&#x73;&#117;&#97;&#x6c;&#100;&#x72;&#x75;&#x67;&#x73;&#x2e;&#x6e;&#101;&#116;</a><br />Removed all moo dependencies and converted to POJS<br />December 2013: Updated for use of promises.<br />...</p></div>
+<p>CRUD.Database.js, a simple database abstraction layer.<br />Adapted from mootools Database.js by  Dipl.-Ing. (FH) AndrÃ© Fiedler <a href="&#109;&#x61;&#105;&#x6c;&#116;&#111;&#x3a;&#107;&#x6f;&#110;&#x74;&#x61;&#107;&#116;&#64;&#x76;&#105;&#115;&#117;&#97;&#x6c;&#100;&#x72;&#x75;&#103;&#115;&#46;&#x6e;&#x65;&#116;">&#107;&#x6f;&#110;&#x74;&#x61;&#107;&#116;&#64;&#x76;&#105;&#115;&#117;&#97;&#x6c;&#100;&#x72;&#x75;&#103;&#115;&#46;&#x6e;&#x65;&#116;</a><br />Removed all moo dependencies and converted to POJS<br />December 2013: Updated for use of promises.<br />...</p></div>
           <pre><code class="language-javascript">CRUD.Database = function(name, options) {
     options = options || {
         version: '1.0',
@@ -905,7 +935,7 @@ CRUD.Database.SQLBuilder.prototype = {
         var entity = CRUD.EntityManager.entities[theClass];
         parent = CRUD.EntityManager.entities[parent];
 
-        switch (parent.relations[entity.className]) { // then check the relationtype
+        switch (parent.relations[entity.getType()]) { // then check the relationtype
             case CRUD.RELATION_SINGLE:
             case CRUD.RELATION_FOREIGN:
                 if (entity.fields.indexOf(parent.primary) &gt; -1) {

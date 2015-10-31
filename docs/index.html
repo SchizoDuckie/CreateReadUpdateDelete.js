@@ -33,12 +33,14 @@ or any flavor of remote database you can think of via serverside JSON API</p>
 <p>Written in Plain Old JavaScript without any framework dependencies, you can use this with Mootools, Jquery, Zepto, Ember, or whatever your drug of choice is.</p>
 <h1>ActiveRecord? Orm?</h1>
 <p>ActiveRecord/ORM is a technique that fits perfectly into the DRY (Don't Repeat Yourself) paradigm.
-It takes away all the hassle of creating Insert, Select, Update and Delete database queries. You create your class, set some properties, call Persist, and a database record is created automagicaly.
+It takes away all the hassle of creating Insert, Select, Update and Delete database queries. You create your an instance of your entity, set some properties, call Persist, and a database record is created automagicaly.
 If the object you're referring to already exists in the database, it will be updated.</p>
 <p>Want to find related data? Instantiate an object, call Find() on it with the filters you need, and the onComplete callback returns you your data.</p>
 <p>If you're doing data storage right, you don't have to write <em>any</em> SQL, at all.</p>
 <h1>Features</h1>
 <ul>
+<li>Works on any browser that supports WebSQL (yes, also on mobile)</li>
+<li>Works even without <a href="https://www.sqlite.org/foreignkeys.html">schema-defined foreign keys</a> by just matching primary keys</li>
 <li>Simple access to WebSQL database rows as if they're plain javascript objects</li>
 <li>A simplified query language, but the freedom to execute plain SQL</li>
 <li>Support for indexes, fixtures and migrations</li>
@@ -46,91 +48,8 @@ If the object you're referring to already exists in the database, it will be upd
 <li>Built-in caching / entity manager layer makes sure you'll get a handle to the same entity when it's fetched again</li>
 <li>Supports 1:1, 1:many, many:1 and many:many relations</li>
 </ul>
-<h1>Docs</h1>
-<p><a href="http://schizoduckie.github.io/CreateReadUpdateDelete/docs/">Check out the full jsdoc here</a></p>
-<h1>Examples</h1>
-<p><a href="http://schizoduckie.github.io/CreateReadUpdateDelete/demo/">Check out the annotated running demo here</a></p>
-<h2>An Entity</h2>
-<pre><code>/**
- * Create a nice Native function so that we can do console.log and see a Serie object
- */
-function Serie() {
-    CRUD.Entity.call(this);
-}
-
-/**
- * Extend the Named Function with CRUD definitions and register it in the CRUD.EntityManager
- * Signature:
- * CRUD.Define(Entity, {options}, {prototypeMethods});
- */
-CRUD.define(Serie, {
-    className: 'Serie', 	// String classname for the entity
-    table: 'Series',		// Database table this entity is bound to
-    primary: 'ID_Serie',	// Primary key. Make sure to use uniquely named keys, don't use 'id' on every table and refer to 'id_something'
-    fields: [ 				// List all individual properties. Accessors will be auto-created (but can be overwritten)
-    	'ID_Serie',
-    	'name',
-    	'banner',
-    	'overview',
-    	'TVDB_ID',
-    	'actors'
-    ],
-    autoSerialize: ['actors'], // optional array of properties that will be json_encoded / decoded automagically.
-    relations: {
-    	// Foreign keys will be matched automagically based on the primary key of this table
-        'Episode': CRUD.RELATION_FOREIGN,
-        'Season': CRUD.RELATION_FOREIGN,
-        // Many to many relations have a connecting CRUD entity that has a foreign key to both this primary and the foreign primary.
-        'Tag' : CRUD.RELATION_MANY 		  
-    },
-    indexes: [
-        'name', 			// A create index statement will be automagically run to add any columns you list here
-    ],
-    // Provide your CREATE TABLE statement. CreateReadUpdateDelete will not autogenerate this for you
-    createStatement: 'CREATE TABLE Series (ID_Serie INTEGER PRIMARY KEY NOT NULL, name VARCHAR(250) DEFAULT(NULL), banner VARCHAR(1024) DEFAULT(NULL), overview TEXT DEFAULT(NULL), TVDB_ID INTEGER UNIQUE NOT NULL, actors VARCHAR(1024) DEFAULT(NULL))',
-    defaultValues: { // You can create a map of default values that you don't have in your schema here 
-    	'actors': ['Some actor']
-    }, 
-    fixtures: [{ // Fixtures can be an optional array of objects that are inserted when the table is created
-    	name: 'Marvels Agents of S.H.I.E.L.D',
-    	TVDB_ID: 263365,
-    	actors: [
-	    	&quot;Clark Gregg (Phil Coulson)&quot;,
-	    	&quot;Ming-Na Wen (Melinda May / Agent 33)&quot;,
-	    	&quot;Brett Dalton (Grant Ward)&quot;,
-	    	&quot;Chloe Bennet (Skye)&quot;,
-	    	&quot;Iain De Caestecker (Leo Fitz)&quot;
-    	],
-    }], 
-    migrations: {
-    	// if you change your table schema, you can 
-    }
-}, {
-    getEpisodes: function() {
-        return Episode.findBySerie({
-            ID_Serie: this.getID()
-        }, {
-            limit: 100000
-        });
-    },
-
-    getSeasons: function() {
-        return Season.findByID_Serie(this.getID());
-    },
-
-    getLastEpisode: function() {
-        var filter = ['(Episodes.firstaired &gt; 0 and Episodes.firstAired &lt; ' + new Date().getTime() + ')'];
-        filter.ID_Serie = this.getID();
-        return CRUD.FindOne('Episode', filter, {
-            orderBy: 'seasonnumber desc, episodenumber desc, firstaired desc'
-        }).then(function(result) {
-            return result;
-        });
-    }
-});
-</code></pre>
 <h2>Create</h2>
-<pre><code>var serie = new Serie();
+<pre><code class="language-javascript">var serie = new Serie();
 serie.name = 'Arrow';
 serie.TVDB_ID = '257655';
 serie.actors = [
@@ -148,20 +67,29 @@ serie.Persist().then(function(result) {
 });
 </code></pre>
 <h2>Read</h2>
-<pre><code>CRUD.Find(Serie, { name: 'Arrow' }).then(function(series) { // Find returns an array by default
+<pre><code class="language-javascript">/**
+ * CRUD.Find returns a promise that receives an array with results
+ */
+CRUD.Find(Serie, { name: 'Arrow' }).then(function(series) {
 	console.log(&quot;Found results: &quot;, series);
 });
 
-CRUD.FindOne(Serie, { name: 'Arrow' }).then(function(serie) { // FindOne does  a limit 0,1
+/**
+ * CRUD.FindOne returns a promise that receives a single instance of an entity or null
+ */
+CRUD.FindOne(Serie, { name: 'Arrow' }).then(function(serie) {
 	console.log(&quot;Found one result: &quot;, serie);
 });
 
-CRUD.Find(Serie, ['name like &quot;%Arr%&quot;']).then(function(series) { // You can pass an array instead of mapped object to add custom sql 
+/**
+ * You can pass an array instead of mapped object to add custom SQL
+ */
+CRUD.Find(Serie, ['name like &quot;%Arr%&quot;']).then(function(series) { 
 	console.log(&quot;Found wildcard results: &quot;, serie);
 });
 </code></pre>
 <h2>Update</h2>
-<pre><code>CRUD.FindOne(Serie, {name: 'Arrow'}).then(function(arrow) {
+<pre><code class="language-javascript">CRUD.FindOne(Serie, {name: 'Arrow'}).then(function(arrow) {
 	arrow.overview = [
 		&quot;Oliver Queen and his father are lost at sea when their luxury yacht sinks.&quot;,
 		&quot;His father doesn't survive. Oliver survives on an uncharted island for five years learning to fight,&quot;,
@@ -176,12 +104,147 @@ CRUD.Find(Serie, ['name like &quot;%Arr%&quot;']).then(function(series) { // You
 });
 </code></pre>
 <h2>Delete</h2>
-<pre><code>CRUD.FindOne(Serie, {name: 'Arrow'}).then(function(arrow) {
+<pre><code class="language-javascript">CRUD.FindOne(Serie, {name: 'Arrow'}).then(function(arrow) {
 	return arrow.Delete();
 }).then(function(result) {
 	console.log(&quot;Arrow deleted!&quot;);
 });
 </code></pre>
+<p><a href="http://jsfiddle.net/SchizoDuckie/1fwntkhr/">basic setup of an entity</a></p>
+<h1>Topics</h1>
+<ul>
+<li><a href="#cruddefine-introduction-and-conventions">CRUD.define: Introduction and conventions</a></li>
+<li><a href="#cruddefine-setting-up-a-basic-entity">CRUD.define: Setting up a basic entity</a></li>
+<li><a href="#cruddefine-11-relation">CRUD.define: 1:1 relation</a></li>
+<li><a href="#cruddefine-1many-relation">CRUD.define: 1:many relation</a></li>
+<li><a href="#cruddefine-many1-relation">CRUD.define: many:1 relation</a></li>
+<li><a href="#cruddefine-manymany-relation">CRUD.define: many:many relation</a></li>
+<li><a href="#cruddefine-default-orderby-property-and-orderby-direction">CRUD.define: Default orderBy property and orderBy direction</a></li>
+<li><a href="#cruddefine-custom-orderby-clause">CRUD.define: Custom orderBy clause</a></li>
+<li><a href="#cruddefine-defining-fixtures">CRUD.define: Defining fixtures</a></li>
+<li><a href="#cruddefine-indexes">CRUD.define: Indexes</a></li>
+<li><a href="#cruddefine-migrations">CRUD.define: Migrations</a></li>
+<li><a href="#usage-opening-a-database-connection">Usage: Opening a database connection</a></li>
+<li><a href="#usage-using-crudfind-and-crudfindone">Usage: Using CRUD.Find and CRUD.FindOne</a></li>
+<li><a href="#usage-using-find-on-an-entity-instance-to-fetch-related-entities">Usage: Using Find on an entity instance to fetch related entities</a></li>
+<li><a href="#usage-using-findone">Usage: Using FindOne</a></li>
+<li><a href="#usage-save-changes-to-an-entity-to-the-database">Usage: Save changes to an entity to the database</a></li>
+<li><a href="#usage-deleting-an-entity">Usage: Deleting an entity</a></li>
+<li><a href="#usage-connecting-entities">Usage: Connecting entities</a></li>
+<li><a href="#advanced-deep-filters-on-related-records-using-crudfind">Advanced: Deep filters on related records using CRUD.Find</a></li>
+<li><a href="#advanced-using-crudfromcache-to-convert-a-plain-javascript-object-into-a-crud-entity">Advanced: Using CRUD.fromCache to convert a plain JavaScript Object into a CRUD Entity</a></li>
+<li><a href="#advanced-loading-data-from-json-and-inserting-it-into-the-database">Advanced: Loading data from JSON and inserting it into the database</a></li>
+<li><a href="#advanced-using-crudexecutequery">Advanced: Using CRUD.executeQuery</a></li>
+<li><a href="#advanced-active-query-monitor-using-objectobserve">Advanced: Active Query Monitor using Object.observe</a></li>
+<li><a href="#advanced-crudentitymanager-ensures-you-have-a-handle-to-the-same-record-in-different-contexts">Advanced: CRUD.EntityManager ensures you have handle to the same record in different contexts</a></li>
+<li><a href="#advanced-using-replace-into-instead-of-the-default-insert-into">Advanced: Using REPLACE INTO instead of the default INSERT INTO</a></li>
+<li><a href="#advanced-migrations-in-websql-adding-a-column-to-the-database">Advanced: Migrations in WebSQL: Adding a column to the database</a></li>
+<li><a href="#advanced-interacting-with-a-select2-via-jquery">Advanced: Interacting with a Select2 via JQuery</a></li>
+</ul>
+<h1>JS Docs</h1>
+<p><a href="http://schizoduckie.github.io/CreateReadUpdateDelete/docs/">Check out the full jsdoc here</a></p>
+<h1>CRUD.define: Introduction and conventions</h1>
+<p>CRUD.define registers your entities in the EntityManager.</p>
+<p>The Entity Manager performs the following tasks as soon as it's connected to a database:</p>
+<ul>
+<li>Fetch a list of all tables and indexes</li>
+<li>Verify that all tables for registered entities exist.</li>
+<li>Execute createStatements for entities if they haven't been created.</li>
+<li>Execute any migrations in sequence if the table version is smaller than the highest migration number</li>
+<li>Compare the list of indexes in the database to the ones defined and create the ones that don't exist</li>
+<li>Insert fixtures for tables that have been freshly created</li>
+</ul>
+<p>To connect to a database, feed a new instance of a CRUD.SqliteAdapter to CRUD.setAdapter</p>
+<pre><code class="language-javascript">// initialize WebSQL database connection
+CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete', {
+    estimatedSize: 25 * 1024 * 1024
+}));
+</code></pre>
+<h2>CRUD.define signature and parameters</h2>
+<pre><code class="language-Javascript">/**
+ * @param  {Function} namedFunction Named Function to register with the entity manager
+ * @param  {object} properties entity config properties like table, primary, fields, createStatement
+ * @param  {object} methods prototype methods to register on the entity instance
+ * @return {Function} namedFunction enriched with CRUD methods and prototype methods
+ */
+CRUD.define = function(namedFunction, properties, methods) {};
+</code></pre>
+<p>CRUD.define forwards registration of an entity to CRUD.EntityManager.</p>
+<p>Parameters passed to 'properties' should be at least:</p>
+<ul>
+<li>createStatement : String, Full CREATE TABLE SQL statement</li>
+<li>table : String, Table name used by createStatement</li>
+<li>primary : String, Primary key property</li>
+<li>fields : All properties (including primary key) created by the createStatement
+Optional properties can be:</li>
+<li>indexes : Array, List of fields to create indexes on.</li>
+<li>relations : Array, List of (String) Entity names and CRUD.RELATION_* types</li>
+<li>autoSerialize : Array, properties to auto json_encode / json_decode on fetch/persist</li>
+<li>defaultValues : Object, property -&gt; default value list</li>
+<li>orderProperty : String, default orderBy propery to append to CRUD.Find queries</li>
+<li>orderDirection : String, default orderBy direction to append to CRUD.Find queries</li>
+<li>migrations : Object, with numeric keys and array of raw sql migrations to run in sequence when current version doesn't match lastest.</li>
+</ul>
+<h1>CRUD.define: Setting up a basic entity</h1>
+<p>Make sure you define your entities before opening the database connection using CRUD.setAdapter.
+The setup phase only runs on creating a connection. Defining new entities after the database is connected is not supported.</p>
+<pre><code class="language-javascript">/**
+ * Create a nice Named Function that calls the CRUD.Entity constructor 
+ * The Named function will make sure that we can do console.log and see a Serie object instead of CRUD.Entity
+ * Adding ``CRUD.Entity.call(this)`` is mandatory and makes sure that the proper setup is performed when creating a new instance of the object.
+ */
+function Serie() {
+    CRUD.Entity.call(this);
+}
+
+/**
+ * Extend the Named Function with CRUD definitions and register it in the CRUD.EntityManager
+ * Signature:
+ * CRUD.define(Entity, {options}, {prototypeMethods});
+ */
+CRUD.define(Serie, {
+    table: 'Series', // Database table this entity is bound to
+    primary: 'ID_Serie', // Primary key. Make sure to use uniquely named keys, don't use 'id' on every table and refer to 'id_something'
+    fields: [ // List all individual properties. Accessors will be auto-created (but can be overwritten)
+        'ID_Serie',
+        'name',
+        'banner',
+        'overview',
+        'TVDB_ID',
+        'actors'
+    ],
+    createStatement: 'CREATE TABLE Series (ID_Serie INTEGER PRIMARY KEY NOT NULL, name VARCHAR(250) DEFAULT(NULL), banner VARCHAR(1024) DEFAULT(NULL), overview TEXT DEFAULT(NULL), TVDB_ID INTEGER UNIQUE NOT NULL, actors VARCHAR(1024) DEFAULT(NULL))',
+});
+</code></pre>
+<h1>CRUD.define: 1:1 relation</h1>
+<pre><code class="language-javascript">
+
+
+
+</code></pre>
+<h1>CRUD.define: 1:many relation</h1>
+<h1>CRUD.define: many:1 relation</h1>
+<h1>CRUD.define: many:many relation</h1>
+<h1>CRUD.define: Default orderBy property and orderBy direction</h1>
+<h1>CRUD.define: Custom orderBy clause</h1>
+<h1>CRUD.define: Defining fixtures</h1>
+<h1>CRUD.define: Indexes</h1>
+<h1>CRUD.define: Migrations</h1>
+<h1>Usage: Opening a database connection</h1>
+<h1>Usage: Using CRUD.Find and CRUD.FindOne</h1>
+<h1>Usage: Using Find on an entity instance to fetch related entities</h1>
+<h1>Usage: Using FindOne</h1>
+<h1>Usage: Save changes to an entity to the database</h1>
+<h1>Usage: Deleting an entity</h1>
+<h1>Usage: Connecting entities</h1>
+<h1>Advanced: Deep filters on related records using CRUD.Find</h1>
+<h1>Advanced: Using CRUD.fromCache to convert a plain JavaScript Object into a CRUD Entity</h1>
+<h1>Advanced: Loading data from JSON and inserting it into the database</h1>
+<h1>Advanced: Using CRUD.executeQuery</h1>
+<h1>Advanced: Active Query Monitor using Object.observe</h1>
+<h1>Advanced: CRUD.EntityManager ensures you have a handle to the same record in different contexts</h1>
+<h1>Advanced: Migrations in WebSQL: Adding a column to the database</h1>
+<h1>Advanced: Interacting with a Select2 via JQuery</h1>
 </section>
           <div class="footer site-footer">
             <div class="span site-footer-owner"><a href="https://github.com/mr-doc/mr-doc-theme-cayman">Cayman</a> is maintained by <a href="https://github.com/iwatakeshi">iwatakeshi</a>.</div>

@@ -57,7 +57,7 @@ Read
 
 ```javascript
 /**
- * CRUD. Find returns a promise that receives an array with results
+ * CRUD.Find returns a promise that receives an array with results
  */
 CRUD.Find(Serie, { name: 'Arrow' }).then(function(series) {
 	console.log("Found results: ", series);
@@ -112,17 +112,17 @@ CRUD.FindOne(Serie, {name: 'Arrow'}).then(function(arrow) {
 Topics
 ======
 
-- [CRUD.Define: Introduction and conventions](#cruddefine-introduction-and-conventions)
-- [CRUD.Define: Setting up a basic entity](#cruddefine-setting-up-a-basic-entity)
-- [CRUD.Define: 1:1 relation](#cruddefine-11-relation)
-- [CRUD.Define: 1:many relation](#cruddefine-1many-relation)
-- [CRUD.Define: many:1 relation](#cruddefine-many1-relation)
-- [CRUD.Define: many:many relation](#cruddefine-manymany-relation)
-- [CRUD.Define: Default orderBy property and orderBy direction](#cruddefine-default-orderby-property-and-orderby-direction)
-- [CRUD.Define: Custom orderBy clause](#cruddefine-custom-orderby-clause)
-- [CRUD.Define: Defining fixtures](#cruddefine-defining-fixtures)
-- [CRUD.Define: Indexes](#cruddefine-indexes)
-- [CRUD.Define: Migrations](#cruddefine-migrations)
+- [CRUD.define: Introduction and conventions](#cruddefine-introduction-and-conventions)
+- [CRUD.define: Setting up a basic entity](#cruddefine-setting-up-a-basic-entity)
+- [CRUD.define: 1:1 relation](#cruddefine-11-relation)
+- [CRUD.define: 1:many relation](#cruddefine-1many-relation)
+- [CRUD.define: many:1 relation](#cruddefine-many1-relation)
+- [CRUD.define: many:many relation](#cruddefine-manymany-relation)
+- [CRUD.define: Default orderBy property and orderBy direction](#cruddefine-default-orderby-property-and-orderby-direction)
+- [CRUD.define: Custom orderBy clause](#cruddefine-custom-orderby-clause)
+- [CRUD.define: Defining fixtures](#cruddefine-defining-fixtures)
+- [CRUD.define: Indexes](#cruddefine-indexes)
+- [CRUD.define: Migrations](#cruddefine-migrations)
 - [Usage: Opening a database connection](#usage-opening-a-database-connection)
 - [Usage: Using CRUD.Find and CRUD.FindOne](#usage-using-crudfind-and-crudfindone)
 - [Usage: Using Find on an entity instance to fetch related entities](#usage-using-find-on-an-entity-instance-to-fetch-related-entities)
@@ -146,10 +146,21 @@ JS Docs
 [Check out the full jsdoc here](http://schizoduckie.github.io/CreateReadUpdateDelete/docs/)
 
 
-CRUD.Define: Introduction and conventions
+CRUD.define: Introduction and conventions
 =========================================
 
-- Define your entities and then create a database connection
+CRUD.define registers your entities in the EntityManager.
+
+The Entity Manager performs the following tasks as soon as it's connected to a database:
+
+- Fetch a list of all tables and indexes
+- Verify that all tables for registered entities exist.
+- Execute createStatements for entities if they haven't been created.
+- Execute any migrations in sequence if the table version is smaller than the highest migration number
+- Compare the list of indexes in the database to the ones defined and create the ones that don't exist
+- Insert fixtures for tables that have been freshly created
+
+To connect to a database, feed a new instance of a CRUD.SqliteAdapter to CRUD.setAdapter
 
 ```javascript
 // initialize WebSQL database connection
@@ -158,11 +169,40 @@ CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete', {
 }));
 ```
 
+CRUD.define signature and parameters
+------------------------------------
 
-CRUD.Define: Setting up a basic entity
+```Javascript
+/**
+ * @param  {Function} namedFunction Named Function to register with the entity manager
+ * @param  {object} properties entity config properties like table, primary, fields, createStatement
+ * @param  {object} methods prototype methods to register on the entity instance
+ * @return {Function} namedFunction enriched with CRUD methods and prototype methods
+ */
+CRUD.define = function(namedFunction, properties, methods) {};
+```
+
+ CRUD.define forwards registration of an entity to CRUD.EntityManager.
+  
+ Parameters passed to 'properties' should be at least:
+ - createStatement : String, Full CREATE TABLE SQL statement
+ - table : String, Table name used by createStatement
+ - primary : String, Primary key property
+ - fields : All properties (including primary key) created by the createStatement
+  Optional properties can be:
+ - indexes : Array, List of fields to create indexes on.
+ - relations : Array, List of (String) Entity names and CRUD.RELATION_* types
+ - autoSerialize : Array, properties to auto json_encode / json_decode on fetch/persist
+ - defaultValues : Object, property -> default value list
+ - orderProperty : String, default orderBy propery to append to CRUD.Find queries
+ - orderDirection : String, default orderBy direction to append to CRUD.Find queries
+ - migrations : Object, with numeric keys and array of raw sql migrations to run in sequence when current version doesn't match lastest.
+
+CRUD.define: Setting up a basic entity
 ======================================
 
 Make sure you define your entities before opening the database connection using CRUD.setAdapter.
+The setup phase only runs on creating a connection. Defining new entities after the database is connected is not supported.
 
 ```javascript
 /**
@@ -177,7 +217,7 @@ function Serie() {
 /**
  * Extend the Named Function with CRUD definitions and register it in the CRUD.EntityManager
  * Signature:
- * CRUD.Define(Entity, {options}, {prototypeMethods});
+ * CRUD.define(Entity, {options}, {prototypeMethods});
  */
 CRUD.define(Serie, {
     table: 'Series', // Database table this entity is bound to
@@ -194,7 +234,7 @@ CRUD.define(Serie, {
 });
 ```
 
-CRUD.Define: 1:1 relation
+CRUD.define: 1:1 relation
 =========================
 
 ```javascript
@@ -204,28 +244,28 @@ CRUD.Define: 1:1 relation
 
 ```
 
-CRUD.Define: 1:many relation
+CRUD.define: 1:many relation
 ============================
 
-CRUD.Define: many:1 relation
+CRUD.define: many:1 relation
 ============================
 
-CRUD.Define: many:many relation
+CRUD.define: many:many relation
 ===============================
 
-CRUD.Define: Default orderBy property and orderBy direction
+CRUD.define: Default orderBy property and orderBy direction
 ===========================================================
 
-CRUD.Define: Custom orderBy clause
+CRUD.define: Custom orderBy clause
 ==================================
 
-CRUD.Define: Defining fixtures
+CRUD.define: Defining fixtures
 ==============================
 
-CRUD.Define: Indexes
+CRUD.define: Indexes
 ====================
 
-CRUD.Define: Migrations
+CRUD.define: Migrations
 =======================
 
 Usage: Opening a database connection

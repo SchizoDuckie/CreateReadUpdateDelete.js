@@ -48,8 +48,7 @@ CRUD.EntityManager = function() {
         orderDirection: false,
         relations: {},
         connectors: {},
-        createStatement: false,
-        keys: []
+        createStatement: false
     };
     var ucFirst = function(str) {
         return str.charAt(0).toUpperCase() + str.slice(1);
@@ -170,6 +169,30 @@ CRUD.EntityManager = function() {
     };
     return this;
 }();
+
+/**
+ * CRUD.define forwards registration of an entity to CRUD.EntityManager.
+ *
+ * Parameters passed to 'properties' should be at least:
+ * - createStatement : String, Full CREATE TABLE SQL statement
+ * - table : String, Table name used by createStatement
+ * - primary : String, Primary key property
+ * - fields : All properties (including primary key) created by the createStatement
+ *
+ * Optional properties can be:
+ * - indexes : Array, List of fields to create indexes on.
+ * - relations : Array, List of (String) Entity names and CRUD.RELATION_* types
+ * - autoSerialize : Array, properties to auto json_encode / json_decode on fetch/persist
+ * - defaultValues : Object, property -> default value list
+ * - orderProperty : String, default orderBy propery to append to CRUD.Find queries
+ * - orderDirection : String, default orderBy direction to append to CRUD.Find queries
+ * - migrations : Object, with numeric keys and array of raw sql migrations to run in sequence when current version doesn't match lastest.
+ *
+ * @param  {Function} namedFunction Named Function to register with the entity manager
+ * @param  {object} properties entity config properties like table, primary, fields, createStatement
+ * @param  {object} methods prototype methods to register on the entity instance
+ * @return {Function} namedFunction enriched with CRUD methods and prototype methods
+ */
 CRUD.define = function(namedFunction, properties, methods) {
     return CRUD.EntityManager.registerEntity(namedFunction.prototype.constructor.name, namedFunction, properties, methods || {});
 };
@@ -190,7 +213,7 @@ CRUD.Find = function(obj, filters, options) {
     var type = null;
     if (obj instanceof CRUD.Entity || obj.prototype instanceof CRUD.Entity) {
         type = obj.getType();
-        if (obj.getID() !== false) {
+        if (obj.getID && obj.getID() !== false) {
             CRUD.log('Object has an ID! ', ID, type);
             filters.ID = obj.getID();
             filters.type = filters;
