@@ -19,6 +19,8 @@ If you're doing data storage right, you don't have to write *any* SQL, at all.
 Features 
 ========
 
+- Works on any browser that supports WebSQL (yes, also on mobile)
+- Works even without [schema-defined foreign keys](https://www.sqlite.org/foreignkeys.html) by just matching primary keys
 - Simple access to WebSQL database rows as if they're plain javascript objects
 - A simplified query language, but the freedom to execute plain SQL
 - Support for indexes, fixtures and migrations
@@ -138,10 +140,36 @@ JS Docs
 CRUD.Define: Introduction and conventions
 =========================================
 
+- Define your entities and then create a database connection
+
+```javascript
+// initialize WebSQL database connection
+CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete', {
+    estimatedSize: 25 * 1024 * 1024
+}));
+```
+
+
 CRUD.Define: Setting up a basic entity
 ======================================
 
-- use CRUD.Define to
+Make sure you define your entities before opening the database connection using CRUD.setAdapter.
+
+```javascript
+CRUD.define(Serie, {
+    table: 'Series', // Database table this entity is bound to
+    primary: 'ID_Serie', // Primary key. Make sure to use uniquely named keys, don't use 'id' on every table and refer to 'id_something'
+    fields: [ // List all individual properties. Accessors will be auto-created (but can be overwritten)
+        'ID_Serie',
+        'name',
+        'banner',
+        'overview',
+        'TVDB_ID',
+        'actors'
+    ],
+    createStatement: 'CREATE TABLE Series (ID_Serie INTEGER PRIMARY KEY NOT NULL, name VARCHAR(250) DEFAULT(NULL), banner VARCHAR(1024) DEFAULT(NULL), overview TEXT DEFAULT(NULL), TVDB_ID INTEGER UNIQUE NOT NULL, actors VARCHAR(1024) DEFAULT(NULL))',
+});
+```
 
 CRUD.Define: 1:1 relation
 =========================
