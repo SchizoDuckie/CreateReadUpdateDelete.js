@@ -36,7 +36,6 @@ CRUD.EntityManager = function() {
     this.cache = {};
     this.connectionAdapter = false;
     this.defaultSetup = {
-        className: 'CRUD.Entity',
         ID: false,
         table: false,
         primary: false,
@@ -59,12 +58,8 @@ CRUD.EntityManager = function() {
      * Register a new entity into the entity manager, which will manage it's properties, relations, and data.
      */
     this.registerEntity = function(className, namedFunction, dbSetup, methods) {
-        console.log(className, namedFunction.prototype.constructor.name);
         namedFunction.prototype = Object.create(CRUD.Entity.prototype);
         namedFunction.prototype.constructor = CRUD.Entity;
-        namedFunction.prototype.constructor.name = className;
-        console.log(namedFunction.prototype.constructor.name);
-        console.log(namedFunction.prototype.constructor.name);
         dbSetup.fields.map(function(field) {
             Object.defineProperty(namedFunction.prototype, field, {
                 get: field in methods && 'get' in methods[field] ? methods[field].get : function() {
@@ -82,6 +77,13 @@ CRUD.EntityManager = function() {
                 namedFunction.prototype[j] = methods[j];
             }
         }
+        Object.defineProperty(namedFunction.prototype, '__className__', {
+            get: function() {
+                return className;
+            },
+            enumerable: false,
+            configurable: true
+        });
         CRUD.log('Register entity', namedFunction, dbSetup, className);
         if (!(className in this.entities)) {
             this.entities[className] = JSON.parse(JSON.stringify(this.defaultSetup));
@@ -107,6 +109,10 @@ CRUD.EntityManager = function() {
         namedFunction.FindOne = function(filters, options) {
             return CRUD.FindOne(className, filters, options);
         };
+        namedFunction.getType = function() {
+            return className;
+        };
+        namedFunction.toString = namedFunction.getType;
         dbSetup.fields.map(function(field) {
             namedFunction['findOneBy' + ucFirst(field)] = function(value, options) {
                 var filter = {};
@@ -119,7 +125,7 @@ CRUD.EntityManager = function() {
                 return CRUD.Find(className, filter, options || {});
             };
         });
-        Object.keys(dbSetup.relations).map(function(name) {
+        Object.keys(this.entities[className].relations).map(function(name) {
             CRUD.log('creating relation search for ', name, ' to ', className);
             namedFunction['findBy' + name] = function(filter) {
                 var filters = {};
@@ -165,7 +171,6 @@ CRUD.EntityManager = function() {
     return this;
 }();
 CRUD.define = function(namedFunction, properties, methods) {
-    console.log(namedFunction.prototype.constructor.name);
     return CRUD.EntityManager.registerEntity(namedFunction.prototype.constructor.name, namedFunction, properties, methods);
 };
 CRUD.setAdapter = function(adapter) {
@@ -255,7 +260,6 @@ CRUD.ConnectionAdapter = function(endpoint, options) {
 CRUD.Entity = function(className, methods) {
     this.__values__ = {};
     this.__dirtyValues__ = {};
-    debugger;
     console.log("Create entity: ", this.constructor.name);
     return this;
 };
@@ -406,7 +410,7 @@ CRUD.Entity.prototype = {
         });
     },
     getType: function() {
-        return this.prototype.constructor.name;
+        return this.__className__;
     },
     /** 
      * Connect 2 entities regardles of their relationship type.
