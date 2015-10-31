@@ -9,7 +9,7 @@ Written in Plain Old JavaScript without any framework dependencies, you can use 
 ActiveRecord? Orm?
 ==================
 ActiveRecord/ORM is a technique that fits perfectly into the DRY (Don't Repeat Yourself) paradigm. 
-It takes away all the hassle of creating Insert, Select, Update and Delete database queries. You create your class, set some properties, call Persist, and a database record is created automagicaly.
+It takes away all the hassle of creating Insert, Select, Update and Delete database queries. You create your an instance of your entity, set some properties, call Persist, and a database record is created automagicaly.
 If the object you're referring to already exists in the database, it will be updated.
 
 Want to find related data? Instantiate an object, call Find() on it with the filters you need, and the onComplete callback returns you your data.
@@ -101,32 +101,33 @@ CRUD.FindOne(Serie, {name: 'Arrow'}).then(function(arrow) {
 Topics
 ======
 
-- CRUD.Define: Introduction and conventions
-- CRUD.Define: Setting up a basic entity
-- CRUD.Define: 1:1 relation
-- CRUD.Define: 1:many relation
-- CRUD.Define: many:1 relation
-- CRUD.Define: many:many relation
-- CRUD.Define: Default orderBy property and orderBy direction
-- CRUD.Define: Custom orderBy clause
-- CRUD.Define: Defining fixtures
-- CRUD.Define: Indexes
-- CRUD.Define: Migrations
-- Usage: Opening a database connection
-- Usage: Using CRUD.Find and CRUD.FindOne
-- Usage: Using Find on an entity instance to fetch related entities
-- Usage: Using FindOne
-- Usage: Save changes to an entity to the database
-- Usage: Deleting an entity
-- Usage: Connecting entities
-- Advanced: Deep filters on related records using CRUD.Find
-- Advanced: Using CRUD.fromCache to convert a plain JavaScript Object into a CRUD Entity
-- Advanced: Loading data from JSON and inserting it into the database
-- Advanced: Using CRUD.executeQuery
-- Advanced: Active Query Monitor using Object.observe
-- Advanced: CRUD.EntityManager ensures you have handle to the same record in different contexts
-- Advanced: Migrations in WebSQL: Adding a column to the database
-- Advanced: Interacting with a Select2 via JQuery
+- [#cruddefine-introduction-and-conventions](CRUD.Define: Introduction and conventions)
+- [#cruddefine-setting-up-a-basic-entity](CRUD.Define: Setting up a basic entity)
+- [#cruddefine-11-relation](CRUD.Define: 1:1 relation)
+- [#cruddefine-1many-relation](CRUD.Define: 1:many relation)
+- [#cruddefine-many1-relation](CRUD.Define: many:1 relation)
+- [#cruddefine-manymany-relation](CRUD.Define: many:many relation)
+- [#cruddefine-default-orderby-property-and-orderby-direction](CRUD.Define: Default orderBy property and orderBy direction)
+- [#cruddefine-custom-orderby-clause](CRUD.Define: Custom orderBy clause)
+- [#cruddefine-defining-fixtures](CRUD.Define: Defining fixtures)
+- [#cruddefine-indexes](CRUD.Define: Indexes)
+- [#cruddefine-migrations](CRUD.Define: Migrations)
+- [#usage-opening-a-database-connection](Usage: Opening a database connection)
+- [#usage-using-crudfind-and-crudfindone](Usage: Using CRUD.Find and CRUD.FindOne)
+- [#usage-using-find-on-an-entity-instance-to-fetch-related-entities](Usage: Using Find on an entity instance to fetch related entities)
+- [#usage-using-findone](Usage: Using FindOne)
+- [#usage-save-changes-to-an-entity-to-the-database](Usage: Save changes to an entity to the database)
+- [#usage-deleting-an-entity](Usage: Deleting an entity)
+- [#usage-connecting-entities](Usage: Connecting entities)
+- [#advanced-deep-filters-on-related-records-using-crudfind](Advanced: Deep filters on related records using CRUD.Find)
+- [#advanced-using-crudfromcache-to-convert-a-plain-javascript-object-into-a-crud-entity](Advanced: Using CRUD.fromCache to convert a plain JavaScript Object into a CRUD Entity)
+- [#advanced-loading-data-from-json-and-inserting-it-into-the-database](Advanced: Loading data from JSON and inserting it into the database)
+- [#advanced-using-crudexecutequery](Advanced: Using CRUD.executeQuery)
+- [#advanced-active-query-monitor-using-objectobserve](Advanced: Active Query Monitor using Object.observe)
+- [#advanced-crudentitymanager-ensures-you-have-a-handle-to-the-same-record-in-different-contexts](Advanced: CRUD.EntityManager ensures you have handle to the same record in different contexts)
+- [#advanced-using-replace-into-instead-of-the-default-insert-into](Advanced: Using REPLACE INTO instead of the default INSERT INTO)
+- [#advanced-migrations-in-websql-adding-a-column-to-the-database](Advanced: Migrations in WebSQL: Adding a column to the database)
+- [#advanced-interacting-with-a-select2-via-jquery](Advanced: Interacting with a Select2 via JQuery)
 
 
 JS Docs
@@ -203,8 +204,8 @@ Advanced: Using CRUD.executeQuery
 Advanced: Active Query Monitor using Object.observe
 ===================================================
 
-Advanced: CRUD.EntityManager ensures you have handle to the same record in different contexts
-=============================================================================================
+Advanced: CRUD.EntityManager ensures you have a handle to the same record in different contexts
+===============================================================================================
 
 Advanced: Migrations in WebSQL: Adding a column to the database
 ===============================================================
