@@ -58,9 +58,13 @@ CRUD.EntityManager = function() {
     /**
      * Register a new entity into the entity manager, which will manage it's properties, relations, and data.
      */
-    this.registerEntity = function(namedFunction, dbSetup, methods) {
+    this.registerEntity = function(className, namedFunction, dbSetup, methods) {
+        console.log(className, namedFunction.prototype.constructor.name);
         namedFunction.prototype = Object.create(CRUD.Entity.prototype);
         namedFunction.prototype.constructor = CRUD.Entity;
+        namedFunction.prototype.constructor.name = className;
+        console.log(namedFunction.prototype.constructor.name);
+        console.log(namedFunction.prototype.constructor.name);
         dbSetup.fields.map(function(field) {
             Object.defineProperty(namedFunction.prototype, field, {
                 get: field in methods && 'get' in methods[field] ? methods[field].get : function() {
@@ -78,14 +82,6 @@ CRUD.EntityManager = function() {
                 namedFunction.prototype[j] = methods[j];
             }
         }
-        var className = dbSetup.className;
-        Object.defineProperty(namedFunction.prototype, '__className__', {
-            get: function() {
-                return className;
-            },
-            enumerable: false,
-            configurable: true
-        });
         CRUD.log('Register entity', namedFunction, dbSetup, className);
         if (!(className in this.entities)) {
             this.entities[className] = JSON.parse(JSON.stringify(this.defaultSetup));
@@ -169,7 +165,8 @@ CRUD.EntityManager = function() {
     return this;
 }();
 CRUD.define = function(namedFunction, properties, methods) {
-    return CRUD.EntityManager.registerEntity(namedFunction, properties, methods);
+    console.log(namedFunction.prototype.constructor.name);
+    return CRUD.EntityManager.registerEntity(namedFunction.prototype.constructor.name, namedFunction, properties, methods);
 };
 CRUD.setAdapter = function(adapter) {
     return CRUD.EntityManager.setAdapter(adapter);
@@ -254,9 +251,12 @@ CRUD.ConnectionAdapter = function(endpoint, options) {
     };
     return this;
 };
+
 CRUD.Entity = function(className, methods) {
     this.__values__ = {};
     this.__dirtyValues__ = {};
+    debugger;
+    console.log("Create entity: ", this.constructor.name);
     return this;
 };
 CRUD.Entity.prototype = {
@@ -406,7 +406,7 @@ CRUD.Entity.prototype = {
         });
     },
     getType: function() {
-        return this.__className__;
+        return this.prototype.constructor.name;
     },
     /** 
      * Connect 2 entities regardles of their relationship type.

@@ -30,7 +30,7 @@ Features
 Create
 ------
 
-```
+```javascript
 var serie = new Serie();
 serie.name = 'Arrow';
 serie.TVDB_ID = '257655';
@@ -53,7 +53,7 @@ serie.Persist().then(function(result) {
 Read
 ----
 
-```
+```javascript
 CRUD.Find(Serie, { name: 'Arrow' }).then(function(series) { // Find returns an array by default
 	console.log("Found results: ", series);
 });
@@ -69,7 +69,7 @@ CRUD.Find(Serie, ['name like "%Arr%"']).then(function(series) { // You can pass 
 
 Update
 ------
-```
+```javascript
 CRUD.FindOne(Serie, {name: 'Arrow'}).then(function(arrow) {
 	arrow.overview = [
 		"Oliver Queen and his father are lost at sea when their luxury yacht sinks.",
@@ -87,7 +87,7 @@ CRUD.FindOne(Serie, {name: 'Arrow'}).then(function(arrow) {
 
 Delete
 ------
-```
+```javascript
 CRUD.FindOne(Serie, {name: 'Arrow'}).then(function(arrow) {
 	return arrow.Delete();
 }).then(function(result) {
@@ -101,33 +101,33 @@ CRUD.FindOne(Serie, {name: 'Arrow'}).then(function(arrow) {
 Topics
 ======
 
-- [#cruddefine-introduction-and-conventions](CRUD.Define: Introduction and conventions)
-- [#cruddefine-setting-up-a-basic-entity](CRUD.Define: Setting up a basic entity)
-- [#cruddefine-11-relation](CRUD.Define: 1:1 relation)
-- [#cruddefine-1many-relation](CRUD.Define: 1:many relation)
-- [#cruddefine-many1-relation](CRUD.Define: many:1 relation)
-- [#cruddefine-manymany-relation](CRUD.Define: many:many relation)
-- [#cruddefine-default-orderby-property-and-orderby-direction](CRUD.Define: Default orderBy property and orderBy direction)
-- [#cruddefine-custom-orderby-clause](CRUD.Define: Custom orderBy clause)
-- [#cruddefine-defining-fixtures](CRUD.Define: Defining fixtures)
-- [#cruddefine-indexes](CRUD.Define: Indexes)
-- [#cruddefine-migrations](CRUD.Define: Migrations)
-- [#usage-opening-a-database-connection](Usage: Opening a database connection)
-- [#usage-using-crudfind-and-crudfindone](Usage: Using CRUD.Find and CRUD.FindOne)
-- [#usage-using-find-on-an-entity-instance-to-fetch-related-entities](Usage: Using Find on an entity instance to fetch related entities)
-- [#usage-using-findone](Usage: Using FindOne)
-- [#usage-save-changes-to-an-entity-to-the-database](Usage: Save changes to an entity to the database)
-- [#usage-deleting-an-entity](Usage: Deleting an entity)
-- [#usage-connecting-entities](Usage: Connecting entities)
-- [#advanced-deep-filters-on-related-records-using-crudfind](Advanced: Deep filters on related records using CRUD.Find)
-- [#advanced-using-crudfromcache-to-convert-a-plain-javascript-object-into-a-crud-entity](Advanced: Using CRUD.fromCache to convert a plain JavaScript Object into a CRUD Entity)
-- [#advanced-loading-data-from-json-and-inserting-it-into-the-database](Advanced: Loading data from JSON and inserting it into the database)
-- [#advanced-using-crudexecutequery](Advanced: Using CRUD.executeQuery)
-- [#advanced-active-query-monitor-using-objectobserve](Advanced: Active Query Monitor using Object.observe)
-- [#advanced-crudentitymanager-ensures-you-have-a-handle-to-the-same-record-in-different-contexts](Advanced: CRUD.EntityManager ensures you have handle to the same record in different contexts)
-- [#advanced-using-replace-into-instead-of-the-default-insert-into](Advanced: Using REPLACE INTO instead of the default INSERT INTO)
-- [#advanced-migrations-in-websql-adding-a-column-to-the-database](Advanced: Migrations in WebSQL: Adding a column to the database)
-- [#advanced-interacting-with-a-select2-via-jquery](Advanced: Interacting with a Select2 via JQuery)
+- [CRUD.Define: Introduction and conventions](#cruddefine-introduction-and-conventions)
+- [CRUD.Define: Setting up a basic entity](#cruddefine-setting-up-a-basic-entity)
+- [CRUD.Define: 1:1 relation](#cruddefine-11-relation)
+- [CRUD.Define: 1:many relation](#cruddefine-1many-relation)
+- [CRUD.Define: many:1 relation](#cruddefine-many1-relation)
+- [CRUD.Define: many:many relation](#cruddefine-manymany-relation)
+- [CRUD.Define: Default orderBy property and orderBy direction](#cruddefine-default-orderby-property-and-orderby-direction)
+- [CRUD.Define: Custom orderBy clause](#cruddefine-custom-orderby-clause)
+- [CRUD.Define: Defining fixtures](#cruddefine-defining-fixtures)
+- [CRUD.Define: Indexes](#cruddefine-indexes)
+- [CRUD.Define: Migrations](#cruddefine-migrations)
+- [Usage: Opening a database connection](#usage-opening-a-database-connection)
+- [Usage: Using CRUD.Find and CRUD.FindOne](#usage-using-crudfind-and-crudfindone)
+- [Usage: Using Find on an entity instance to fetch related entities](#usage-using-find-on-an-entity-instance-to-fetch-related-entities)
+- [Usage: Using FindOne](#usage-using-findone)
+- [Usage: Save changes to an entity to the database](#usage-save-changes-to-an-entity-to-the-database)
+- [Usage: Deleting an entity](#usage-deleting-an-entity)
+- [Usage: Connecting entities](#usage-connecting-entities)
+- [Advanced: Deep filters on related records using CRUD.Find](#advanced-deep-filters-on-related-records-using-crudfind)
+- [Advanced: Using CRUD.fromCache to convert a plain JavaScript Object into a CRUD Entity](#advanced-using-crudfromcache-to-convert-a-plain-javascript-object-into-a-crud-entity)
+- [Advanced: Loading data from JSON and inserting it into the database](#advanced-loading-data-from-json-and-inserting-it-into-the-database)
+- [Advanced: Using CRUD.executeQuery](#advanced-using-crudexecutequery)
+- [Advanced: Active Query Monitor using Object.observe](#advanced-active-query-monitor-using-objectobserve)
+- [Advanced: CRUD.EntityManager ensures you have handle to the same record in different contexts](#advanced-crudentitymanager-ensures-you-have-a-handle-to-the-same-record-in-different-contexts)
+- [Advanced: Using REPLACE INTO instead of the default INSERT INTO](#advanced-using-replace-into-instead-of-the-default-insert-into)
+- [Advanced: Migrations in WebSQL: Adding a column to the database](#advanced-migrations-in-websql-adding-a-column-to-the-database)
+- [Advanced: Interacting with a Select2 via JQuery](#advanced-interacting-with-a-select2-via-jquery)
 
 
 JS Docs
@@ -141,8 +141,17 @@ CRUD.Define: Introduction and conventions
 CRUD.Define: Setting up a basic entity
 ======================================
 
+- use CRUD.Define to
+
 CRUD.Define: 1:1 relation
 =========================
+
+```javascript
+
+
+
+
+```
 
 CRUD.Define: 1:many relation
 ============================

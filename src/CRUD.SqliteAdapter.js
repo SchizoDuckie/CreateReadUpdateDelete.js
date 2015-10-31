@@ -126,18 +126,18 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
                 var entity = CRUD.EntityManager.entities[entityName];
                 if (tables.indexOf(entity.table) == -1) {
                     if (!entity.createStatement) {
-                        throw "No create statement found for " + entity.className + ". Don't know how to create table.";
+                        throw "No create statement found for " + entity.getType() + ". Don't know how to create table.";
                     }
                     return db.execute(entity.createStatement).then(function() {
                         tables.push(entity.table);
                         localStorage.setItem('database.version.' + entity.table, ('migrations' in entity) ? Math.max.apply(Math, Object.keys(entity.migrations)) : 1);
-                        CRUD.log(entity.className + " table created.");
+                        CRUD.log(entity.getType() + " table created.");
                         return entity;
                     }, function(err) {
-                        CRUD.log("Error creating " + entity.className, err);
-                        throw "Error creating table: " + entity.table + " for " + entity.className;
+                        CRUD.log("Error creating " + entity.getType(), err);
+                        throw "Error creating table: " + entity.table + " for " + entity.getType();
                     }).then(createFixtures).then(function() {
-                        CRUD.log("Table created and fixtures inserted for ", entity.className);
+                        CRUD.log("Table created and fixtures inserted for ", entity.getType());
                         return;
                     });
                 }
@@ -230,7 +230,7 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
         return new Promise(function(resolve, reject) {
             if (!entity.fixtures) return resolve();
             return Promise.all(entity.fixtures.map(function(fixture) {
-                CRUD.fromCache(entity.className, fixture).Persist(true);
+                CRUD.fromCache(entity.getType(), fixture).Persist(true);
             })).then(resolve, reject);
         });
     }
@@ -569,7 +569,7 @@ CRUD.Database.SQLBuilder.prototype = {
         var entity = CRUD.EntityManager.entities[theClass];
         parent = CRUD.EntityManager.entities[parent];
 
-        switch (parent.relations[entity.className]) { // then check the relationtype
+        switch (parent.relations[entity.getType()]) { // then check the relationtype
             case CRUD.RELATION_SINGLE:
             case CRUD.RELATION_FOREIGN:
                 if (entity.fields.indexOf(parent.primary) > -1) {
