@@ -171,7 +171,7 @@ CRUD.EntityManager = function() {
     return this;
 }();
 CRUD.define = function(namedFunction, properties, methods) {
-    return CRUD.EntityManager.registerEntity(namedFunction.prototype.constructor.name, namedFunction, properties, methods);
+    return CRUD.EntityManager.registerEntity(namedFunction.prototype.constructor.name, namedFunction, properties, methods || {});
 };
 CRUD.setAdapter = function(adapter) {
     return CRUD.EntityManager.setAdapter(adapter);
