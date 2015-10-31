@@ -56,15 +56,24 @@ Read
 ----
 
 ```javascript
-CRUD.Find(Serie, { name: 'Arrow' }).then(function(series) { // Find returns an array by default
+/**
+ * CRUD. Find returns a promise that receives an array with results
+ */
+CRUD.Find(Serie, { name: 'Arrow' }).then(function(series) {
 	console.log("Found results: ", series);
 });
 
-CRUD.FindOne(Serie, { name: 'Arrow' }).then(function(serie) { // FindOne does  a limit 0,1
+/**
+ * CRUD.FindOne returns a promise that receives a single instance of an entity or null
+ */
+CRUD.FindOne(Serie, { name: 'Arrow' }).then(function(serie) {
 	console.log("Found one result: ", serie);
 });
 
-CRUD.Find(Serie, ['name like "%Arr%"']).then(function(series) { // You can pass an array instead of mapped object to add custom sql 
+/**
+ * You can pass an array instead of mapped object to add custom SQL
+ */
+CRUD.Find(Serie, ['name like "%Arr%"']).then(function(series) { 
 	console.log("Found wildcard results: ", serie);
 });
 ```
