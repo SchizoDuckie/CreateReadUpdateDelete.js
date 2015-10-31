@@ -156,6 +156,20 @@ CRUD.Define: Setting up a basic entity
 Make sure you define your entities before opening the database connection using CRUD.setAdapter.
 
 ```javascript
+/**
+ * Create a nice Named Function that calls the CRUD.Entity constructor 
+ * The Named function will make sure that we can do console.log and see a Serie object instead of CRUD.Entity
+ * Adding ``CRUD.Entity.call(this)`` is mandatory and makes sure that the proper setup is performed when creating a new instance of the object.
+ */
+function Serie() {
+    CRUD.Entity.call(this);
+}
+
+/**
+ * Extend the Named Function with CRUD definitions and register it in the CRUD.EntityManager
+ * Signature:
+ * CRUD.Define(Entity, {options}, {prototypeMethods});
+ */
 CRUD.define(Serie, {
     table: 'Series', // Database table this entity is bound to
     primary: 'ID_Serie', // Primary key. Make sure to use uniquely named keys, don't use 'id' on every table and refer to 'id_something'
