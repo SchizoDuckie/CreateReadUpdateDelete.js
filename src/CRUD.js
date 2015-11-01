@@ -488,7 +488,8 @@ CRUD.Entity.prototype = {
                         }
                         break;
                     case CRUD.RELATION_MANY:
-                        var connector = new CRUD.EntityManager.entities[thisType].connectors[targetType]();
+                        var connectorClass = CRUD.EntityManager.entities[thisType].connectors[targetType];
+                        var connector = new CRUD.EntityManager.entities[connectorClass]();
                         connector[thisPrimary] = that.getID();
                         connector[targetPrimary] = to.getID();
                         return connector.Persist().then(resolve, fail);

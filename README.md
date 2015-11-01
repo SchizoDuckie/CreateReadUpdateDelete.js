@@ -164,13 +164,16 @@ The Entity Manager performs the following tasks as soon as it's connected to a d
 - Compare the list of indexes in the database to the ones defined and create the ones that don't exist
 - Insert fixtures for tables that have been freshly created
 
-To connect to a database, feed a new instance of a CRUD.SqliteAdapter to CRUD.setAdapter
+To connect to a database, feed a new instance of a CRUD.SqliteAdapter to CRUD.setAdapter. 
+This returns a promise that is resolved when all the setup steps are done, and after that you can use your entities.
 
 ```javascript
 // initialize WebSQL database connection
 CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete', {
     estimatedSize: 25 * 1024 * 1024
-}));
+})).then(function() {
+	// do stuff with your CRUD entities here.
+});
 ```
 
 CRUD.define signature and parameters
@@ -269,11 +272,11 @@ CRUD.define(Role, {
 CRUD.define(Actor, {
     table: 'Actors', 
     primary: 'ID_Actor',
-    fields: ['ID_Actor', 'firstName', 'lastName', 'gender', 'ID_Role'],
+    fields: ['ID_Actor', 'firstname', 'lastname', 'gender', 'ID_Role'],
     relations: {
         	'Role' : CRUD.RELATION_SINGLE
     },
-    createStatement: 'CREATE TABLE Actors (ID_Actor INTEGER PRIMARY KEY NOT NULL, firstname VARCHAR(250) DEFAULT(NULL), lastname VARCHAR(250) DEFAULT(NULL), gender CHAR(250) DEFAULT(NULL), ID_Role INTEGER NULL)'
+    createStatement: 'CREATE TABLE Actors (ID_Actor INTEGER PRIMARY KEY NOT NULL, firstname VARCHAR(250) DEFAULT(NULL), lastname VARCHAR(250) DEFAULT(NULL), gender VARCHAR(1) DEFAULT(NULL), ID_Role INTEGER NULL)'
 });
 
 
@@ -288,8 +291,8 @@ CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete_single', {
 
 	// create a new actor
 	var actor = new Actor();
-	actor.firstName = 'Johnny';
-	actor.lastName = 'Depp';
+	actor.firstname = 'Johnny';
+	actor.lastname = 'Depp';
 	actor.gender = 'm';
 
 	// connect Actor to Role. Note that both will be auto-persisted at this point!
@@ -337,7 +340,7 @@ CRUD.define(Role, {
 CRUD.define(Actor, {
     table: 'Actors', 
     primary: 'ID_Actor',
-    fields: ['ID_Actor', 'firstName', 'lastName', 'gender'],
+    fields: ['ID_Actor', 'firstname', 'lastname', 'gender'],
     relations: {
         	'Role' : CRUD.RELATION_FOREIGN
     },
@@ -356,8 +359,8 @@ CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete_foreign', {
 
 	// create a new actor
 	var actor = new Actor();
-	actor.firstName = 'Johnny';
-	actor.lastName = 'Depp';
+	actor.firstname = 'Johnny';
+	actor.lastname = 'Depp';
 	actor.gender = 'm';
 
 	// connect Actor to Role. Note that both will be auto-persisted at this point!
@@ -375,6 +378,112 @@ JSFiddle live demo: [CreateReadUpdateDelete : Defining a 1:many or many:1 relati
 
 CRUD.define: many:many relation
 ===============================
+
+Many to many relations in CreateReadUpdateDelete.js require that you create an entity for the connecting table as well.
+This connecting entity has to have at least 2 foreign keys, (one for each side of the relation) and a primary key.
+Connector tables with only a combined primary key are NOT supported! Since it's a full CreateReadUpdateDelete.js entity, 
+it needs an AUTO_INCREMENT numeric primary key just as any other CreateReadUpdateDelete.js entity.
+
+Consider this real-world scenario where multiple roles can be played by multiple actors
+
+```javascript
+
+function Serie() {
+	CRUD.Entity.call(this);	
+}
+
+function Role() {
+    CRUD.Entity.call(this);
+}
+
+function Actor() {
+    CRUD.Entity.call(this);
+}
+
+function Actor_Role() {
+	CRUD.Entity.call(this);
+}
+
+CRUD.define(Serie, {
+    table: 'Series',
+    primary: 'ID_Serie', 
+    fields: ['ID_Serie', 'name', 'TVDB_ID'],
+    relations: {
+        'Role': CRUD.RELATION_FOREIGN
+    },
+    createStatement: 'CREATE TABLE Series (ID_Serie INTEGER PRIMARY KEY NOT NULL, name VARCHAR(250) DEFAULT(NULL), TVDB_ID INTEGER UNIQUE NOT NULL)',
+});
+
+CRUD.define(Role, {
+    table: 'Roles', 
+    primary: 'ID_Role',
+    fields: ['ID_Role', 'name'],
+    relations: {
+		'Actor' : CRUD.RELATION_MANY
+    },
+    connectors: {
+    	'Actor': 'Actor_Role'
+    },
+    createStatement: 'CREATE TABLE Roles (ID_Role INTEGER PRIMARY KEY NOT NULL, name VARCHAR(250) DEFAULT(NULL))'
+});
+
+CRUD.define(Actor, {
+    table: 'Actors', 
+    primary: 'ID_Actor',
+    fields: ['ID_Actor', 'firstname', 'lastname', 'gender'],
+    relations: {
+        'Role' : CRUD.RELATION_MANY
+    },
+    connectors: {
+    	'Role' : 'Actor_Role'
+	},
+    createStatement: 'CREATE TABLE Actors (ID_Actor INTEGER PRIMARY KEY NOT NULL, firstname VARCHAR(250) DEFAULT(NULL), lastname VARCHAR(250) DEFAULT(NULL), gender VARCHAR(1) DEFAULT(NULL))'
+});
+
+CRUD.define('Actor_Role', {
+	table: 'Actors_Roles',
+	primary: 'ID_Actor_Role',
+	fields: ['ID_Actor_Role', 'ID_Actor', 'ID_Role'],
+	relations: {
+		'Actor': CRUD.RELATION_FOREIGN,
+		'Role': CRUD.RELATION_FOREIGN
+	},
+	createStatement: 'CREATE TABLE Actors_Roles (ID_Actor_Role INTEGER PRIMARY KEY NOT NULL, ID_Actor INTEGER DEFAULT(NULL), ID_Role INTEGER DEFAULT(NULL))'
+});
+
+
+// initialize WebSQL database connection
+CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete_many', {
+    estimatedSize: 25 * 1024 * 1024
+})).then(function() { // Promise resolves when all database setup is done
+
+	var doctorwho = new Serie();
+	doctorwho.name = 'Doctor Who';
+	doctorwho.TVDB_ID = 78804;
+
+	var thedoctor = new Role();
+	thedoctor.name = 'The Doctor';
+
+	var twelve = new Actor();
+	twelve.firstname ='Peter';
+	twelve.lastname = 'Capaldi';
+
+	var eleven = new Actor();
+	eleven.firstname = 'Matt';
+	eleven.lastname = 'Smith';
+
+	var ten = new Actor();
+	ten.firstname = 'David';
+	ten.lastname = 'Tennant';
+
+	doctorwho.connect(thedoctor);
+	thedoctor.connect(ten);
+	// this also works
+	twelve.connect(thedoctor);
+	eleven.connect(thedoctor);
+});
+
+
 
 CRUD.define: Default orderBy property and orderBy direction
 ===========================================================
