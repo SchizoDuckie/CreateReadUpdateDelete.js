@@ -132,13 +132,13 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
                     return db.execute(entity.createStatement).then(function() {
                         tables.push(entity.table);
                         localStorage.setItem('database.version.' + entity.table, ('migrations' in entity) ? Math.max.apply(Math, Object.keys(entity.migrations)) : 1);
-                        CRUD.log(entity.getType() + " table created.");
+                        CRUD.log(entity.table + " table created.");
                         return entity;
                     }, function(err) {
-                        CRUD.log("Error creating " + entity.getType(), err);
-                        throw "Error creating table: " + entity.table + " for " + entity.getType();
+                        CRUD.log("Error creating " + entity.table, err, entity.createStatement);
+                        throw "Error creating table: " + entity.table;
                     }).then(createFixtures).then(function() {
-                        CRUD.log("Table created and fixtures inserted for ", entity.getType());
+                        CRUD.log("Table created and fixtures inserted for ", entityName);
                         return;
                     });
                 }

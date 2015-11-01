@@ -304,7 +304,6 @@ CRUD.ConnectionAdapter = function(endpoint, options) {
 CRUD.Entity = function(className, methods) {
     this.__values__ = {};
     this.__dirtyValues__ = {};
-    console.log("Create entity: ", this.constructor.name);
     return this;
 };
 CRUD.Entity.prototype = {
