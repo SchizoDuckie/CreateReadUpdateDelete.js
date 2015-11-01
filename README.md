@@ -371,8 +371,6 @@ CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete_foreign', {
 	// role.Connect(actor);
 });
 ```
-
-
 JSFiddle live demo: [CreateReadUpdateDelete : Defining a 1:many or many:1 relation](http://jsfiddle.net/SchizoDuckie/0LuLe1sr)
 
 
@@ -483,6 +481,9 @@ CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete_many', {
 	eleven.connect(thedoctor);
 });
 
+```
+
+JSFiddle live demo: [CreateReadUpdateDelete : Defining a many:many relation](http://jsfiddle.net/SchizoDuckie/pghy3kn4/)
 
 
 CRUD.define: Default orderBy property and orderBy direction
