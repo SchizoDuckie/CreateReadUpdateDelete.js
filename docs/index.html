@@ -264,17 +264,24 @@ CRUD.define(Actor, {
 // initialize WebSQL database connection
 CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete_single', {
     estimatedSize: 25 * 1024 * 1024
-})).then(function() {
-	// execute this immediately after the database tables are created
+})).then(function() { // Promise resolves when all database setup is done
+
+	// create a new role
 	var cptn = new Role();
 	cptn.name = 'Captain Jack Sparrow';
 
+	// create a new actor
 	var actor = new Actor();
 	actor.firstName = 'Johnny';
 	actor.lastName = 'Depp';
 	actor.gender = 'm';
 
+	// connect Actor to Role. Note that both will be auto-persisted at this point!
+	// both entities will also have an update-query executed to set the 1:1 relation.
 	cptn.Connect(actor);
+
+	// the other way around also works.
+	// role.Connect(actor);
 })
 
 
@@ -318,82 +325,47 @@ CRUD.define(Actor, {
 // initialize WebSQL database connection
 CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete_foreign', {
     estimatedSize: 25 * 1024 * 1024
-})).then(function() {
-	// execute this immediately after the database tables are created
-	var cptn = new Role();
+})).then(function() { // Promise resolves when all database setup is done
+
+	// create a new role
+	var cptn = new Role(); 
 	cptn.name = 'Captain Jack Sparrow';
 
+	// create a new actor
 	var actor = new Actor();
 	actor.firstName = 'Johnny';
 	actor.lastName = 'Depp';
 	actor.gender = 'm';
 
+	// connect Actor to Role. Note that both will be auto-persisted at this point!
+	// role will be updated as well to set the Actor_ID
 	actor.Connect(role);
-})
 
-
-JSFiddle live demo: [CreateReadUpdateDelete : Defining a 1:many or many:1 relation](http://jsfiddle.net/SchizoDuckie/0LuLe1sr)
-
-
-CRUD.define: many:many relation
-===============================
-
-CRUD.define: Default orderBy property and orderBy direction
-===========================================================
-
-CRUD.define: Custom orderBy clause
-==================================
-
-CRUD.define: Defining fixtures
-==============================
-
-CRUD.define: Indexes
-====================
-
-CRUD.define: Migrations
-=======================
-
-Usage: Opening a database connection
-====================================
-
-Usage: Using CRUD.Find and CRUD.FindOne
-=======================================
-
-Usage: Using Find on an entity instance to fetch related entities
-=================================================================
-
-Usage: Using FindOne
-====================
-
-Usage: Save changes to an entity to the database
-================================================
-
-Usage: Deleting an entity
-=========================
-
-Usage: Connecting entities
-==========================
-
-Advanced: Deep filters on related records using CRUD.Find
-=========================================================
-
-Advanced: Using CRUD.fromCache to convert a plain JavaScript Object into a CRUD Entity
-======================================================================================
-
-Advanced: Loading data from JSON and inserting it into the database
-===================================================================
-
-Advanced: Using CRUD.executeQuery
-=================================
-
-Advanced: Active Query Monitor using Object.observe
-===================================================
-
-CreateReadUpdateDelete.js automatically monitors how many insert queries it still has outstanding. With this, you can observe changes to this object and show a progress indicator of all outstanding write operations.
-
-
-```javascript
-var progress = document.getElementById('progress'),
+	// the other way around also works.
+	// role.Connect(actor);
+});
+</code></pre>
+<p>JSFiddle live demo: <a href="http://jsfiddle.net/SchizoDuckie/0LuLe1sr">CreateReadUpdateDelete : Defining a 1:many or many:1 relation</a></p>
+<h1>CRUD.define: many:many relation</h1>
+<h1>CRUD.define: Default orderBy property and orderBy direction</h1>
+<h1>CRUD.define: Custom orderBy clause</h1>
+<h1>CRUD.define: Defining fixtures</h1>
+<h1>CRUD.define: Indexes</h1>
+<h1>CRUD.define: Migrations</h1>
+<h1>Usage: Opening a database connection</h1>
+<h1>Usage: Using CRUD.Find and CRUD.FindOne</h1>
+<h1>Usage: Using Find on an entity instance to fetch related entities</h1>
+<h1>Usage: Using FindOne</h1>
+<h1>Usage: Save changes to an entity to the database</h1>
+<h1>Usage: Deleting an entity</h1>
+<h1>Usage: Connecting entities</h1>
+<h1>Advanced: Deep filters on related records using CRUD.Find</h1>
+<h1>Advanced: Using CRUD.fromCache to convert a plain JavaScript Object into a CRUD Entity</h1>
+<h1>Advanced: Loading data from JSON and inserting it into the database</h1>
+<h1>Advanced: Using CRUD.executeQuery</h1>
+<h1>Advanced: Active Query Monitor using Object.observe</h1>
+<p>CreateReadUpdateDelete.js automatically monitors how many insert queries it still has outstanding. With this, you can observe changes to this object and show a progress indicator of all outstanding write operations.</p>
+<pre><code class="language-javascript">var progress = document.getElementById('progress'),
     writesQueued = document.getElementById('writesQueued'),
     writesExecuted = document.getElementById('writesExecuted');
 

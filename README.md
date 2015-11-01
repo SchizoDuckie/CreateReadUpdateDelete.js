@@ -280,17 +280,24 @@ CRUD.define(Actor, {
 // initialize WebSQL database connection
 CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete_single', {
     estimatedSize: 25 * 1024 * 1024
-})).then(function() {
-	// execute this immediately after the database tables are created
+})).then(function() { // Promise resolves when all database setup is done
+
+	// create a new role
 	var cptn = new Role();
 	cptn.name = 'Captain Jack Sparrow';
 
+	// create a new actor
 	var actor = new Actor();
 	actor.firstName = 'Johnny';
 	actor.lastName = 'Depp';
 	actor.gender = 'm';
 
+	// connect Actor to Role. Note that both will be auto-persisted at this point!
+	// both entities will also have an update-query executed to set the 1:1 relation.
 	cptn.Connect(actor);
+
+	// the other way around also works.
+	// role.Connect(actor);
 })
 
 
@@ -341,18 +348,26 @@ CRUD.define(Actor, {
 // initialize WebSQL database connection
 CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete_foreign', {
     estimatedSize: 25 * 1024 * 1024
-})).then(function() {
-	// execute this immediately after the database tables are created
-	var cptn = new Role();
+})).then(function() { // Promise resolves when all database setup is done
+
+	// create a new role
+	var cptn = new Role(); 
 	cptn.name = 'Captain Jack Sparrow';
 
+	// create a new actor
 	var actor = new Actor();
 	actor.firstName = 'Johnny';
 	actor.lastName = 'Depp';
 	actor.gender = 'm';
 
+	// connect Actor to Role. Note that both will be auto-persisted at this point!
+	// role will be updated as well to set the Actor_ID
 	actor.Connect(role);
-})
+
+	// the other way around also works.
+	// role.Connect(actor);
+});
+```
 
 
 JSFiddle live demo: [CreateReadUpdateDelete : Defining a 1:many or many:1 relation](http://jsfiddle.net/SchizoDuckie/0LuLe1sr)
