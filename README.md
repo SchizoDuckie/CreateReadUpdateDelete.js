@@ -153,6 +153,14 @@ Documentation and howto
 CRUD.define: Introduction and conventions
 =========================================
 
+Conventions
+-----------
+- Always create an Integer AUTO_INCREMENT primary key on your tables. This library doesn't support compound keys.
+- If you create a foreign key in a table, name it the same as the primary key of the table you're referring to. 
+
+Introduction
+------------
+
 CRUD.define registers your entities in the EntityManager.
 
 The Entity Manager performs the following tasks as soon as it's connected to a database:
