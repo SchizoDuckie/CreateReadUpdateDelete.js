@@ -489,14 +489,80 @@ JSFiddle live demo: [CreateReadUpdateDelete : Defining a many:many relation](htt
 CRUD.define: Default orderBy property and orderBy direction
 ===========================================================
 
+```javascript
+CRUD.define(Actor, {
+    table: 'Actors', 
+    primary: 'ID_Actor',
+    fields: ['ID_Actor', 'firstname', 'lastname', 'gender'],
+    orderProperty: 'lastname',
+    orderDirection: 'ASC',
+    relations: {
+        'Role' : CRUD.RELATION_MANY
+    },
+    connectors: {
+    	'Role' : 'Actor_Role'
+	},
+    createStatement: 'CREATE TABLE Actors (ID_Actor INTEGER PRIMARY KEY NOT NULL, firstname VARCHAR(250) DEFAULT(NULL), lastname VARCHAR(250) DEFAULT(NULL), gender VARCHAR(1) DEFAULT(NULL))'
+});
+```
+
+
 CRUD.define: Custom orderBy clause
 ==================================
+
+```javascript
+CRUD.define(Actor, {
+    table: 'Actors', 
+    primary: 'ID_Actor',
+    fields: ['ID_Actor', 'firstname', 'lastname', 'gender'],
+    orderBy: 'lastname ASC, firstname DESC'
+    relations: {
+        'Role' : CRUD.RELATION_MANY
+    },
+    connectors: {
+    	'Role' : 'Actor_Role'
+	},
+    createStatement: 'CREATE TABLE Actors (ID_Actor INTEGER PRIMARY KEY NOT NULL, firstname VARCHAR(250) DEFAULT(NULL), lastname VARCHAR(250) DEFAULT(NULL), gender VARCHAR(1) DEFAULT(NULL))'
+});
+```
 
 CRUD.define: Defining fixtures
 ==============================
 
+```javascript
+CRUD.define(Actor, {
+    table: 'Actors', 
+    primary: 'ID_Actor',
+    fields: ['ID_Actor', 'firstname', 'lastname', 'gender'],
+    orderBy: 'lastname ASC, firstname DESC'
+    relations: {
+        'Role' : CRUD.RELATION_MANY
+    },
+    connectors: {
+    	'Role' : 'Actor_Role'
+	},
+    createStatement: 'CREATE TABLE Actors (ID_Actor INTEGER PRIMARY KEY NOT NULL, firstname VARCHAR(250) DEFAULT(NULL), lastname VARCHAR(250) DEFAULT(NULL), gender VARCHAR(1) DEFAULT(NULL))'
+	fixtures: [
+		{ firstname: 'Peter', lastname: 'Capaldi', gender: 'm' },
+		{ firstname: 'Matt', lastname: 'Smith', gender: 'm' },
+		{ firstname: 'David', 'lastname': Tennant', gender: 'm' }
+	],
+});
+```
+
+
 CRUD.define: Indexes
 ====================
+
+```javascript
+CRUD.define(Actor, {
+    table: 'Actors', 
+    primary: 'ID_Actor',
+    fields: ['ID_Actor', 'firstname', 'lastname', 'gender'],
+    createStatement: 'CREATE TABLE Actors (ID_Actor INTEGER PRIMARY KEY NOT NULL, firstname VARCHAR(250) DEFAULT(NULL), lastname VARCHAR(250) DEFAULT(NULL), gender VARCHAR(1) DEFAULT(NULL))'
+    indexes: ['firstname','lastname', 'gender'],
+});
+```
 
 CRUD.define: Migrations
 =======================
@@ -504,29 +570,169 @@ CRUD.define: Migrations
 Usage: Opening a database connection
 ====================================
 
+```javascript
+// initialize WebSQL database connection
+CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete_foreign', {
+    estimatedSize: 25 * 1024 * 1024
+})).then(function() { // Promise resolves when all database setup is done
+
+	// do stuff here
+});
+```
+
 Usage: Using CRUD.Find and CRUD.FindOne
 =======================================
 
-Usage: Using Find on an entity instance to fetch related entities
-=================================================================
+Find returns an array:
+```javascript
+CRUD.Find(Serie, { name: 'Arrow'}).then(function(results) {
+	// do something with results
+});
+```
+
+FindOne returns a single entity
+```javascript
+CRUD.FindOne(Serie, { name: 'Arrow'}).then(function(results) {
+	// do something with results
+});
+```
 
 Usage: Using FindOne
 ====================
 
+```javascript
+CRUD.FindOne(Serie, { name: 'Arrow'}).then(function(arrow) {
+	// do something with Arrow.
+});
+```
+
+Find the first serie in the database that has an episode with seasonNumber 4
+
+```javascript
+CRUD.FindOne(Serie, { Episode: { seasonNumber: 4 }}).then(function(results) {
+	// 
+});
+```
+
+
+Usage: Using Find on an entity instance to fetch related entities
+=================================================================
+
+This auto creates a join where needed and executes [these] queries
+
+```javascript
+CRUD.FindOne(Serie, { name: 'Arrow'}).then(function(arrow) {
+	arrow.Find('Episode', { seasonNumber: 1 }).then(function(episodes) {
+		// do something with episodes
+	});
+});
+```
+
 Usage: Save changes to an entity to the database
 ================================================
+
+
+```javascript
+var serie = new Serie();
+serie.name = 'Arrow';
+serie.TVDB_ID = '257655';
+serie.actors = [
+	"Stephen Amell (Oliver Queen / Arrow)",
+	"Katie Cassidy (Laurel Lance)",
+	"Paul Blackthorne (Detective Quentin Lance)",
+	"David Ramsey (John Diggle)",
+	"Willa Holland (Thea Queen)",
+	"Emily Bett Rickards (Felicity Smoak)",
+	"John Barrowman (Malcolm Merlyn)"
+];
+
+serie.Persist().then(function(result) {
+	console.log("Serie persisted! ", result);
+});
+```
+
+Or, on an existing entity:
+
+```javascript
+CRUD.FindOne(Serie, { name: 'Arrow' }).then(function(serie) {
+	
+	serie.name = 'Arrow';
+	serie.TVDB_ID = '257655';
+	serie.actors = [];
+
+	serie.Persist().then(function(result) {
+		console.log("Serie actors were emptied! ", result);
+	});
+});
+```
+
 
 Usage: Deleting an entity
 =========================
 
+
+```javascript
+CRUD.FindOne(Serie, { name: 'Arrow' }).then(function(serie) {
+	
+	serie.Delete().then(function(result) {
+		console.log("Arrow was deleted. ", result);
+	});
+});
+```
+
 Usage: Connecting entities
 ==========================
+
+```javascript
+var doctorwho = new Serie();
+	doctorwho.name = 'Doctor Who';
+	doctorwho.TVDB_ID = 78804;
+
+	var thedoctor = new Role();
+	thedoctor.name = 'The Doctor';
+
+	var twelve = new Actor();
+	twelve.firstname ='Peter';
+	twelve.lastname = 'Capaldi';
+
+	var eleven = new Actor();
+	eleven.firstname = 'Matt';
+	eleven.lastname = 'Smith';
+
+	var ten = new Actor();
+	ten.firstname = 'David';
+	ten.lastname = 'Tennant';
+
+	doctorwho.connect(thedoctor);
+	thedoctor.connect(ten);
+	// this also works
+	twelve.connect(thedoctor);
+	eleven.connect(thedoctor);
+```
 
 Advanced: Deep filters on related records using CRUD.Find
 =========================================================
 
+```javascript
+CRUD.Find(Episode, { Serie: { name:'Doctor Who'}, Season: { 'seasonNumber > 2' }, 'name like "%angels%"'})
+```
+
 Advanced: Using CRUD.fromCache to convert a plain JavaScript Object into a CRUD Entity
 ======================================================================================
+
+```javascript
+
+var fixtures = [
+	{ ID_Actor: 1, firstname: 'Peter', lastname: 'Capaldi', gender: 'm' },
+	{ ID_Actor: 2, firstname: 'Matt', lastname: 'Smith', gender: 'm' },
+	{ ID_Actor: 3, firstname: 'David', 'lastname': Tennant', gender: 'm' }
+];
+
+fixtures.map(function(fixture) {
+	var entity = CRUD.fromCache(Actor, fixture);
+	entity.Persist(true);
+});
+
 
 Advanced: Loading data from JSON and inserting it into the database
 ===================================================================
