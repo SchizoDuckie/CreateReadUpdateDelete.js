@@ -194,7 +194,9 @@ CRUD.define = function(namedFunction, properties, methods) {};
  - `table` : String, Table name used by createStatement
  - `primary` : String, Primary key property
  - `fields` : All properties (including primary key) created by the createStatement
+
   Optional properties can be:
+  
  - `indexes` : Array, List of fields to create indexes on.
  - `relations` : Array, List of (String) Entity names and CRUD.RELATION_* types
  - `autoSerialize` : Array, properties to auto json_encode / json_decode on fetch/persist
