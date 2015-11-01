@@ -246,8 +246,8 @@ CRUD.Find = function(obj, filters, options) {
  */
 CRUD.FindCount = function(obj, filters, options) {
     var type = null;
-    if (obj instanceof CRUD.Entity || obj.prototype instanceof CRUD.Entity) {
-        throw 'CRUD.FindCount cannot search on instances of objects.';
+    if (obj.toString() != Serie.getType()) {
+        throw 'CRUD.FindCount cannot search on instances of Entities.';
     } else if (obj in CRUD.EntityManager.entities) {
         type = obj;
     } else {
