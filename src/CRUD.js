@@ -466,15 +466,15 @@ CRUD.Entity.prototype = {
     Connect: function(to) {
         var targetType = to.getType();
         var thisType = this.getType();
-        var thisPrimary = this.dbSetup.primary;
-        var targetPrimary = to.dbSetup.primary;
+        var thisPrimary = CRUD.EntityManager.getPrimary(thisType);
+        var targetPrimary = CRUD.EntityManager.getPrimary(targetType);
         var that = this;
-        new Promise(function(resolve, fail) {
-            Promise.all([
+        return new Promise(function(resolve, fail) {
+            return Promise.all([
                 that.Persist(),
                 to.Persist()
             ]).then(function() {
-                switch (that.dbSetup.relations[targetType]) {
+                switch (CRUD.EntityManager.entities[thisType].relations[targetType]) {
                     case CRUD.RELATION_SINGLE:
                         to.set(thisPrimary, that.getID());
                         that.set(targetPrimary, to.getID());
@@ -488,19 +488,18 @@ CRUD.Entity.prototype = {
                         }
                         break;
                     case CRUD.RELATION_MANY:
-                        var connector = new window[that.dbSetup.connectors[targetType]]();
+                        var connector = new CRUD.EntityManager.entities[thisType].connectors[targetType]();
                         connector.set(thisPrimary, that.getID());
                         connector.set(targetPrimary, to.getID());
-                        connector.Persist().then(resolve, fail);
-                        return;
+                        return connector.Persist().then(resolve, fail);
                     case CRUD.RELATION_CUSTOM:
                         //@TODO
                         break;
                 }
-                if (that.dbSetup.relations[to.getType()] != CRUD.RELATION_MANY) {
-                    Promise.all([
-                        to.Persist(),
-                        from.Persist()
+                if (CRUD.EntityManager.entities[thisType].relations[targetType] != CRUD.RELATION_MANY) {
+                    return Promise.all([
+                        that.Persist(),
+                        to.Persist()
                     ]).then(resolve, fail);
                 }
             }, fail);

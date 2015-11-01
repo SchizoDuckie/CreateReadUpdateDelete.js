@@ -196,7 +196,7 @@ CRUD.define = function(namedFunction, properties, methods) {};
  - `fields` : All properties (including primary key) created by the createStatement
 
   Optional properties can be:
-  
+
  - `indexes` : Array, List of fields to create indexes on.
  - `relations` : Array, List of (String) Entity names and CRUD.RELATION_* types
  - `autoSerialize` : Array, properties to auto json_encode / json_decode on fetch/persist
@@ -223,13 +223,11 @@ function Serie() {
 
 /**
  * Extend the Named Function with CRUD definitions and register it in the CRUD.EntityManager
- * Signature:
- * CRUD.define(Entity, {options}, {prototypeMethods});
  */
 CRUD.define(Serie, {
     table: 'Series', // Database table this entity is bound to
     primary: 'ID_Serie', // Primary key. Make sure to use uniquely named keys, don't use 'id' on every table and refer to 'id_something'
-    fields: [ // List all individual properties. Accessors will be auto-created (but can be overwritten)
+    fields: [ // List all individual properties including primary key. Accessors will be auto-created (but can be overwritten)
         'ID_Serie',
         'name',
         'banner',
