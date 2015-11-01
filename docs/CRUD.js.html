@@ -35,6 +35,8 @@
                   </li>
                   <li><a href="#Find"><i class="alert alert-info"></i><span>Find</span></a>
                   </li>
+                  <li><a href="#FindCount"><i class="alert alert-info"></i><span>FindCount</span></a>
+                  </li>
                   <li><a href="#FindOne"><i class="alert alert-info"></i><span>FindOne</span></a>
                   </li>
                   <li><a href="#ConnectionAdapter"><i class="alert alert-info"></i><span>ConnectionAdapter</span></a>
@@ -333,6 +335,54 @@ CRUD.setAdapter = function(adapter) {
         });
     });
 };</code></pre>
+          <section id="FindCount">
+            <h1>FindCount</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>CRUD.FindCount()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>CRUD.FindCount performs a SELECT COUNT(primary) for a set of filters and</p></div>
+          <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th style="width:20%">Option name</th>
+                <th style="width:20%">Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>obj</td>
+                <td>CRUD.Entity</td>
+                <td><p>Object to find</p></td>
+              </tr>
+              <tr>
+                <td>filters</td>
+                <td>Object, Array</td>
+                <td><p>Filters to pass to the query (See CRUD.Find)</p></td>
+              </tr>
+              <tr>
+                <td>options</td>
+                <td>Object</td>
+                <td><p>Object with limit, orderby/groupBy</p></td>
+              </tr>
+            </tbody>
+          </table>
+          <pre><code class="language-javascript">CRUD.FindCount = function(obj, filters, options) {
+    var type = null;
+    if (obj instanceof CRUD.Entity || obj.prototype instanceof CRUD.Entity) {
+        throw 'CRUD.FindCount cannot search on instances of objects.';
+    } else if (obj in CRUD.EntityManager.entities) {
+        type = obj;
+    } else {
+        throw 'CRUD.Find cannot search for non-CRUD objects like ' + obj + '!';
+    }
+    return CRUD.EntityManager.getAdapter().FindCount(type, filters, options).then(function(results) {
+        console.log(&quot;Count query executed: &quot;, results);
+        return results;
+    });
+};</code></pre>
           <section id="FindOne">
             <h1>FindOne</h1>
             <h5 class="subheader"></h5>
@@ -340,7 +390,7 @@ CRUD.setAdapter = function(adapter) {
               <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>CRUD.FindOne()</span><span>&nbsp;</span>
             </p>
           </section>
-          <div class="description"><p>Uses CRUD.find with a limit 0,1 and returns the first result.</p></div>
+          <div class="description"><p>Uses CRUD.Find with a limit 0,1 and returns the first result.</p></div>
           <pre><code class="language-javascript">CRUD.FindOne = function(obj, filters, options) {
     options = options || {};
     options.limit = 1;

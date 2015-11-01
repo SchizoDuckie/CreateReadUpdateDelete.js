@@ -236,8 +236,31 @@ CRUD.Find = function(obj, filters, options) {
         });
     });
 };
+
+/**
+ * CRUD.FindCount performs a SELECT COUNT(primary) for a set of filters and
+ * @param {CRUD.Entity} obj Object to find
+ * @param {Object|Array} filters Filters to pass to the query (See CRUD.Find)
+ * @param {Object} options Object with limit, orderby/groupBy
+ * @returns Promise that receives number of records
+ */
+CRUD.FindCount = function(obj, filters, options) {
+    var type = null;
+    if (obj instanceof CRUD.Entity || obj.prototype instanceof CRUD.Entity) {
+        throw 'CRUD.FindCount cannot search on instances of objects.';
+    } else if (obj in CRUD.EntityManager.entities) {
+        type = obj;
+    } else {
+        throw 'CRUD.Find cannot search for non-CRUD objects like ' + obj + '!';
+    }
+    return CRUD.EntityManager.getAdapter().FindCount(type, filters, options).then(function(results) {
+        console.log("Count query executed: ", results);
+        return results;
+    });
+};
+
 /** 
- * Uses CRUD.find with a limit 0,1 and returns the first result.
+ * Uses CRUD.Find with a limit 0,1 and returns the first result.
  * @returns Promise
  */
 CRUD.FindOne = function(obj, filters, options) {

@@ -615,7 +615,7 @@ CRUD.Database.SQLBuilder.prototype = {
     getCount: function() {
         var where = (this.wheres.length > 0) ? ' WHERE ' + this.wheres.join(" \n AND \n\t") : '';
         var group = (this.groups.length > 0) ? ' GROUP BY ' + this.groups.join(", ") : '';
-        var query = "SELECT count(*) FROM \n\t" + CRUD.EntityManager.entities[this.entity].table + "\n " + this.joins.join("\n ") + where + ' ' + group;
+        var query = "SELECT count(" + CRUD.EntityManager.entities[this.entity].primary + ") FROM \n\t" + CRUD.EntityManager.entities[this.entity].table + "\n " + this.joins.join("\n ") + where + ' ' + group;
         return (query);
     }
 };

@@ -161,7 +161,7 @@ CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete', {
 }));
 </code></pre>
 <h2>CRUD.define signature and parameters</h2>
-<pre><code class="language-Javascript">/**
+<pre><code class="language-javascript">/**
  * @param  {Function} namedFunction Named Function to register with the entity manager
  * @param  {object} properties entity config properties like table, primary, fields, createStatement
  * @param  {object} methods prototype methods to register on the entity instance
@@ -172,18 +172,18 @@ CRUD.define = function(namedFunction, properties, methods) {};
 <p>CRUD.define forwards registration of an entity to CRUD.EntityManager.</p>
 <p>Parameters passed to 'properties' should be at least:</p>
 <ul>
-<li>createStatement : String, Full CREATE TABLE SQL statement</li>
-<li>table : String, Table name used by createStatement</li>
-<li>primary : String, Primary key property</li>
-<li>fields : All properties (including primary key) created by the createStatement
+<li><code>createStatement</code> : String, Full CREATE TABLE SQL statement</li>
+<li><code>table</code> : String, Table name used by createStatement</li>
+<li><code>primary</code> : String, Primary key property</li>
+<li><code>fields</code> : All properties (including primary key) created by the createStatement
 Optional properties can be:</li>
-<li>indexes : Array, List of fields to create indexes on.</li>
-<li>relations : Array, List of (String) Entity names and CRUD.RELATION_* types</li>
-<li>autoSerialize : Array, properties to auto json_encode / json_decode on fetch/persist</li>
-<li>defaultValues : Object, property -&gt; default value list</li>
-<li>orderProperty : String, default orderBy propery to append to CRUD.Find queries</li>
-<li>orderDirection : String, default orderBy direction to append to CRUD.Find queries</li>
-<li>migrations : Object, with numeric keys and array of raw sql migrations to run in sequence when current version doesn't match lastest.</li>
+<li><code>indexes</code> : Array, List of fields to create indexes on.</li>
+<li><code>relations</code> : Array, List of (String) Entity names and CRUD.RELATION_* types</li>
+<li><code>autoSerialize</code> : Array, properties to auto json_encode / json_decode on fetch/persist</li>
+<li><code>defaultValues</code> : Object, property -&gt; default value list</li>
+<li><code>orderProperty</code> : String, default orderBy propery to append to CRUD.Find queries</li>
+<li><code>orderDirection</code> : String, default orderBy direction to append to CRUD.Find queries</li>
+<li><code>migrations</code> : Object, with numeric keys and array of raw sql migrations to run in sequence when current version doesn't match lastest.</li>
 </ul>
 <h1>CRUD.define: Setting up a basic entity</h1>
 <p>Make sure you define your entities before opening the database connection using CRUD.setAdapter.
@@ -217,6 +217,7 @@ CRUD.define(Serie, {
 });
 </code></pre>
 <h1>CRUD.define: 1:1 relation</h1>
+<p>To define a 1:1 relation,</p>
 <pre><code class="language-javascript">
 
 
@@ -242,6 +243,20 @@ CRUD.define(Serie, {
 <h1>Advanced: Loading data from JSON and inserting it into the database</h1>
 <h1>Advanced: Using CRUD.executeQuery</h1>
 <h1>Advanced: Active Query Monitor using Object.observe</h1>
+<p>CreateReadUpdateDelete.js automatically monitors how many insert queries it still has outstanding. With this, you can observe changes to this object and show a progress indicator of all outstanding write operations.</p>
+<pre><code class="language-javascript">var progress = document.getElementById('progress'),
+    writesQueued = document.getElementById('writesQueued'),
+    writesExecuted = document.getElementById('writesExecuted');
+
+Object.observe(CRUD.stats, function() {
+   progress.innerHTML = Math.floor((CRUD.stats.writesExecuted / CRUD.stats.writesQueued) * 100);
+   writesQueued.innerHTML = CRUD.stats.writesQueued;
+   writesExecuted.innerHTML = CRUD.stats.writesExecuted; 
+});
+
+// now execute some insert queries and see the magic happen.
+</code></pre>
+<p>JSFiddle live demo: http://jsfiddle.net/SchizoDuckie/p7kta1mv/</p>
 <h1>Advanced: CRUD.EntityManager ensures you have a handle to the same record in different contexts</h1>
 <h1>Advanced: Migrations in WebSQL: Adding a column to the database</h1>
 <h1>Advanced: Interacting with a Select2 via JQuery</h1>

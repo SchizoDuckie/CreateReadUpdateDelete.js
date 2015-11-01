@@ -740,7 +740,7 @@ return this;
             </p>
           </section>
           <div class="description"><hr>
-<p>CRUD.Database.js, a simple database abstraction layer.<br />Adapted from mootools Database.js by  Dipl.-Ing. (FH) AndrÃ© Fiedler <a href="&#109;&#x61;&#105;&#x6c;&#116;&#111;&#x3a;&#107;&#x6f;&#110;&#x74;&#x61;&#107;&#116;&#64;&#x76;&#105;&#115;&#117;&#97;&#x6c;&#100;&#x72;&#x75;&#103;&#115;&#46;&#x6e;&#x65;&#116;">&#107;&#x6f;&#110;&#x74;&#x61;&#107;&#116;&#64;&#x76;&#105;&#115;&#117;&#97;&#x6c;&#100;&#x72;&#x75;&#103;&#115;&#46;&#x6e;&#x65;&#116;</a><br />Removed all moo dependencies and converted to POJS<br />December 2013: Updated for use of promises.<br />...</p></div>
+<p>CRUD.Database.js, a simple database abstraction layer.<br />Adapted from mootools Database.js by  Dipl.-Ing. (FH) AndrÃ© Fiedler <a href="&#109;&#97;&#x69;&#108;&#x74;&#x6f;&#x3a;&#x6b;&#x6f;&#x6e;&#x74;&#97;&#x6b;&#x74;&#64;&#x76;&#105;&#x73;&#x75;&#x61;&#x6c;&#x64;&#x72;&#x75;&#x67;&#115;&#46;&#110;&#101;&#x74;">&#x6b;&#x6f;&#x6e;&#x74;&#97;&#x6b;&#x74;&#64;&#x76;&#105;&#x73;&#x75;&#x61;&#x6c;&#x64;&#x72;&#x75;&#x67;&#115;&#46;&#110;&#101;&#x74;</a><br />Removed all moo dependencies and converted to POJS<br />December 2013: Updated for use of promises.<br />...</p></div>
           <pre><code class="language-javascript">CRUD.Database = function(name, options) {
     options = options || {
         version: '1.0',
@@ -981,7 +981,7 @@ CRUD.Database.SQLBuilder.prototype = {
     getCount: function() {
         var where = (this.wheres.length &gt; 0) ? ' WHERE ' + this.wheres.join(&quot; \n AND \n\t&quot;) : '';
         var group = (this.groups.length &gt; 0) ? ' GROUP BY ' + this.groups.join(&quot;, &quot;) : '';
-        var query = &quot;SELECT count(*) FROM \n\t&quot; + CRUD.EntityManager.entities[this.entity].table + &quot;\n &quot; + this.joins.join(&quot;\n &quot;) + where + ' ' + group;
+        var query = &quot;SELECT count(&quot; + CRUD.EntityManager.entities[this.entity].primary + &quot;) FROM \n\t&quot; + CRUD.EntityManager.entities[this.entity].table + &quot;\n &quot; + this.joins.join(&quot;\n &quot;) + where + ' ' + group;
         return (query);
     }
 };</code></pre>

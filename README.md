@@ -172,7 +172,7 @@ CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete', {
 CRUD.define signature and parameters
 ------------------------------------
 
-```Javascript
+```javascript
 /**
  * @param  {Function} namedFunction Named Function to register with the entity manager
  * @param  {object} properties entity config properties like table, primary, fields, createStatement
@@ -185,18 +185,18 @@ CRUD.define = function(namedFunction, properties, methods) {};
  CRUD.define forwards registration of an entity to CRUD.EntityManager.
   
  Parameters passed to 'properties' should be at least:
- - createStatement : String, Full CREATE TABLE SQL statement
- - table : String, Table name used by createStatement
- - primary : String, Primary key property
- - fields : All properties (including primary key) created by the createStatement
+ - `createStatement` : String, Full CREATE TABLE SQL statement
+ - `table` : String, Table name used by createStatement
+ - `primary` : String, Primary key property
+ - `fields` : All properties (including primary key) created by the createStatement
   Optional properties can be:
- - indexes : Array, List of fields to create indexes on.
- - relations : Array, List of (String) Entity names and CRUD.RELATION_* types
- - autoSerialize : Array, properties to auto json_encode / json_decode on fetch/persist
- - defaultValues : Object, property -> default value list
- - orderProperty : String, default orderBy propery to append to CRUD.Find queries
- - orderDirection : String, default orderBy direction to append to CRUD.Find queries
- - migrations : Object, with numeric keys and array of raw sql migrations to run in sequence when current version doesn't match lastest.
+ - `indexes` : Array, List of fields to create indexes on.
+ - `relations` : Array, List of (String) Entity names and CRUD.RELATION_* types
+ - `autoSerialize` : Array, properties to auto json_encode / json_decode on fetch/persist
+ - `defaultValues` : Object, property -> default value list
+ - `orderProperty` : String, default orderBy propery to append to CRUD.Find queries
+ - `orderDirection` : String, default orderBy direction to append to CRUD.Find queries
+ - `migrations` : Object, with numeric keys and array of raw sql migrations to run in sequence when current version doesn't match lastest.
 
 CRUD.define: Setting up a basic entity
 ======================================
@@ -237,6 +237,7 @@ CRUD.define(Serie, {
 CRUD.define: 1:1 relation
 =========================
 
+To define a 1:1 relation, 
 ```javascript
 
 
@@ -303,6 +304,26 @@ Advanced: Using CRUD.executeQuery
 
 Advanced: Active Query Monitor using Object.observe
 ===================================================
+
+CreateReadUpdateDelete.js automatically monitors how many insert queries it still has outstanding. With this, you can observe changes to this object and show a progress indicator of all outstanding write operations.
+
+
+```javascript
+var progress = document.getElementById('progress'),
+    writesQueued = document.getElementById('writesQueued'),
+    writesExecuted = document.getElementById('writesExecuted');
+
+Object.observe(CRUD.stats, function() {
+   progress.innerHTML = Math.floor((CRUD.stats.writesExecuted / CRUD.stats.writesQueued) * 100);
+   writesQueued.innerHTML = CRUD.stats.writesQueued;
+   writesExecuted.innerHTML = CRUD.stats.writesExecuted; 
+});
+
+// now execute some insert queries and see the magic happen.
+```
+
+JSFiddle live demo: http://jsfiddle.net/SchizoDuckie/p7kta1mv/
+ 
 
 Advanced: CRUD.EntityManager ensures you have a handle to the same record in different contexts
 ===============================================================================================
