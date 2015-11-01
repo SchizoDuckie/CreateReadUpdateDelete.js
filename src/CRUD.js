@@ -365,7 +365,7 @@ CRUD.Entity.prototype = {
             ret = this.__dirtyValues__[field];
         } else if (field in this.__values__) {
             ret = this.__values__[field];
-        } else if (field in CRUD.EntityManager.entities[this.getType()].fields) {
+        } else if (CRUD.EntityManager.entities[this.getType()].fields.indexOf(field) > -1) {
             ret = (field in CRUD.EntityManager.entities[this.getType()].defaultValues) ? CRUD.EntityManager.entities[this.getType()].defaultValues[field] : null;
         } else {
             CRUD.log('Could not find field \'' + field + '\' in \'' + this.getType() + '\' (for get)');
