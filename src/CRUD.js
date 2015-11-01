@@ -253,10 +253,7 @@ CRUD.FindCount = function(obj, filters, options) {
     } else {
         throw 'CRUD.Find cannot search for non-CRUD objects like ' + obj + '!';
     }
-    return CRUD.EntityManager.getAdapter().FindCount(type, filters, options).then(function(results) {
-        console.log("Count query executed: ", results);
-        return results;
-    });
+    return CRUD.EntityManager.getAdapter().FindCount(type, filters, options);
 };
 
 /** 

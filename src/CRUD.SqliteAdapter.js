@@ -278,6 +278,30 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
     };
 
     /**
+     * @param {CRUD.Entity} what type of CRUD.Entity to query the database for
+     * @param {object} filters Properties to create a WHERE statement from
+     * @param {object} options Optional array of options: { orderBy, groupBy, limit, justthese }
+     */
+    this.FindCount = function(what, filters, options) {
+        var builder = new CRUD.Database.SQLBuilder(what, filters, options);
+        var query = builder.buildCountQuery();
+
+        CRUD.log("Executing query via sqliteadapter: ", options, query);
+        return new Promise(function(resolve, fail) {
+            return delayUntilSetupDone(function() {
+                db.execute(query.query, query.parameters).then(function(resultset) {
+                        var row = resultset.rs.rows.item(0);
+                        resolve(row[Object.keys(row)[0]]);
+                    },
+                    function(resultSet, sqlError) {
+                        CRUD.log('SQL Error in FIND : ', sqlError, resultSet, query);
+                        fail();
+                    });
+            });
+        });
+    };
+
+    /**
      * Save a changed or new entity into the database.
      * @param {CRUD.Entity} what an instance of a CRUD.Entity
      * @param {boolean} forceInsert (Optional) Flag all values dirty and append them to the query
@@ -612,10 +636,13 @@ CRUD.Database.SQLBuilder.prototype = {
         });
     },
 
-    getCount: function() {
+    buildCountQuery: function() {
         var where = (this.wheres.length > 0) ? ' WHERE ' + this.wheres.join(" \n AND \n\t") : '';
         var group = (this.groups.length > 0) ? ' GROUP BY ' + this.groups.join(", ") : '';
         var query = "SELECT count(" + CRUD.EntityManager.entities[this.entity].primary + ") FROM \n\t" + CRUD.EntityManager.entities[this.entity].table + "\n " + this.joins.join("\n ") + where + ' ' + group;
-        return (query);
+        return ({
+            query: query,
+            parameters: this.parameters
+        });
     }
 };
