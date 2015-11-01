@@ -168,7 +168,8 @@ CRUD.EntityManager = function() {
         return related in this.entities[className].relations;
     };
     return this;
-}();
+};
+CRUD.EntityManager = new CRUD.EntityManager();
 
 /**
  * CRUD.define forwards registration of an entity to CRUD.EntityManager.
@@ -489,7 +490,7 @@ CRUD.Entity.prototype = {
                         break;
                     case CRUD.RELATION_MANY:
                         var connectorClass = CRUD.EntityManager.entities[thisType].connectors[targetType];
-                        var connector = new CRUD.EntityManager.entities[connectorClass]();
+                        var connector = new CRUD.EntityManager.constructors[connectorClass]();
                         connector[thisPrimary] = that.getID();
                         connector[targetPrimary] = to.getID();
                         return connector.Persist().then(resolve, fail);
