@@ -83,7 +83,7 @@ CRUD.FindOne(Serie, { name: 'Arrow' }).then(function(serie) {
  * You can pass an array instead of mapped object to add custom SQL
  */
 CRUD.Find(Serie, ['name like "%Arr%"']).then(function(series) { 
-	console.log("Found wildcard results: ", serie);
+	console.log("Found wildcard results: ", series);
 });
 ```
 
@@ -115,7 +115,7 @@ CRUD.FindOne(Serie, {name: 'Arrow'}).then(function(arrow) {
 });
 ```
 
-[basic setup of an entity](http://jsfiddle.net/SchizoDuckie/1fwntkhr/)
+JSFiddle live demo: [CreateReadUpdateDelete : basic setup of an entity](http://jsfiddle.net/SchizoDuckie/1fwntkhr/)
 
 
 Documentation and howto
@@ -545,7 +545,7 @@ CRUD.define(Actor, {
 	fixtures: [
 		{ firstname: 'Peter', lastname: 'Capaldi', gender: 'm' },
 		{ firstname: 'Matt', lastname: 'Smith', gender: 'm' },
-		{ firstname: 'David', 'lastname': Tennant', gender: 'm' }
+		{ firstname: 'David', 'lastname': 'Tennant', gender: 'm' }
 	],
 });
 ```
