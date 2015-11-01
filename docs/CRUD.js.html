@@ -371,17 +371,14 @@ CRUD.setAdapter = function(adapter) {
           </table>
           <pre><code class="language-javascript">CRUD.FindCount = function(obj, filters, options) {
     var type = null;
-    if (obj instanceof CRUD.Entity || obj.prototype instanceof CRUD.Entity) {
-        throw 'CRUD.FindCount cannot search on instances of objects.';
+    if (obj.toString() != Serie.getType()) {
+        throw 'CRUD.FindCount cannot search on instances of Entities.';
     } else if (obj in CRUD.EntityManager.entities) {
         type = obj;
     } else {
         throw 'CRUD.Find cannot search for non-CRUD objects like ' + obj + '!';
     }
-    return CRUD.EntityManager.getAdapter().FindCount(type, filters, options).then(function(results) {
-        console.log(&quot;Count query executed: &quot;, results);
-        return results;
-    });
+    return CRUD.EntityManager.getAdapter().FindCount(type, filters, options);
 };</code></pre>
           <section id="FindOne">
             <h1>FindOne</h1>

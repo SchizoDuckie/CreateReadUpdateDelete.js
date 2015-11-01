@@ -46,6 +46,8 @@
                   </li>
                   <li><a href="#Find"><i class="alert alert-info"></i><span>Find</span></a>
                   </li>
+                  <li><a href="#FindCount"><i class="alert alert-info"></i><span>FindCount</span></a>
+                  </li>
                   <li><a href="#Persist"><i class="alert alert-info"></i><span>Persist</span></a>
                   </li>
                   <li><a href="#Delete"><i class="alert alert-info"></i><span>Delete</span></a>
@@ -564,6 +566,58 @@ return db.execute(&quot;select type,name,tbl_name from sqlite_master&quot;)
         });
     });
 };</code></pre>
+          <section id="FindCount">
+            <h1>FindCount</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">method</div><span>&nbsp;</span><span>this.FindCount()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"></div>
+          <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th style="width:20%">Option name</th>
+                <th style="width:20%">Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>what</td>
+                <td>CRUD.Entity</td>
+                <td><p>type of CRUD.Entity to query the database for</p></td>
+              </tr>
+              <tr>
+                <td>filters</td>
+                <td>object</td>
+                <td><p>Properties to create a WHERE statement from</p></td>
+              </tr>
+              <tr>
+                <td>options</td>
+                <td>object</td>
+                <td><p>Optional array of options: { orderBy, groupBy, limit, justthese }</p></td>
+              </tr>
+            </tbody>
+          </table>
+          <pre><code class="language-javascript">this.FindCount = function(what, filters, options) {
+    var builder = new CRUD.Database.SQLBuilder(what, filters, options);
+    var query = builder.buildCountQuery();
+
+    CRUD.log(&quot;Executing query via sqliteadapter: &quot;, options, query);
+    return new Promise(function(resolve, fail) {
+        return delayUntilSetupDone(function() {
+            db.execute(query.query, query.parameters).then(function(resultset) {
+                    var row = resultset.rs.rows.item(0);
+                    resolve(row[Object.keys(row)[0]]);
+                },
+                function(resultSet, sqlError) {
+                    CRUD.log('SQL Error in FIND : ', sqlError, resultSet, query);
+                    fail();
+                });
+        });
+    });
+};</code></pre>
           <section id="Persist">
             <h1>Persist</h1>
             <h5 class="subheader"></h5>
@@ -740,7 +794,7 @@ return this;
             </p>
           </section>
           <div class="description"><hr>
-<p>CRUD.Database.js, a simple database abstraction layer.<br />Adapted from mootools Database.js by  Dipl.-Ing. (FH) AndrÃ© Fiedler <a href="&#109;&#97;&#x69;&#108;&#x74;&#x6f;&#x3a;&#x6b;&#x6f;&#x6e;&#x74;&#97;&#x6b;&#x74;&#64;&#x76;&#105;&#x73;&#x75;&#x61;&#x6c;&#x64;&#x72;&#x75;&#x67;&#115;&#46;&#110;&#101;&#x74;">&#x6b;&#x6f;&#x6e;&#x74;&#97;&#x6b;&#x74;&#64;&#x76;&#105;&#x73;&#x75;&#x61;&#x6c;&#x64;&#x72;&#x75;&#x67;&#115;&#46;&#110;&#101;&#x74;</a><br />Removed all moo dependencies and converted to POJS<br />December 2013: Updated for use of promises.<br />...</p></div>
+<p>CRUD.Database.js, a simple database abstraction layer.<br />Adapted from mootools Database.js by  Dipl.-Ing. (FH) AndrÃ© Fiedler <a href="&#109;&#x61;&#105;&#108;&#116;&#x6f;&#x3a;&#107;&#x6f;&#x6e;&#x74;&#97;&#107;&#116;&#64;&#x76;&#x69;&#x73;&#117;&#x61;&#x6c;&#100;&#x72;&#x75;&#x67;&#115;&#x2e;&#110;&#x65;&#x74;">&#107;&#x6f;&#x6e;&#x74;&#97;&#107;&#116;&#64;&#x76;&#x69;&#x73;&#117;&#x61;&#x6c;&#100;&#x72;&#x75;&#x67;&#115;&#x2e;&#110;&#x65;&#x74;</a><br />Removed all moo dependencies and converted to POJS<br />December 2013: Updated for use of promises.<br />...</p></div>
           <pre><code class="language-javascript">CRUD.Database = function(name, options) {
     options = options || {
         version: '1.0',
@@ -978,11 +1032,14 @@ CRUD.Database.SQLBuilder.prototype = {
         });
     },
 
-    getCount: function() {
+    buildCountQuery: function() {
         var where = (this.wheres.length &gt; 0) ? ' WHERE ' + this.wheres.join(&quot; \n AND \n\t&quot;) : '';
         var group = (this.groups.length &gt; 0) ? ' GROUP BY ' + this.groups.join(&quot;, &quot;) : '';
         var query = &quot;SELECT count(&quot; + CRUD.EntityManager.entities[this.entity].primary + &quot;) FROM \n\t&quot; + CRUD.EntityManager.entities[this.entity].table + &quot;\n &quot; + this.joins.join(&quot;\n &quot;) + where + ' ' + group;
-        return (query);
+        return ({
+            query: query,
+            parameters: this.parameters
+        });
     }
 };</code></pre>
           <div class="footer site-footer">

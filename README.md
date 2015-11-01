@@ -4,30 +4,39 @@ CreateReadUpdateDelete.js
 CreateReadUpdateDelete.js aims to bring you a tiny footprint, platform independent ORM/ActiveRecord implementation for Javascript that works flawlessly on SQLite / WebSQL databases,
 or any flavor of remote database you can think of via serverside JSON API
 
-Written in Plain Old JavaScript without any framework dependencies, you can use this with Mootools, Jquery, Zepto, Ember, or whatever your drug of choice is.
+Written in Plain Old JavaScript without any framework dependencies, you can use this with AngularJS, React, Jquery, Mootools, Zepto, Ember, or whatever your framework drug of choice is.
 
 ActiveRecord? Orm?
 ==================
-ActiveRecord/ORM is a technique that fits perfectly into the DRY (Don't Repeat Yourself) paradigm. 
-It takes away all the hassle of creating Insert, Select, Update and Delete database queries. You create your an instance of your entity, set some properties, call Persist, and a database record is created automagicaly.
-If the object you're referring to already exists in the database, it will be updated.
 
-Want to find related data? Instantiate an object, call Find() on it with the filters you need, and the onComplete callback returns you your data.
+*Active Record*
+From Wikipedia:
 
-If you're doing data storage right, you don't have to write *any* SQL, at all.
+> In software engineering, the active record pattern is an architectural pattern found in software that stores in-memory object data in relational databases. It was named by Martin Fowler in his 2003 book Patterns of Enterprise Application Architecture.[1] The interface of an object conforming to this pattern would include functions such as Insert, Update, and Delete, plus properties that correspond more or less directly to the columns in the underlying database table.
+
+> The active record pattern is an approach to accessing data in a database. A database table or view is wrapped into a class. Thus, an object instance is tied to a single row in the table. After creation of an object, a new row is added to the table upon save. Any object loaded gets its information from the database. When an object is updated the corresponding row in the table is also updated. The wrapper class implements accessor methods or properties for each column in the table or view.
+
+> This pattern is commonly used by object persistence tools, and in object-relational mapping (ORM). Typically, foreign key relationships will be exposed as an object instance of the appropriate type via a property.
+
+*ORM*
+(Loosely) From [service-architecture.com](http://www.service-architecture.com/articles/object-relational-mapping/object-relational_mapping_or_mapping_definition.html)
+> Object-relational mapping (OR mapping) products integrate object programming language capabilities with relational databases. Database objects appear as programming language objects. Often, the interface for object-relational mapping products is the same as the interface for object databases.
 
 Features 
 ========
 
-- Works on any browser that supports WebSQL (yes, also on mobile)
-- Works even without [schema-defined foreign keys](https://www.sqlite.org/foreignkeys.html) by just matching primary keys
 - Simple access to WebSQL database rows as if they're plain javascript objects
-- A simplified query language, but the freedom to execute plain SQL
+- Supports 1:1, 1:many, many:1 and many:many relations
 - Support for indexes, fixtures and migrations
 - Completely promise-based. (Use promise.js for browsers that don't have a native Promise object)
+- A simplified query language, but the freedom to execute plain SQL
+- Works on any browser that supports WebSQL (yes, also on mobile)
+- Works even without [schema-defined foreign keys](https://www.sqlite.org/foreignkeys.html) by just matching primary keys
 - Built-in caching / entity manager layer makes sure you'll get a handle to the same entity when it's fetched again
-- Supports 1:1, 1:many, many:1 and many:many relations
+- Auto-generates findBy<property> and findOneBy<property> methods 
 
+Examples
+========
 
 Create
 ------
@@ -109,8 +118,8 @@ CRUD.FindOne(Serie, {name: 'Arrow'}).then(function(arrow) {
 [basic setup of an entity](http://jsfiddle.net/SchizoDuckie/1fwntkhr/)
 
 
-Topics
-======
+Documentation and howto
+=======================
 
 - [CRUD.define: Introduction and conventions](#cruddefine-introduction-and-conventions)
 - [CRUD.define: Setting up a basic entity](#cruddefine-setting-up-a-basic-entity)
@@ -139,11 +148,7 @@ Topics
 - [Advanced: Using REPLACE INTO instead of the default INSERT INTO](#advanced-using-replace-into-instead-of-the-default-insert-into)
 - [Advanced: Migrations in WebSQL: Adding a column to the database](#advanced-migrations-in-websql-adding-a-column-to-the-database)
 - [Advanced: Interacting with a Select2 via JQuery](#advanced-interacting-with-a-select2-via-jquery)
-
-
-JS Docs
-=======
-[Check out the full jsdoc here](http://schizoduckie.github.io/CreateReadUpdateDelete/docs/)
+- [Advanced: Browse the JSDocs](http://schizoduckie.github.io/CreateReadUpdateDelete/docs/)
 
 
 CRUD.define: Introduction and conventions
@@ -322,8 +327,8 @@ Object.observe(CRUD.stats, function() {
 // now execute some insert queries and see the magic happen.
 ```
 
-JSFiddle live demo: http://jsfiddle.net/SchizoDuckie/p7kta1mv/
- 
+JSFiddle live demo: [CreateReadUpdateDelete : CRUD.stats monitoring via Object.observe](http://jsfiddle.net/SchizoDuckie/p7kta1mv/)
+
 
 Advanced: CRUD.EntityManager ensures you have a handle to the same record in different contexts
 ===============================================================================================
