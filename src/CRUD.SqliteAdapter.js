@@ -28,6 +28,7 @@ CRUD.SQLiteAdapter = function(database, dbOptions) {
             CRUD.log("SQLITE connection created to ", self.databaseName);
             return verifyTables().then(function() {
                 self.initializing = false;
+                return true;
             });
         });
     };

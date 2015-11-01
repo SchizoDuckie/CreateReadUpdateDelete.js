@@ -270,9 +270,7 @@ CRUD.define(Role, {
 CRUD.define(Actor, {
     table: 'Actors', 
     primary: 'ID_Actor',
-    fields: [ // List all individual properties including primary key. Accessors will be auto-created (but can be overwritten)
-        'ID_Actor', 'firstName', 'lastName', 'gender', 'ID_Role'
-    ],
+    fields: ['ID_Actor', 'firstName', 'lastName', 'gender', 'ID_Role'],
     relations: {
         	'Role' : CRUD.RELATION_SINGLE
     },
@@ -283,17 +281,19 @@ CRUD.define(Actor, {
 // initialize WebSQL database connection
 CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete_single', {
     estimatedSize: 25 * 1024 * 1024
-}));
+})).then(function() {
+	// execute this immediately after the database tables are created
+	var cptn = new Role();
+	cptn.name = 'Captain Jack Sparrow';
 
-var cptn = new Role();
-cptn.name = 'Captain Jack Sparrow';
+	var actor = new Actor();
+	actor.firstName = 'Johnny';
+	actor.lastName = 'Depp';
+	actor.gender = 'm';
 
-var actor = new Actor();
-actor.firstName = 'Johnny';
-actor.lastName = 'Depp';
-actor.gender = 'm';
+	cptn.Connect(actor);
+})
 
-cptn.Connect(actor);
 
 ```
 JSFiddle live demo: [CreateReadUpdateDelete : Defining a 1:1 relation](http://jsfiddle.net/SchizoDuckie/0LuLe1sr)

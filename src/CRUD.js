@@ -474,21 +474,21 @@ CRUD.Entity.prototype = {
             ]).then(function() {
                 switch (CRUD.EntityManager.entities[thisType].relations[targetType]) {
                     case CRUD.RELATION_SINGLE:
-                        to.set(thisPrimary, that.getID());
-                        that.set(targetPrimary, to.getID());
+                        to[thisPrimary] = that.getID();
+                        that[targetPrimary] = to.getID();
                         break;
                     case CRUD.RELATION_FOREIGN:
                         if (thisPrimary in to) {
-                            to.set(thisPrimary, that.getID());
+                            to[thisPrimary] = that.getID();
                         }
                         if (targetPrimary in that) {
-                            that.set(targetPrimary, to.getID());
+                            that[targetPrimary] = to.getID();
                         }
                         break;
                     case CRUD.RELATION_MANY:
                         var connector = new CRUD.EntityManager.entities[thisType].connectors[targetType]();
-                        connector.set(thisPrimary, that.getID());
-                        connector.set(targetPrimary, to.getID());
+                        connector[thisPrimary] = that.getID();
+                        connector[targetPrimary] = to.getID();
                         return connector.Persist().then(resolve, fail);
                     case CRUD.RELATION_CUSTOM:
                         //@TODO
@@ -509,22 +509,22 @@ CRUD.Entity.prototype = {
         var thisPrimary = CRUD.EntityManager.getPrimary(this);
         var targetPrimary = CRUD.Entitymanager.getPrimary(from);
         var that = this;
-        new Promise(function(resolve, fail) {
-            Promise.all([
+        return new Promise(function(resolve, fail) {
+            return Promise.all([
                 that.Persist(),
                 from.Persist()
             ]).then(function() {
-                switch (this.dbSetup.relations[from.getType()]) {
+                switch (CRUD.EntityManager.entities[thisType].relations[targetType]) {
                     case CRUD.RELATION_SINGLE:
-                        from.set(thisPrimary, null);
-                        that.set(targetPrimary, null);
+                        from[thisPrimary] = null;
+                        that[targetPrimary] = null;
                         break;
                     case CRUD.RELATION_FOREIGN:
                         if (thisPrimary in from) {
-                            from.set(thisPrimary, null);
+                            from[thisPrimary] = null;
                         }
                         if (targetPrimary in that) {
-                            that.set(targetPrimary, null);
+                            that[targetPrimary] = null;
                         }
                         break;
                     case CRUD.RELATION_MANY:
@@ -539,13 +539,14 @@ CRUD.Entity.prototype = {
                         // TODO: implement.
                         break;
                 }
-                Promise.all([
+                return Promise.all([
                     that.Persist(),
                     this.Persist()
                 ]).then(resolve, fail);
             }, fail);
         });
     },
+
     primaryKeyInit: function(ID) {
         this.ID = ID || false;
         if (this.ID !== false) {
