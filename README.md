@@ -725,7 +725,7 @@ Advanced: Using CRUD.fromCache to convert a plain JavaScript Object into a CRUD 
 var fixtures = [
 	{ ID_Actor: 1, firstname: 'Peter', lastname: 'Capaldi', gender: 'm' },
 	{ ID_Actor: 2, firstname: 'Matt', lastname: 'Smith', gender: 'm' },
-	{ ID_Actor: 3, firstname: 'David', 'lastname': Tennant', gender: 'm' }
+	{ ID_Actor: 3, firstname: 'David', 'lastname': 'Tennant', gender: 'm' }
 ];
 
 fixtures.map(function(fixture) {
