@@ -124,8 +124,7 @@ Documentation and howto
 - [CRUD.define: Introduction and conventions](#cruddefine-introduction-and-conventions)
 - [CRUD.define: Setting up a basic entity](#cruddefine-setting-up-a-basic-entity)
 - [CRUD.define: 1:1 relation](#cruddefine-11-relation)
-- [CRUD.define: 1:many relation](#cruddefine-1many-relation)
-- [CRUD.define: many:1 relation](#cruddefine-many1-relation)
+- [CRUD.define: 1:many and many:1 relation](#cruddefine-1many-or-many1-relation)
 - [CRUD.define: many:many relation](#cruddefine-manymany-relation)
 - [CRUD.define: Default orderBy property and orderBy direction](#cruddefine-default-orderby-property-and-orderby-direction)
 - [CRUD.define: Custom orderBy clause](#cruddefine-custom-orderby-clause)
@@ -242,7 +241,7 @@ CRUD.define(Serie, {
 CRUD.define: 1:1 relation
 =========================
 
-To define a 1:1 relation, use the CRUD.RELATION_SINGLE constant.
+To define a 1:1 relation, use the CRUD.RELATION_SINGLE relation type.
 Simply define the fact that a relationship exists, CreateReadUpdateDelete will automatically deduct that the primary key from table A exists in table B and vice versa.
 
 Consider this fictional scenario where every actor in the world can only play one role, ever.
@@ -299,11 +298,65 @@ CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete_single', {
 JSFiddle live demo: [CreateReadUpdateDelete : Defining a 1:1 relation](http://jsfiddle.net/SchizoDuckie/0LuLe1sr)
 
 
-CRUD.define: 1:many relation
+CRUD.define: 1:many or many:1 relation
 ============================
 
-CRUD.define: many:1 relation
-============================
+To define a 1:many or many:1 relation, use the CRUD.RELATION_FOREIGN relation type.
+Simply define the fact that a relationship exists, CreateReadUpdateDelete will automatically determine that the primary key from table A exists in table B or a primary key from table B exists in table A.
+CreateReadUpdateDelete.js automatically makes sure that you can use this relationship from both sides.
+
+Consider this more realistic scenario where one actor can play many roles over a lifetime.
+
+```javascript
+
+function Role() {
+    CRUD.Entity.call(this);
+}
+
+function Actor() {
+    CRUD.Entity.call(this);
+}
+
+CRUD.define(Role, {
+    table: 'Roles', 
+    primary: 'ID_Role',
+    fields: ['ID_Role', 'name', 'ID_Actor'],
+    relations: {
+        	'Actor' : CRUD.RELATION_FOREIGN
+    },
+    createStatement: 'CREATE TABLE Roles (ID_Role INTEGER PRIMARY KEY NOT NULL, name VARCHAR(250) DEFAULT(NULL), ID_Actor INTEGER NULL)'
+});
+
+CRUD.define(Actor, {
+    table: 'Actors', 
+    primary: 'ID_Actor',
+    fields: ['ID_Actor', 'firstName', 'lastName', 'gender'],
+    relations: {
+        	'Role' : CRUD.RELATION_FOREIGN
+    },
+    createStatement: 'CREATE TABLE Actors (ID_Actor INTEGER PRIMARY KEY NOT NULL, firstname VARCHAR(250) DEFAULT(NULL), lastname VARCHAR(250) DEFAULT(NULL), gender CHAR(250) DEFAULT(NULL), ID_Role INTEGER NULL)'
+});
+
+
+// initialize WebSQL database connection
+CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete_foreign', {
+    estimatedSize: 25 * 1024 * 1024
+})).then(function() {
+	// execute this immediately after the database tables are created
+	var cptn = new Role();
+	cptn.name = 'Captain Jack Sparrow';
+
+	var actor = new Actor();
+	actor.firstName = 'Johnny';
+	actor.lastName = 'Depp';
+	actor.gender = 'm';
+
+	actor.Connect(role);
+})
+
+
+JSFiddle live demo: [CreateReadUpdateDelete : Defining a 1:many or many:1 relation](http://jsfiddle.net/SchizoDuckie/0LuLe1sr)
+
 
 CRUD.define: many:many relation
 ===============================
