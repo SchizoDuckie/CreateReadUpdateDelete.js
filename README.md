@@ -242,13 +242,62 @@ CRUD.define(Serie, {
 CRUD.define: 1:1 relation
 =========================
 
-To define a 1:1 relation, 
+To define a 1:1 relation, use the CRUD.RELATION_SINGLE constant.
+Simply define the fact that a relationship exists, CreateReadUpdateDelete will automatically deduct that the primary key from table A exists in table B and vice versa.
+
+Consider this fictional scenario where every actor in the world can only play one role, ever.
+
 ```javascript
 
+function Role() {
+    CRUD.Entity.call(this);
+}
+
+function Actor() {
+    CRUD.Entity.call(this);
+}
+
+CRUD.define(Role, {
+    table: 'Roles', 
+    primary: 'ID_Role',
+    fields: ['ID_Role', 'name', 'ID_Actor'],
+    relations: {
+        	'Actor' : CRUD.RELATION_SINGLE
+    },
+    createStatement: 'CREATE TABLE Roles (ID_Role INTEGER PRIMARY KEY NOT NULL, name VARCHAR(250) DEFAULT(NULL), ID_Actor INTEGER NULL)'
+});
+
+CRUD.define(Actor, {
+    table: 'Actors', 
+    primary: 'ID_Actor',
+    fields: [ // List all individual properties including primary key. Accessors will be auto-created (but can be overwritten)
+        'ID_Actor', 'firstName', 'lastName', 'gender', 'ID_Role'
+    ],
+    relations: {
+        	'Role' : CRUD.RELATION_SINGLE
+    },
+    createStatement: 'CREATE TABLE Actors (ID_Actor INTEGER PRIMARY KEY NOT NULL, firstname VARCHAR(250) DEFAULT(NULL), lastname VARCHAR(250) DEFAULT(NULL), gender CHAR(250) DEFAULT(NULL), ID_Role INTEGER NULL)'
+});
 
 
+// initialize WebSQL database connection
+CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete_single', {
+    estimatedSize: 25 * 1024 * 1024
+}));
+
+var cptn = new Role();
+cptn.name = 'Captain Jack Sparrow';
+
+var actor = new Actor();
+actor.firstName = 'Johnny';
+actor.lastName = 'Depp';
+actor.gender = 'm';
+
+cptn.Connect(actor);
 
 ```
+JSFiddle live demo: [CreateReadUpdateDelete : Defining a 1:1 relation](http://jsfiddle.net/SchizoDuckie/0LuLe1sr)
+
 
 CRUD.define: 1:many relation
 ============================

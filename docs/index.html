@@ -213,13 +213,11 @@ function Serie() {
 
 /**
  * Extend the Named Function with CRUD definitions and register it in the CRUD.EntityManager
- * Signature:
- * CRUD.define(Entity, {options}, {prototypeMethods});
  */
 CRUD.define(Serie, {
     table: 'Series', // Database table this entity is bound to
     primary: 'ID_Serie', // Primary key. Make sure to use uniquely named keys, don't use 'id' on every table and refer to 'id_something'
-    fields: [ // List all individual properties. Accessors will be auto-created (but can be overwritten)
+    fields: [ // List all individual properties including primary key. Accessors will be auto-created (but can be overwritten)
         'ID_Serie',
         'name',
         'banner',
@@ -231,12 +229,58 @@ CRUD.define(Serie, {
 });
 </code></pre>
 <h1>CRUD.define: 1:1 relation</h1>
-<p>To define a 1:1 relation,</p>
+<p>To define a 1:1 relation, use the CRUD.RELATION_SINGLE constant.
+Simply define the fact that a relationship exists, CreateReadUpdateDelete will automatically deduct that the primary key from table A exists in table B and vice versa.</p>
+<p>Consider this fictional scenario where every actor in the world can only play one role, ever.</p>
 <pre><code class="language-javascript">
+function Role() {
+    CRUD.Entity.call(this);
+}
+
+function Actor() {
+    CRUD.Entity.call(this);
+}
+
+CRUD.define(Role, {
+    table: 'Roles', 
+    primary: 'ID_Role',
+    fields: ['ID_Role', 'name', 'ID_Actor'],
+    relations: {
+        	'Actor' : CRUD.RELATION_SINGLE
+    },
+    createStatement: 'CREATE TABLE Roles (ID_Role INTEGER PRIMARY KEY NOT NULL, name VARCHAR(250) DEFAULT(NULL), ID_Actor INTEGER NULL)'
+});
+
+CRUD.define(Actor, {
+    table: 'Actors', 
+    primary: 'ID_Actor',
+    fields: [ // List all individual properties including primary key. Accessors will be auto-created (but can be overwritten)
+        'ID_Actor', 'firstName', 'lastName', 'gender', 'ID_Role'
+    ],
+    relations: {
+        	'Role' : CRUD.RELATION_SINGLE
+    },
+    createStatement: 'CREATE TABLE Actors (ID_Actor INTEGER PRIMARY KEY NOT NULL, firstname VARCHAR(250) DEFAULT(NULL), lastname VARCHAR(250) DEFAULT(NULL), gender CHAR(250) DEFAULT(NULL), ID_Role INTEGER NULL)'
+});
 
 
+// initialize WebSQL database connection
+CRUD.setAdapter(new CRUD.SQLiteAdapter('createreadupdatedelete_single', {
+    estimatedSize: 25 * 1024 * 1024
+}));
+
+var cptn = new Role();
+cptn.name = 'Captain Jack Sparrow';
+
+var actor = new Actor();
+actor.firstName = 'Johnny';
+actor.lastName = 'Depp';
+actor.gender = 'm';
+
+cptn.Connect(actor);
 
 </code></pre>
+<p>JSFiddle live demo: <a href="http://jsfiddle.net/SchizoDuckie/0LuLe1sr">CreateReadUpdateDelete : Defining a 1:1 relation</a></p>
 <h1>CRUD.define: 1:many relation</h1>
 <h1>CRUD.define: many:1 relation</h1>
 <h1>CRUD.define: many:many relation</h1>

@@ -459,9 +459,7 @@ CRUD.Entity.prototype = {
      * Connect 2 entities regardles of their relationship type.
      * Pass the object you want to connect this entity to to this function and
      * this will find out what it needs to do to set the correct properties in your persistence layer.
- * @TODO: update thisPrimary,    thatPrimary resolve functions to allow mapping using RELATION_CUSTOM,
-    also,
-    using identified_by propertys
+     * @TODO: update thisPrimary,    thatPrimary resolve functions to allow mapping using RELATION_CUSTOM
      */
     Connect: function(to) {
         var targetType = to.getType();
