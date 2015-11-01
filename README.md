@@ -341,7 +341,7 @@ CRUD.define(Actor, {
     relations: {
         	'Role' : CRUD.RELATION_FOREIGN
     },
-    createStatement: 'CREATE TABLE Actors (ID_Actor INTEGER PRIMARY KEY NOT NULL, firstname VARCHAR(250) DEFAULT(NULL), lastname VARCHAR(250) DEFAULT(NULL), gender CHAR(250) DEFAULT(NULL), ID_Role INTEGER NULL)'
+    createStatement: 'CREATE TABLE Actors (ID_Actor INTEGER PRIMARY KEY NOT NULL, firstname VARCHAR(250) DEFAULT(NULL), lastname VARCHAR(250) DEFAULT(NULL), gender VARCHAR(1) DEFAULT(NULL), ID_Role INTEGER NULL)'
 });
 
 
