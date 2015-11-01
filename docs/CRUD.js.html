@@ -239,7 +239,8 @@ this.hasRelation = function(className, related) {
     return related in this.entities[className].relations;
 };
 return this;
-}();</code></pre>
+};
+CRUD.EntityManager = new CRUD.EntityManager();</code></pre>
           <section id="define">
             <h1>define</h1>
             <h5 class="subheader"></h5>
@@ -435,7 +436,6 @@ CRUD.fromCache = function(obj, values) {
 CRUD.Entity = function(className, methods) {
     this.__values__ = {};
     this.__dirtyValues__ = {};
-    console.log(&quot;Create entity: &quot;, this.constructor.name);
     return this;
 };
 CRUD.Entity.prototype = {
@@ -502,7 +502,7 @@ importValues: function(values, dirty) {
         ret = this.__dirtyValues__[field];
     } else if (field in this.__values__) {
         ret = this.__values__[field];
-    } else if (field in CRUD.EntityManager.entities[this.getType()].fields) {
+    } else if (CRUD.EntityManager.entities[this.getType()].fields.indexOf(field) &gt; -1) {
         ret = (field in CRUD.EntityManager.entities[this.getType()].defaultValues) ? CRUD.EntityManager.entities[this.getType()].defaultValues[field] : null;
     } else {
         CRUD.log('Could not find field \'' + field + '\' in \'' + this.getType() + '\' (for get)');
@@ -660,7 +660,7 @@ getType: function() {
                     break;
                 case CRUD.RELATION_MANY:
                     var connectorClass = CRUD.EntityManager.entities[thisType].connectors[targetType];
-                    var connector = new CRUD.EntityManager.entities[connectorClass]();
+                    var connector = new CRUD.EntityManager.constructors[connectorClass]();
                     connector[thisPrimary] = that.getID();
                     connector[targetPrimary] = to.getID();
                     return connector.Persist().then(resolve, fail);

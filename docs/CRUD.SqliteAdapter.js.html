@@ -350,13 +350,13 @@
             return db.execute(entity.createStatement).then(function() {
                 tables.push(entity.table);
                 localStorage.setItem('database.version.' + entity.table, ('migrations' in entity) ? Math.max.apply(Math, Object.keys(entity.migrations)) : 1);
-                CRUD.log(entity.getType() + &quot; table created.&quot;);
+                CRUD.log(entity.table + &quot; table created.&quot;);
                 return entity;
             }, function(err) {
-                CRUD.log(&quot;Error creating &quot; + entity.getType(), err);
-                throw &quot;Error creating table: &quot; + entity.table + &quot; for &quot; + entity.getType();
+                CRUD.log(&quot;Error creating &quot; + entity.table, err, entity.createStatement);
+                throw &quot;Error creating table: &quot; + entity.table;
             }).then(createFixtures).then(function() {
-                CRUD.log(&quot;Table created and fixtures inserted for &quot;, entity.getType());
+                CRUD.log(&quot;Table created and fixtures inserted for &quot;, entityName);
                 return;
             });
         }
@@ -795,7 +795,7 @@ return this;
             </p>
           </section>
           <div class="description"><hr>
-<p>CRUD.Database.js, a simple database abstraction layer.<br />Adapted from mootools Database.js by  Dipl.-Ing. (FH) AndrÃ© Fiedler <a href="&#x6d;&#x61;&#105;&#x6c;&#116;&#111;&#x3a;&#107;&#x6f;&#110;&#x74;&#97;&#107;&#116;&#x40;&#118;&#105;&#x73;&#117;&#97;&#108;&#100;&#114;&#x75;&#x67;&#115;&#46;&#110;&#101;&#116;">&#107;&#x6f;&#110;&#x74;&#97;&#107;&#116;&#x40;&#118;&#105;&#x73;&#117;&#97;&#108;&#100;&#114;&#x75;&#x67;&#115;&#46;&#110;&#101;&#116;</a><br />Removed all moo dependencies and converted to POJS<br />December 2013: Updated for use of promises.<br />...</p></div>
+<p>CRUD.Database.js, a simple database abstraction layer.<br />Adapted from mootools Database.js by  Dipl.-Ing. (FH) AndrÃ© Fiedler <a href="&#x6d;&#97;&#105;&#x6c;&#116;&#111;&#x3a;&#x6b;&#111;&#x6e;&#116;&#x61;&#107;&#116;&#x40;&#x76;&#x69;&#x73;&#x75;&#x61;&#x6c;&#100;&#x72;&#x75;&#103;&#115;&#x2e;&#110;&#x65;&#116;">&#x6b;&#111;&#x6e;&#116;&#x61;&#107;&#116;&#x40;&#x76;&#x69;&#x73;&#x75;&#x61;&#x6c;&#100;&#x72;&#x75;&#103;&#115;&#x2e;&#110;&#x65;&#116;</a><br />Removed all moo dependencies and converted to POJS<br />December 2013: Updated for use of promises.<br />...</p></div>
           <pre><code class="language-javascript">CRUD.Database = function(name, options) {
     options = options || {
         version: '1.0',
