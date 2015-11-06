@@ -740,6 +740,7 @@ fixtures.map(function(fixture) {
 	var entity = CRUD.fromCache(Actor, fixture);
 	entity.Persist(true);
 });
+```
 
 
 Advanced: Loading data from JSON and inserting it into the database
