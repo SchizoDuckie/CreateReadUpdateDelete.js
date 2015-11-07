@@ -780,3 +780,8 @@ Advanced: Migrations in WebSQL: Adding a column to the database
 
 Advanced: Interacting with a Select2 via JQuery
 ===============================================
+
+Advanced: Storing images as base64 data into the database
+=========================================================
+
+JSFiddle live demo: [CreateReadUpdateDelete : Store an image in the database](http://jsfiddle.net/SchizoDuckie/y7f3t65w/)
