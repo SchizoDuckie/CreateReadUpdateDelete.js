@@ -1,0 +1,36 @@
+{
+    "name": "CreateReadUpdateDelete.js",
+    "description": "Simple ORM/ActiveRecord for WebSQL that covers 90% of use cases. Supports 1:1, 1:many and many:many relations, indexes, fixtures and migrations.",
+    "version": "1.0",
+    "keywords": [
+        "websql",
+        "orm",
+        "activerecord",
+        "crud"
+    ],
+    "contributors": [{
+        "name": "Garfield69",
+        "email": "",
+        "web": "https://github.com/Garfield69"
+    }],
+    "maintainers": [{
+        "name": "SchizoDuckie",
+        "web": "https://github.com/SchizoDuckie"
+    }],
+    "demos": [
+        "http://schizoduckie.github.io/CreateReadUpdateDelete.js/docs/"
+    ],
+    "repositories": [{
+        "type": "git",
+        "url": "https://github.com/SchizoDuckie/CreateReadUpdateDelete.js.git"
+    }],
+    "licenses": [{
+        "name": "MIT",
+        "url": "https://github.com/SchizoDuckie/CreateReadUpdateDelete.js/blob/master/LICENSE"
+    }],
+    "homepage": "http://schizoduckie.github.io/CreateReadUpdateDelete.js",
+    "dependencies": {
+        "inquirer": "^0.11.0",
+        "pluralize": "^1.2.1"
+    }
+}
