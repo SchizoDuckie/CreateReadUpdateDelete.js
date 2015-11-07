@@ -3,10 +3,10 @@
     "description": "Simple ORM/ActiveRecord for WebSQL that covers 90% of use cases. Supports 1:1, 1:many and many:many relations, indexes, fixtures and migrations.",
     "version": "1.0",
     "keywords": [
-        "websql",
-        "orm",
         "activerecord",
-        "crud"
+        "crud",
+        "orm",
+        "websql"
     ],
     "contributors": [{
         "name": "Garfield69",

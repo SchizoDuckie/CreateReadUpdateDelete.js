@@ -1,6 +1,37 @@
-"use strict";
 var inquirer = require("inquirer"),
-    pluralize = require('pluralize');
+    pluralize = require('pluralize'),
+    fs = require('fs'),
+    grep = require('simple-grep'),
+    exec = require('child_process').exec
+
+// file is included here:
+eval(fs.readFileSync('src/CRUD.js') + '');
+eval(fs.readFileSync('src/CRUD.SqliteAdapter.js') + '');
+
+/**
+ * Find a list of all defined CRUD entities so we can use them for hooking up relations
+ */
+function findEntities() {
+
+    exec("find . -iname '*js' | xargs grep 'CRUD.Entity.call(this);' -isl", {
+        timeout: 3000,
+        cwd: process.cwd()
+    }, function(err, stdout, stdin) {
+
+        // split the results
+        var results = stdout.split('\n');
+        // remove last element (it’s an empty line)
+        results.pop();
+
+        console.log("Search results");
+        for (var i = 0; i < results.length; i++) {
+
+            console.log(results[i]);
+
+        }
+    });
+}
+
 
 console.log([
     "------------------------------------------------",
@@ -24,6 +55,7 @@ var propertyQuestions = [{
     name: "type",
     message: "What's the type?",
     choices: [
+        "RELATION",
         "VARCHAR",
         "INT",
         "TINYINT",
@@ -36,7 +68,8 @@ var propertyQuestions = [{
         "BLOB",
         "DOUBLE",
         "FLOAT",
-        "DECIMAL"
+        "DECIMAL",
+
     ]
 }];
 
