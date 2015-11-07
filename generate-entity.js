@@ -6,35 +6,37 @@ var inquirer = require("inquirer"),
     Promise = require('es6-promise').Promise;
 
 
-eval(fs.readFileSync('src/CRUD.js') + '');
-eval(fs.readFileSync('src/CRUD.SqliteAdapter.js') + '');
-
 /**
- * Find a list of all defined CRUD entities so we can use them for hooking up relations
+ * CRUD mock object that captures definitions
+ * @type {Object}
+ */
+var CRUD = {
+    entities: {},
+    define: function(proto, definition) {
+        CRUD.entities[proto.prototype.constructor.name] = definition;
+    }
+};
+/**
+ * Find a list of all defined CRUD entities in the current directory so we can use them for hooking up relations
  */
 function findEntities() {
-
-    exec("find . -iname '*js' | xargs grep 'CRUD.Entity.call(this);' -isl", {
-        timeout: 3000,
-        cwd: process.cwd()
-    }, function(err, stdout, stdin) {
-
-        // split the results
-        var results = stdout.split('\n');
-        // remove last element (it’s an empty line)
-        results.pop();
-
-        console.log("Search results");
-        for (var i = 0; i < results.length; i++) {
-
-            console.log(results[i]);
-
-        }
+    return new Promise(function(resolve, reject) {
+        exec("find . ! -name '" + __filename.split('/').pop() + "' -iname '*js' | xargs grep 'CRUD.Entity.call(this);' -isl", {
+            timeout: 3000,
+            cwd: process.cwd()
+        }, function(err, stdout, stdin) {
+            var results = stdout.trim().split('\n');
+            for (var i = 0; i < results.length; i++) {
+                eval(fs.readFileSync(results[i]) + '');
+            }
+            resolve(Object.keys(CRUD.entities));
+        });
     });
 }
 
 var entity = {
-    properties: {}
+    properties: {},
+    relations: {}
 };
 
 var ucFirst = function(str) {
@@ -117,7 +119,7 @@ function askProperty() {
         type: "list",
         name: "type",
         message: "What's the type?",
-        choices: "FOREIGN RELATION|VARCHAR|INT|TINYINT|SMALLINT|MEDIUMINT|BIGINT|DATE|DATETIME|TEXT|BLOB|DOUBLE|FLOAT|DECIMAL".split("|")
+        choices: "VARCHAR|INT|TINYINT|SMALLINT|MEDIUMINT|BIGINT|DATE|DATETIME|TEXT|BLOB|DOUBLE|FLOAT|DECIMAL".split("|")
     }]).then(function(results) {
         entity.properties[results.property] = {
             type: results.type
@@ -161,6 +163,48 @@ function addProperty() {
         .then(askAnotherProperty);
 }
 
+// http://lisperator.net/blog/using-uglifyjs-for-code-refactoring/
+function addRelations() {
+
+    return promisePrompt({
+        type: "confirm",
+        name: "addRelation",
+        message: "Do you want to add a relation to another entity?"
+    }).then(function(answer) {
+        if (answer.addRelation) {
+            var chosen = null;
+            return findEntities()
+                .then(function(definedEntities) {
+                    return promisePrompt({
+                            type: "list",
+                            name: "name",
+                            message: "What's the target entity?",
+                            choices: definedEntities
+                        })
+                        .then(function(relation) {
+                            chosen = relation.name;
+                            return promisePrompt({
+                                type: "list",
+                                name: "relationType",
+                                message: "What type should the relation be?",
+                                choices: [
+                                    "1:1\n\t" + entity.name + " will have a foreign key to " + relation.name + " and vice versa",
+                                    "1:many\n\t" + entity.name + " will have a foreign key to " + relation.name,
+                                    "many:1\n\t" + relation.name + " will have a foreign key to " + entity.name,
+                                    'many:many\n\tA connecting ' + entity.name + '_' + relation.name + ' entity will be generated that has a foreign key to both ' + entity.name + " and " + relation.name
+                                ]
+                            });
+                        })
+                        .then(function(type) {
+                            entity.relations[chosen] = type.relationType;
+                            return addRelations();
+                        });
+                });
+        } else {
+            return promiseWrap(entity);
+        }
+    });
+}
 
 
 console.log([
@@ -178,5 +222,5 @@ promisePrompt({
     entity.table = ucFirst(pluralize.plural(entity.name));
     entity.primary = 'ID_' + entity.name;
     console.log("Creating new CRUD Entity: %s\nTable: %s\nPrimary key: %s", entity.name, entity.table, entity.primary);
-    return addProperty().then(outputEntity);
+    return addProperty().then(addRelations).then(outputEntity);
 });
