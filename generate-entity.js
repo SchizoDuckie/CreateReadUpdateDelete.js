@@ -33,13 +33,6 @@ function findEntities() {
     });
 }
 
-
-console.log([
-    "------------------------------------------------",
-    "   Generate a CreateReadUpdateDelete.js Entity",
-    "------------------------------------------------"
-].join("\n"));
-
 var entity = {
     properties: {}
 };
@@ -124,7 +117,7 @@ function askProperty() {
         type: "list",
         name: "type",
         message: "What's the type?",
-        choices: "RELATION|VARCHAR|INT|TINYINT|SMALLINT|MEDIUMINT|BIGINT|DATE|DATETIME|TEXT|BLOB|DOUBLE|FLOAT|DECIMAL".split("|")
+        choices: "FOREIGN RELATION|VARCHAR|INT|TINYINT|SMALLINT|MEDIUMINT|BIGINT|DATE|DATETIME|TEXT|BLOB|DOUBLE|FLOAT|DECIMAL".split("|")
     }]).then(function(results) {
         entity.properties[results.property] = {
             type: results.type
@@ -151,6 +144,15 @@ function outputEntity(entity) {
     return;
 }
 
+/**
+ * Kick off the promise chain that asks the questions to add a new property
+ * - input property name
+ * - ask for length if applies
+ * - ask to autoserialize if applies
+ * - ask to create index if applies
+ * - ask to add another property if applies (recurse)
+ * Returns a promise that resolves when answer to askAnotherProperty is no
+ */
 function addProperty() {
     return askProperty()
         .then(askLength)
@@ -158,6 +160,14 @@ function addProperty() {
         .then(askIndex)
         .then(askAnotherProperty);
 }
+
+
+
+console.log([
+    "------------------------------------------------",
+    "   Generate a CreateReadUpdateDelete.js Entity",
+    "------------------------------------------------"
+].join("\n"));
 
 promisePrompt({
     type: "input",
