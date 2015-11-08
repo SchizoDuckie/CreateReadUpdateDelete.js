@@ -205,10 +205,34 @@ function addRelations() {
     });
 }
 
+/**
+ * - find foreign entities to modify
+ * - inject foreign keys where needed
+ * - output changes to foreign entity
+ */
+function injectForeignProperties() {
+
+}
+
+/**
+ * - iterate foreign entities to modify
+ * - find foreign entities to modify
+ * - modify relations property and add entity and type to list where needed
+ * - write changes to entity to file
+ */
 function injectForeignRelations() {
 
 }
 
+/**
+ * - iterate foreign entities to modify
+ * - fetch existing createstatement property and modify it with new property
+ * - fetch migrations property if it exists (otherwise create it)
+ * - find highest migration number
+ * - increment migration number and generate migration query
+ * - modify migrations property with new migration
+ * - write changes to entity to file
+ */
 function generateForeignMigrations() {
 
 }
@@ -232,6 +256,7 @@ promisePrompt({
     return addProperty()
         .then(addRelations)
         .then(outputEntity)
+        .then(injectForeignProperties)
         .then(injectForeignRelations)
         .then(generateForeignMigrations)
 });
