@@ -163,9 +163,8 @@ function addProperty() {
         .then(askAnotherProperty);
 }
 
-// http://lisperator.net/blog/using-uglifyjs-for-code-refactoring/
-function addRelations() {
 
+function addRelations() {
     return promisePrompt({
         type: "confirm",
         name: "addRelation",
@@ -206,6 +205,14 @@ function addRelations() {
     });
 }
 
+function injectForeignRelations() {
+
+}
+
+function generateForeignMigrations() {
+
+}
+
 
 console.log([
     "------------------------------------------------",
@@ -222,5 +229,9 @@ promisePrompt({
     entity.table = ucFirst(pluralize.plural(entity.name));
     entity.primary = 'ID_' + entity.name;
     console.log("Creating new CRUD Entity: %s\nTable: %s\nPrimary key: %s", entity.name, entity.table, entity.primary);
-    return addProperty().then(addRelations).then(outputEntity);
+    return addProperty()
+        .then(addRelations)
+        .then(outputEntity)
+        .then(injectForeignRelations)
+        .then(generateForeignMigrations)
 });
