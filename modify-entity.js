@@ -1,50 +1,51 @@
-var U2 = require("uglify-js"),
+var UglifyJS = require("uglify-js"),
     fs = require('fs');
 
-function replace_throw_string(code) {
-    var ast = U2.parse(code);
-    // accumulate `throw "string"` nodes in this array
-    var throw_string_nodes = [];
-    ast.walk(new U2.TreeWalker(function(node) {
-        if (node instanceof U2.AST_ObjectKeyVal && node.start.value == 'relations') { // && node.value instanceof U2.AST_String) {
-            console.log(node.value.properties);
-            //throw_string_nodes.push(node);
+function parse_crud_entity_property(code, entityName, property) {
+    var output = null;
+    var ast = UglifyJS.parse(code);
+    //ast.figure_out_scope();
+    ast.walk(new UglifyJS.TreeWalker(function(node) {
+        // search for CRUD.define calls
+        if (node instanceof UglifyJS.AST_Call && node.start.value == 'CRUD' && node.expression.property == 'define' && node.args[0].start.value == entityName) {
+            // iterate the properties passed to the CRUD.define (second arguments) and store the ast node if found for later returning
+            node.args[1].properties.map(function(node) {
+                if (node.key == property) {
+                    output = node;
+                }
+            });
         }
     }));
-    process.exit();
-    // now go through the nodes backwards and replace code
-    /* for (var i = throw_string_nodes.length; --i >= 0;) {
-        var node = throw_string_nodes[i];
-        var start_pos = node.start.pos;
-        var end_pos = node.end.endpos;
-        var replacement = new U2.AST_Throw({
-            value: new U2.AST_New({
-                expression: new U2.AST_SymbolRef({
-                    name: "Error"
-                }),
-                args: [node.value]
-            })
-        }).print_to_string({
-            beautify: true
-        });
-        code = splice_string(code, start_pos, end_pos, replacement);
-    }*/
-    return code;
+    return output;
 }
 
-function splice_string(str, begin, end, replacement) {
-    return str.substr(0, begin) + replacement + str.substr(end);
+function rewrite_code(code, node, replacement_string) {
+    return code.substr(0, node.start.pos) + replacement_string + code.substr(node.end.endpos);
 }
 
-// test it
+/*
+// test parse a CRUD.entities.js file where multiple entities are defined
+var code = fs.readFileSync('../DuckieTV/js/CRUD.entities.js') + '';
+var property = parse_crud_entity_property(code, 'Serie', 'fields');
+//console.log(property);
+var old_values = property.value.elements.map(function(node) {
+    return node.start.value;
+});
 
-function test() {
-    if (foo) throw bar;
-    if (moo /* foo */ ) {
-        throw "foo";
-    }
-    throw "bar";
-}
+console.log("Old values for 'fields' : ", JSON.stringify(old_values));
+old_values.push("ID_something");
+code = rewrite_code(code, property.value, JSON.stringify(old_values));
+console.log("Patched code: ", code);
+*/
 
 var code = fs.readFileSync('./demo/Serie.js') + '';
-replace_throw_string(code);
+var property = parse_crud_entity_property(code, 'Serie', 'fields');
+//console.log(property);
+var old_values = property.value.elements.map(function(node) {
+    return node.start.value;
+});
+
+console.log("Old values for 'fields' : ", JSON.stringify(old_values));
+old_values.push("ID_something");
+code = rewrite_code(code, property.value, JSON.stringify(old_values));
+console.log("Patched code: ", code);
