@@ -3,7 +3,8 @@ var inquirer = require("inquirer"),
     fs = require('fs'),
     grep = require('simple-grep'),
     exec = require('child_process').exec,
-    Promise = require('es6-promise').Promise;
+    Promise = require('es6-promise').Promise,
+    UglifyJS = require('uglify-js');
 
 
 /**
@@ -140,10 +141,38 @@ function askAnotherProperty() {
     });
 }
 
+function buildCreateStatement(entity) {
+    return ["CREATE TABLE ",
+        entity.table,
+        "(", ")"
+    ].join("");
+}
+
+
 function outputEntity(entity) {
+
     console.log("\nEntity info:");
-    console.log(JSON.stringify(entity, null, "  "));
-    return;
+    util = require('util');
+    console.log(util.inspect(entity));
+    var properties = {
+        table: entity.table,
+        primary: entity.primary,
+        fields: Object.keys(entity.properties),
+        createStatement: buildCreateStatement(entity),
+        defaultValues: {},
+        indexes: [],
+        migrations: {}
+    };
+    var code = ["function " + entity.name + "() { CRUD.Entity.call(this);} ", "",
+        "CRUD.define(" + entity.name + ", " + util.inspect(properties) + ",{});"
+    ].join("\n");
+
+    var ast = UglifyJS.parse(code);
+    var stream = UglifyJS.OutputStream({
+        beautify: true
+    });
+    ast.print(stream);
+    console.log(stream.toString());
 }
 
 /**
@@ -258,5 +287,5 @@ promisePrompt({
         .then(outputEntity)
         .then(injectForeignProperties)
         .then(injectForeignRelations)
-        .then(generateForeignMigrations)
+        .then(generateForeignMigrations);
 });
