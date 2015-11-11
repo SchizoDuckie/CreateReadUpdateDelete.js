@@ -1,7 +1,10 @@
-var Promise = require('es6-promise').Promise,
+var Promise = require('bluebird'),
     inquirer = require('inquirer'),
+    pluralize = require('pluralize'),
     entityFinder = require('./entityfinder'),
-    entity = require('./entity').entity;
+    entity = require('./entity').entity,
+    aOrAn = require('articles').articlize,
+    ucFirst = require('./ucfirst').ucFirst;
 /**
  * Return anything not promise as a promise similar to angular's $q.when
  */
@@ -146,8 +149,8 @@ var questions = {
                                     message: "What type should the relation be?",
                                     choices: [
                                         "1:1\n\t" + entity.name + " will have a foreign key to " + relation.name + " and vice versa",
-                                        "1:many\n\t" + entity.name + " will have a foreign key to " + relation.name,
-                                        "many:1\n\t" + relation.name + " will have a foreign key to " + entity.name,
+                                        "1:many\n\t" + ucFirst(aOrAn(relation.name)) + " has many " + pluralize.plural(entity.name),
+                                        "many:1\n\t" + ucFirst(aOrAn(entity.name)) + " has many " + pluralize.plural(relation.name),
                                         'many:many\n\tA connecting ' + entity.name + '_' + relation.name + ' entity will be generated that has a foreign key to both ' + entity.name + " and " + relation.name
                                     ]
                                 });

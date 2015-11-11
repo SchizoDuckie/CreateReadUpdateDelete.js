@@ -2,13 +2,13 @@ var findEntities = require('./cli/entityfinder').entityFinder,
     questions = require('./cli/questions'),
     pluralize = require('pluralize'),
     entity = require('./cli/entity').entity,
-    entitybuilder = require('./cli/entitybuilder');
+    entitybuilder = require('./cli/entitybuilder'),
+    Promise = require('bluebird'),
+    ucFirst = require('./cli/ucfirst').ucFirst;
 
-
-
-var ucFirst = function(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-};
+Promise.onPossiblyUnhandledRejection(function(error) {
+    throw error;
+});
 
 
 console.log([

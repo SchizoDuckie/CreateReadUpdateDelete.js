@@ -1,4 +1,8 @@
-var UglifyJS = require('uglify-js');
+var UglifyJS = require('uglify-js'),
+    util = require('util'),
+    fs = require('fs'),
+    CRUD = require('./CRUDMock').CRUD,
+    entityFinder = require('./entityfinder');
 
 
 function buildCreateStatement(entity) {
@@ -27,9 +31,38 @@ function buildFieldsArray(entity) {
 function outputEntity(entity) {
 
     console.log("\nEntity info:");
-    util = require('util');
     console.log(util.inspect(entity));
-    var indexes = [];
+    entityFinder.findEntities();
+    var indexes = [],
+        relations = {};
+
+    Object.keys(entity.relations).map(function(targetEntity) {
+        var type = entity.relations[targetEntity].split("\n")[0];
+        switch (type) {
+            case '1:1':
+                relations[targetEntity] = 'CRUD.RELATION_SINGLE';
+                entity.properties[CRUD.entities[targetEntity].primary] = {
+                    type: 'INTEGER',
+                    length: 11,
+                    index: true
+                };
+                break;
+            case '1:many':
+                relations[targetEntity] = 'CRUD.RELATION_FOREIGN';
+                entity.properties[CRUD.entities[targetEntity].primary] = {
+                    type: 'INTEGER',
+                    length: 11,
+                    index: true
+                };
+                break;
+            case 'many:1':
+                relations[targetEntity] = 'CRUD.RELATION_FOREIGN';
+                break;
+            case 'many:many':
+                relations[targetEntity] = 'CRUD.RELATION_MANY';
+                break;
+        }
+    });
     Object.keys(entity.properties).map(function(property) {
         if (entity.properties[property].index === true) {
             indexes.push(property);
@@ -42,17 +75,23 @@ function outputEntity(entity) {
         createStatement: buildCreateStatement(entity),
         defaultValues: {},
         indexes: indexes,
-        migrations: {}
+        migrations: {},
+        relations: relations
     };
     var code = ["function " + entity.name + "() { CRUD.Entity.call(this);} ", "",
         "CRUD.define(" + entity.name + ", " + util.inspect(properties) + ",{});"
-    ].join("\n");
+    ].join("\n").replace(/'CRUD.RELATION_(.*)'/g, 'CRUD.RELATION_$1');
 
+    console.log(code);
     var ast = UglifyJS.parse(code);
     var stream = UglifyJS.OutputStream({
         beautify: true
     });
     ast.print(stream);
+    if (!fs.existsSync('generated')) {
+        fs.mkdirSync('generated');
+    }
+    fs.writeFileSync('./generated/' + entity.name + '.js', stream.toString());
     console.log(stream.toString());
 }
 

@@ -1,5 +1,5 @@
 var fs = require('fs'),
-    Promise = require('es6-promise').Promise,
+    Promise = require('bluebird'),
     CRUD = require('./CRUDMock').CRUD,
     exec = require('child_process').exec;
 /**
