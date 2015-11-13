@@ -54,7 +54,7 @@ var questions = {
                 type: "input",
                 name: "length",
                 message: "Length",
-                default: 1
+                default: property.type == 'VARCHAR' ? 250 : 1
             }).then(function(results) {
                 entity.properties[property.property].length = results.length;
                 return property;

@@ -2,7 +2,8 @@ var UglifyJS = require('uglify-js'),
     util = require('util'),
     fs = require('fs'),
     CRUD = require('./CRUDMock').CRUD,
-    entityFinder = require('./entityfinder');
+    entityFinder = require('./entityfinder'),
+    entityModifier = require('./existingentitymodifier').entityModifier;
 
 
 function buildCreateStatement(entity) {
@@ -57,6 +58,14 @@ function outputEntity(entity) {
                 break;
             case 'many:1':
                 relations[targetEntity] = 'CRUD.RELATION_FOREIGN';
+                entityModifier.readEntityProperty(targetEntity, 'relations').then(function(existingRelations) {
+                    console.log(existingRelations);
+                    if (!existingRelations) {
+                        existingRelations = {};
+                    }
+                    existingRelations[entity.name] = 'CRUD.RELATION_FOREIGN';
+                    entityModifier.modifyEntityProperty(targetEntity, 'relations', util.inspect(existingRelations).replace(/'CRUD.RELATION_([A-Z]+)'/, 'CRUD.RELATION_$1'));
+                });
                 break;
             case 'many:many':
                 relations[targetEntity] = 'CRUD.RELATION_MANY';
