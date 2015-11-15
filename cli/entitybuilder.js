@@ -64,7 +64,7 @@ function outputEntity(entity) {
                         existingRelations = {};
                     }
                     existingRelations[entity.name] = 'CRUD.RELATION_FOREIGN';
-                    entityModifier.modifyEntityProperty(targetEntity, 'relations', util.inspect(existingRelations).replace(/'CRUD.RELATION_([A-Z]+)'/, 'CRUD.RELATION_$1'));
+                    entityModifier.modifyEntityProperty(targetEntity, 'relations', util.inspect(existingRelations).replace(/'CRUD.RELATION_([A-Z]+)'/g, 'CRUD.RELATION_$1'));
                 });
                 break;
             case 'many:many':
@@ -89,9 +89,11 @@ function outputEntity(entity) {
     };
     var code = ["function " + entity.name + "() { CRUD.Entity.call(this);} ", "",
         "CRUD.define(" + entity.name + ", " + util.inspect(properties) + ",{});"
-    ].join("\n").replace(/'CRUD.RELATION_(.*)'/g, 'CRUD.RELATION_$1');
+    ].join("\n");
 
-    console.log(code);
+
+    code = code.replace(/\'CRUD\.RELATION_(.*)\'/g, 'CRUD.RELATION_$1');
+
     var ast = UglifyJS.parse(code);
     var stream = UglifyJS.OutputStream({
         beautify: true
@@ -101,7 +103,7 @@ function outputEntity(entity) {
         fs.mkdirSync('generated');
     }
     fs.writeFileSync('./generated/' + entity.name + '.js', stream.toString());
-    console.log(stream.toString());
+    console.log(stream.toString()); //console.log(stream.toString());
 }
 
 /**

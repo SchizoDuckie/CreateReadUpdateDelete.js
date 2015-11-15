@@ -75,11 +75,16 @@ function EntityModifier() {
                     return node.start.value;
                 });
             }
+
             if ('properties' in prop.value) {
                 var output = {};
                 prop.value.properties.map(function(node) {
                     console.log(node.value);
-                    output[node.key] = code.substr(node.value.start.pos, node.value.end.pos - node.value.start.pos);
+                    if ('expression' in node.value) {
+                        output[node.key] = node.value.expression.name + '.' + node.value.property;
+                    } else {
+                        output[node.key] = code.substr(node.value.start.pos, node.value.end.endpos - node.value.start.pos);
+                    }
                 });
                 return output;
             }
