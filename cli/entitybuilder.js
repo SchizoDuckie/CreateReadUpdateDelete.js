@@ -44,6 +44,18 @@ function outputEntity(entity) {
                     length: 11,
                     index: true
                 };
+                entityModifier.readEntityProperty(targetEntity, 'relations').then(function(existingRelations) {
+                    if (!existingRelations) {
+                        existingRelations = {};
+                    }
+                    existingRelations[entity.name] = 'CRUD.RELATION_FOREIGN';
+                    entityModifier.modifyEntityProperty(targetEntity, 'relations', util.inspect(existingRelations).replace(/'CRUD.RELATION_([A-Z]+)'/g, 'CRUD.RELATION_$1'));
+                    entityModifier.readEntityProperty(targetEntity, 'fields').then(function(fields) {
+                        fields.push(entity.primary);
+                        entityModifier.modifyEntityProperty(targetEntity, 'fields', JSON.stringify(fields));
+                        return true;
+                    });
+                });
                 break;
             case '1:many':
                 relations[targetEntity] = 'CRUD.RELATION_FOREIGN';
@@ -52,6 +64,13 @@ function outputEntity(entity) {
                     length: 11,
                     index: true
                 };
+                entityModifier.readEntityProperty(targetEntity, 'relations').then(function(existingRelations) {
+                    if (!existingRelations) {
+                        existingRelations = {};
+                    }
+                    existingRelations[entity.name] = 'CRUD.RELATION_FOREIGN';
+                    entityModifier.modifyEntityProperty(targetEntity, 'relations', util.inspect(existingRelations).replace(/'CRUD.RELATION_([A-Z]+)'/g, 'CRUD.RELATION_$1'));
+                });
                 break;
             case 'many:1':
                 relations[targetEntity] = 'CRUD.RELATION_FOREIGN';
@@ -66,11 +85,36 @@ function outputEntity(entity) {
                         entityModifier.modifyEntityProperty(targetEntity, 'fields', JSON.stringify(fields));
                         return true;
                     });
-
                 });
                 break;
             case 'many:many':
+                entityModifier.readEntityProperty(targetEntity, 'relations').then(function(existingRelations) {
+                    if (!existingRelations) {
+                        existingRelations = {};
+                    }
+                    existingRelations[entity.name] = 'CRUD.RELATION_MANY';
+                    entityModifier.modifyEntityProperty(targetEntity, 'relations', util.inspect(existingRelations).replace(/'CRUD.RELATION_([A-Z]+)'/g, 'CRUD.RELATION_$1'));
+                    entityModifier.readEntityProperty(targetEntity, 'fields').then(function(fields) {
+                        fields.push(entity.primary);
+                        entityModifier.modifyEntityProperty(targetEntity, 'fields', JSON.stringify(fields));
+                        return true;
+                    });
+                });
+
                 relations[targetEntity] = 'CRUD.RELATION_MANY';
+
+                var rels = {};
+                rels[entity.name] = 'CRUD.RELATION_FOREIGN';
+                rels[targetEntity] = 'CRUD.RELATION_FOREIGN';
+
+                outputEntity({
+                    name: entity.name + '_' + relation.name,
+                    primary: 'ID_' + entity.name + '_' + relation.name,
+                    relations: rels,
+                    properties: ['ID_' + entity.name + '_' + relation.name, relation.primary, entity.primary]
+                });
+
+
                 break;
         }
     });

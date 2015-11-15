@@ -41,6 +41,17 @@ function EntityModifier() {
         return code.substr(0, node.start.pos) + replacement_string + code.substr(node.end.endpos);
     }
 
+    function beautify(code) {
+        var ast = UglifyJS.parse(code);
+        var stream = UglifyJS.OutputStream({
+            beautify: true,
+            comments: true,
+            width: 80
+        });
+        ast.print(stream);
+        return stream.toString();
+    }
+
     /**
      * Find the filename that contains a specific entity
      * and replace the value of a specific CRUD.define property with newValue
@@ -69,7 +80,6 @@ function EntityModifier() {
         return entityFinder.findEntityPath(entity).then(function(path) {
             var code = fs.readFileSync(path) + '';
             var prop = parse_crud_entity_property(code, entity, property);
-            console.log(prop.value);
             if ('elements' in prop.value) {
                 return prop.value.elements.map(function(node) {
                     return node.start.value;
@@ -79,7 +89,6 @@ function EntityModifier() {
             if ('properties' in prop.value) {
                 var output = {};
                 prop.value.properties.map(function(node) {
-                    console.log(node.value);
                     if ('expression' in node.value) {
                         output[node.key] = node.value.expression.name + '.' + node.value.property;
                     } else {

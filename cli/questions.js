@@ -38,7 +38,7 @@ var questions = {
             type: "confirm",
             name: "createIndex",
             message: "Create an INDEX on this property?",
-            default: false
+            default: true
         }).then(function(results) {
             entity.properties[property.property].index = results.createIndex;
             return property;
@@ -150,7 +150,8 @@ var questions = {
                                         "1:1\n\t" + entity.name + " will have a foreign key to " + relation.name + " and vice versa",
                                         "1:many\n\t" + ucFirst(aOrAn(relation.name)) + " has many " + pluralize.plural(entity.name),
                                         "many:1\n\t" + ucFirst(aOrAn(entity.name)) + " has many " + pluralize.plural(relation.name),
-                                        'many:many\n\tA connecting ' + entity.name + '_' + relation.name + ' entity will be generated that has a foreign key to both ' + entity.name + " and " + relation.name
+                                        'many:many\n\tMany ' + pluralize.plural(entity.name) + ' have many ' + pluralize.plural(relation.name) +
+                                        '\n\tNote: A connecting ' + entity.name + '_' + relation.name + ' entity will be auto-generated with a foreign key to both ' + entity.name + " and " + relation.name
                                     ]
                                 });
                             })
