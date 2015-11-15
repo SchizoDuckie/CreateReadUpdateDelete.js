@@ -10,7 +10,6 @@ function buildCreateStatement(entity) {
     var query = [entity.primary + ' INTEGER PRIMARY KEY NOT NULL'];
     Object.keys(entity.properties).map(function(property) {
         var prop = entity.properties[property];
-        console.log(prop);
         var type = prop.type + (('length' in prop) ? '(' + prop.length + ')' : '');
         var nil = ('not_null' in prop) ? ' NOT NULL' : ' NULL';
         query.push(property + ' ' + type + nil);
@@ -31,8 +30,6 @@ function buildFieldsArray(entity) {
 
 function outputEntity(entity) {
 
-    console.log("\nEntity info:");
-    console.log(util.inspect(entity));
     entityFinder.findEntities();
     var indexes = [],
         relations = {};
@@ -59,12 +56,17 @@ function outputEntity(entity) {
             case 'many:1':
                 relations[targetEntity] = 'CRUD.RELATION_FOREIGN';
                 entityModifier.readEntityProperty(targetEntity, 'relations').then(function(existingRelations) {
-                    console.log(existingRelations);
                     if (!existingRelations) {
                         existingRelations = {};
                     }
                     existingRelations[entity.name] = 'CRUD.RELATION_FOREIGN';
                     entityModifier.modifyEntityProperty(targetEntity, 'relations', util.inspect(existingRelations).replace(/'CRUD.RELATION_([A-Z]+)'/g, 'CRUD.RELATION_$1'));
+                    entityModifier.readEntityProperty(targetEntity, 'fields').then(function(fields) {
+                        fields.push(entity.primary);
+                        entityModifier.modifyEntityProperty(targetEntity, 'fields', JSON.stringify(fields));
+                        return true;
+                    });
+
                 });
                 break;
             case 'many:many':

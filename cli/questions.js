@@ -102,7 +102,6 @@ var questions = {
             message: "Want to add another property? ",
             default: true
         }).then(function(results) {
-            console.log(entity);
             return (results.askAgain) ? questions.addProperty() : entity;
         });
     },
