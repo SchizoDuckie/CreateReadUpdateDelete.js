@@ -39,6 +39,7 @@ module.exports = {
 
                 // iterate all found js files and search for CRUD.define calls
                 results.map(function(filename) {
+                    if (filename.trim() == '') return;
                     var code = fs.readFileSync(filename) + '';
                     var ast = UglifyJS.parse(code);
                     ast.walk(new UglifyJS.TreeWalker(function(node) {

@@ -2,6 +2,7 @@ var UglifyJS = require('uglify-js'),
     util = require('util'),
     fs = require('fs'),
     CRUD = require('./CRUDMock').CRUD,
+    pluralize = require('pluralize'),
     entityFinder = require('./entityfinder'),
     entityModifier = require('./existingentitymodifier').entityModifier;
 
@@ -28,128 +29,135 @@ function buildFieldsArray(entity) {
 }
 
 
-function outputEntity(entity) {
-
+function outputEntity(entity, donttouchrelated) {
+    donttouchrelated = donttouchrelated || false;
     entityFinder.findEntities();
     var indexes = [],
-        relations = {};
+        relations = {},
+        int11 = {
+            type: 'INTEGER',
+            length: 11,
+            index: true
+        };
 
-    Object.keys(entity.relations).map(function(targetEntity) {
+    Promise.all(Object.keys(entity.relations).map(function(targetEntity) {
         var type = entity.relations[targetEntity].split("\n")[0];
         switch (type) {
             case '1:1':
                 relations[targetEntity] = 'CRUD.RELATION_SINGLE';
-                entity.properties[CRUD.entities[targetEntity].primary] = {
-                    type: 'INTEGER',
-                    length: 11,
-                    index: true
-                };
-                entityModifier.readEntityProperty(targetEntity, 'relations').then(function(existingRelations) {
+                entity.properties[CRUD.entities[targetEntity].primary] = int11;
+                return entityModifier.readEntityProperty(targetEntity, 'relations').then(function(existingRelations) {
                     if (!existingRelations) {
                         existingRelations = {};
                     }
-                    existingRelations[entity.name] = 'CRUD.RELATION_FOREIGN';
+                    existingRelations[entity.name] = 'CRUD.RELATION_SINGLE';
                     entityModifier.modifyEntityProperty(targetEntity, 'relations', util.inspect(existingRelations).replace(/'CRUD.RELATION_([A-Z]+)'/g, 'CRUD.RELATION_$1'));
-                    entityModifier.readEntityProperty(targetEntity, 'fields').then(function(fields) {
+                    return entityModifier.readEntityProperty(targetEntity, 'fields').then(function(fields) {
                         fields.push(entity.primary);
                         entityModifier.modifyEntityProperty(targetEntity, 'fields', JSON.stringify(fields));
                         return true;
                     });
                 });
-                break;
+
             case '1:many':
                 relations[targetEntity] = 'CRUD.RELATION_FOREIGN';
-                entity.properties[CRUD.entities[targetEntity].primary] = {
-                    type: 'INTEGER',
-                    length: 11,
-                    index: true
-                };
-                entityModifier.readEntityProperty(targetEntity, 'relations').then(function(existingRelations) {
-                    if (!existingRelations) {
-                        existingRelations = {};
-                    }
-                    existingRelations[entity.name] = 'CRUD.RELATION_FOREIGN';
-                    entityModifier.modifyEntityProperty(targetEntity, 'relations', util.inspect(existingRelations).replace(/'CRUD.RELATION_([A-Z]+)'/g, 'CRUD.RELATION_$1'));
-                });
+                entity.properties[CRUD.entities[targetEntity].primary] = int11;
+                if (!donttouchrelated) {
+                    return entityModifier.readEntityProperty(targetEntity, 'relations').then(function(existingRelations) {
+                        if (!existingRelations) {
+                            existingRelations = {};
+                        }
+                        existingRelations[entity.name] = 'CRUD.RELATION_FOREIGN';
+                        entityModifier.modifyEntityProperty(targetEntity, 'relations', util.inspect(existingRelations).replace(/'CRUD.RELATION_([A-Z]+)'/g, 'CRUD.RELATION_$1'));
+                    });
+                }
                 break;
+
             case 'many:1':
                 relations[targetEntity] = 'CRUD.RELATION_FOREIGN';
-                entityModifier.readEntityProperty(targetEntity, 'relations').then(function(existingRelations) {
+                return entityModifier.readEntityProperty(targetEntity, 'relations').then(function(existingRelations) {
                     if (!existingRelations) {
                         existingRelations = {};
                     }
                     existingRelations[entity.name] = 'CRUD.RELATION_FOREIGN';
-                    entityModifier.modifyEntityProperty(targetEntity, 'relations', util.inspect(existingRelations).replace(/'CRUD.RELATION_([A-Z]+)'/g, 'CRUD.RELATION_$1'));
-                    entityModifier.readEntityProperty(targetEntity, 'fields').then(function(fields) {
+                    if (!donttouchrelated) {
+                        entityModifier.modifyEntityProperty(targetEntity, 'relations', util.inspect(existingRelations).replace(/'CRUD.RELATION_([A-Z]+)'/g, 'CRUD.RELATION_$1'));
+                    }
+                    return entityModifier.readEntityProperty(targetEntity, 'fields').then(function(fields) {
                         fields.push(entity.primary);
-                        entityModifier.modifyEntityProperty(targetEntity, 'fields', JSON.stringify(fields));
+                        if (!donttouchrelated) {
+                            entityModifier.modifyEntityProperty(targetEntity, 'fields', JSON.stringify(fields));
+                        }
                         return true;
                     });
                 });
-                break;
             case 'many:many':
-                entityModifier.readEntityProperty(targetEntity, 'relations').then(function(existingRelations) {
+                return entityModifier.readEntityProperty(targetEntity, 'relations').then(function(existingRelations) {
                     if (!existingRelations) {
                         existingRelations = {};
                     }
                     existingRelations[entity.name] = 'CRUD.RELATION_MANY';
+                    relations[targetEntity] = 'CRUD.RELATION_MANY';
+
                     entityModifier.modifyEntityProperty(targetEntity, 'relations', util.inspect(existingRelations).replace(/'CRUD.RELATION_([A-Z]+)'/g, 'CRUD.RELATION_$1'));
-                    entityModifier.readEntityProperty(targetEntity, 'fields').then(function(fields) {
-                        fields.push(entity.primary);
-                        entityModifier.modifyEntityProperty(targetEntity, 'fields', JSON.stringify(fields));
-                        return true;
-                    });
+                    var rels = {},
+                        properties = {};
+                    relation = CRUD.entities[targetEntity];
+
+                    rels[entity.name] = 'many:1\n';
+                    rels[targetEntity] = '1:many\n';
+
+                    var primaryA = relation.primary;
+                    var primaryB = entity.primary;
+                    properties[primaryA] = properties[primaryB] = int11;
+                    var connector = {
+                        table: pluralize.plural(entity.name) + '_' + pluralize.plural(targetEntity),
+                        name: entity.name + '_' + targetEntity,
+                        primary: 'ID_' + entity.name + '_' + targetEntity,
+                        relations: rels,
+                        properties: properties
+                    };
+                    return outputEntity(connector, true);
                 });
 
-                relations[targetEntity] = 'CRUD.RELATION_MANY';
-
-                var rels = {};
-                rels[entity.name] = 'CRUD.RELATION_FOREIGN';
-                rels[targetEntity] = 'CRUD.RELATION_FOREIGN';
-
-                outputEntity({
-                    name: entity.name + '_' + relation.name,
-                    primary: 'ID_' + entity.name + '_' + relation.name,
-                    relations: rels,
-                    properties: ['ID_' + entity.name + '_' + relation.name, relation.primary, entity.primary]
-                });
-
-
-                break;
         }
-    });
-    Object.keys(entity.properties).map(function(property) {
-        if (entity.properties[property].index === true) {
-            indexes.push(property);
+        return true;
+    })).then(function() {
+
+
+        Object.keys(entity.properties).map(function(property) {
+            if (entity.properties[property].index === true) {
+                indexes.push(property);
+            }
+        });
+        var properties = {
+            table: entity.table,
+            primary: entity.primary,
+            fields: buildFieldsArray(entity),
+            createStatement: buildCreateStatement(entity),
+            defaultValues: {},
+            indexes: indexes,
+            migrations: {},
+            relations: relations
+        };
+        var code = ["function " + entity.name + "() { CRUD.Entity.call(this);} ", "",
+            "CRUD.define(" + entity.name + ", " + util.inspect(properties) + ",{});"
+        ].join("\n");
+
+
+        code = code.replace(/\'CRUD\.RELATION_(.*)\'/g, 'CRUD.RELATION_$1');
+
+        var ast = UglifyJS.parse(code);
+        var stream = UglifyJS.OutputStream({
+            beautify: true
+        });
+        ast.print(stream);
+        if (!fs.existsSync('generated')) {
+            fs.mkdirSync('generated');
         }
-    });
-    var properties = {
-        table: entity.table,
-        primary: entity.primary,
-        fields: buildFieldsArray(entity),
-        createStatement: buildCreateStatement(entity),
-        defaultValues: {},
-        indexes: indexes,
-        migrations: {},
-        relations: relations
-    };
-    var code = ["function " + entity.name + "() { CRUD.Entity.call(this);} ", "",
-        "CRUD.define(" + entity.name + ", " + util.inspect(properties) + ",{});"
-    ].join("\n");
-
-
-    code = code.replace(/\'CRUD\.RELATION_(.*)\'/g, 'CRUD.RELATION_$1');
-
-    var ast = UglifyJS.parse(code);
-    var stream = UglifyJS.OutputStream({
-        beautify: true
-    });
-    ast.print(stream);
-    if (!fs.existsSync('generated')) {
-        fs.mkdirSync('generated');
-    }
-    fs.writeFileSync('./generated/' + entity.name + '.js', stream.toString());
-    console.log(stream.toString()); //console.log(stream.toString());
+        fs.writeFileSync('./generated/' + entity.name + '.js', stream.toString());
+        console.log(stream.toString()); //console.log(stream.toString());
+    })
 }
 
 /**
