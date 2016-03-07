@@ -1,7 +1,7 @@
 {
-  "name": "CreateReadUpdateDelete.js",
+  "name": "createreadupdatedelete.js",
   "description": "Simple ORM/ActiveRecord for WebSQL that covers 90% of use cases. Supports 1:1, 1:many and many:many relations, indexes, fixtures and migrations.",
-  "version": "1.0.0",
+  "version": "0.8.0",
   "keywords": [
     "activerecord",
     "crud",
@@ -9,34 +9,42 @@
     "websql"
   ],
   "contributors": [
-    {
-      "name": "Garfield69",
-      "email": "",
-      "web": "https://github.com/Garfield69"
-    }
+    "Garfield69 (https://github.com/Garfield69)"
   ],
   "maintainers": [
-    {
-      "name": "SchizoDuckie",
-      "web": "https://github.com/SchizoDuckie"
-    }
+    "SchizoDuckie (https://github.com/SchizoDuckie)"
   ],
   "demos": [
     "http://schizoduckie.github.io/CreateReadUpdateDelete.js/docs/"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/SchizoDuckie/CreateReadUpdateDelete.js.git"
+    "url": "git+https://github.com/SchizoDuckie/CreateReadUpdateDelete.js.git"
   },
-  "license": "MIT",
-  "readme": "https://github.com/SchizoDuckie/CreateReadUpdateDelete.js/blob/master/README.md",
+  "license": "UNLICENSED",
   "homepage": "http://schizoduckie.github.io/CreateReadUpdateDelete.js",
   "dependencies": {
     "articles": "^0.2.1",
-    "bluebird": "^3.0.5",
+    "bluebird": "^3.3.4",
+    "dom-storage": "^2.0.2",
     "es6-promise": "^3.0.2",
     "inquirer": "^0.11.0",
     "pluralize": "^1.2.1",
-    "uglify-js": "^2.5.0"
-  }
+    "sqlite-parser": "^0.10.2",
+    "uglify-js": "^2.5.0",
+    "websql": "^0.1.0"
+  },
+  "bugs": {
+    "url": "https://github.com/SchizoDuckie/CreateReadUpdateDelete.js/issues"
+  },
+  "main": "src/CRUD.SqliteAdapter.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "SchizoDuckie"
 }

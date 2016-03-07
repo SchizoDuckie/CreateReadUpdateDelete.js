@@ -1,3 +1,7 @@
+if(typeof(module) !== undefined && typeof(require) !== undefined) {
+	var Promise = require('bluebird');
+}
+
 /**
  * CreateReadUpdateDelete.js
  *
@@ -564,4 +568,8 @@ if (!('clone' in Object)) {
     Object.clone = function(el) {
         return;
     };
+}
+
+if(typeof(module) !== undefined) {
+	module.exports = CRUD;
 }

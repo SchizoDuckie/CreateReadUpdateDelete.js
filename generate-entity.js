@@ -26,6 +26,7 @@ questions.askEntityName().then(
         return questions.addProperty()
             .then(questions.addRelations)
             .then(entitybuilder.outputEntity)
+            .then(entitybuilder.outputConnectors)
             .then(entitybuilder.injectForeignProperties)
             .then(entitybuilder.injectForeignRelations)
             .then(entitybuilder.generateForeignMigrations);

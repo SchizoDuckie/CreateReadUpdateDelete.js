@@ -1,2 +1,4 @@
-node_modules/
-generated/
+schema-version.json
+createreadupdatedelete_demo
+node_modules
+generated
