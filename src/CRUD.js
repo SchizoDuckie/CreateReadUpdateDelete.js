@@ -1,4 +1,4 @@
-if(typeof(module) !== undefined && typeof(require) !== undefined) {
+if (typeof module !== 'undefined' && typeof require !== 'undefined') {
 	var Promise = require('bluebird');
 }
 
@@ -570,6 +570,6 @@ if (!('clone' in Object)) {
     };
 }
 
-if(typeof(module) !== undefined) {
+if (typeof module !== 'undefined') {
 	module.exports = CRUD;
 }
