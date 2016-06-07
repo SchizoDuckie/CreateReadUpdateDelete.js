@@ -1,9 +1,9 @@
-if(typeof(module) !== undefined && typeof(require) !== undefined) {
+if (typeof module !== 'undefined' && typeof require !== 'undefined') {
 	var CRUD = require('./CRUD.js'),
 		openDatabase = require('websql'),
 		Promise = require('bluebird'), 
 		Storage = require('dom-storage'),
-  		localStorage = new Storage('./schema-version.json');
+		localStorage = new Storage('./schema-version.json');
 }
 /**
  * CRUD.SQliteAdapter
@@ -655,6 +655,6 @@ CRUD.Database.SQLBuilder.prototype = {
     }
 };
 
-if(typeof(module) !== undefined) {
+if (typeof module !== 'undefined') {
 	module.exports = CRUD;
 }
